@@ -336,6 +336,18 @@ HOSTILE_DOCUMENTS = [
                  id="scene-timestamp-is-a-string"),
     pytest.param({"active_scene": {"id": "ghost"}}, id="active-scene-is-an-object"),
     pytest.param({"brightness": float("nan")}, id="brightness-is-nan"),
+    pytest.param(
+        {"scenes": [{"name": "x", "effect": "solid", "created_at": float("nan")}]},
+        id="scene-created-at-is-nan",
+    ),
+    pytest.param(
+        {"scenes": [{"name": "x", "effect": "solid", "updated_at": float("inf")}]},
+        id="scene-updated-at-is-inf",
+    ),
+    pytest.param(
+        {"scenes": [{"name": "x", "effect": "solid", "created_at": 10**400}]},
+        id="scene-created-at-overflows-a-float",
+    ),
     pytest.param({"brightness": float("inf")}, id="brightness-is-inf"),
     pytest.param({"revision": float("inf")}, id="revision-is-inf"),
     pytest.param({"effect": "breathe", "params": {"speed": float("nan")}}, id="param-is-nan"),
@@ -383,6 +395,59 @@ class TestHostileStateFilesNeverStopTheLightsComingUp:
 
         assert state.revision == 0
         assert state.effect == "fire"
+
+    @pytest.mark.parametrize("literal", ["NaN", "Infinity", "-Infinity"])
+    @pytest.mark.parametrize("key", ["created_at", "updated_at"])
+    def test_a_scene_with_a_non_finite_timestamp_is_dropped_not_kept(
+        self, tmp_path, key, literal
+    ):
+        # A NaN here used to reach live state and come back out of the WebSocket
+        # as a bare `NaN` token, which is not valid JSON, so the first frame the
+        # phone receives was unparseable - and StateStore.save wrote it back.
+        path = tmp_path / "state.json"
+        path.write_text(
+            '{"scenes": ['
+            f'{{"id": "a", "name": "poisoned", "effect": "solid", "{key}": {literal}}},'
+            '{"id": "b", "name": "ok", "effect": "solid"}]}',
+            encoding="utf-8",
+        )
+
+        state = StateStore(path).load()
+
+        assert [scene.name for scene in state.scenes] == ["ok"]
+
+    def test_a_scene_timestamp_too_large_for_a_float_loses_only_that_scene(self, tmp_path):
+        # float(10**400) raises OverflowError, which is not a ValueError, so it
+        # used to escape past the per-scene guard and cost the whole document.
+        path = tmp_path / "state.json"
+        path.write_text(
+            '{"scenes": ['
+            '{"id": "a", "name": "poisoned", "effect": "solid", "created_at": 1'
+            + "0" * 400
+            + '},{"id": "b", "name": "ok", "effect": "solid"}]}',
+            encoding="utf-8",
+        )
+
+        state = StateStore(path).load()
+
+        assert [scene.name for scene in state.scenes] == ["ok"]
+
+    def test_restored_state_is_always_serialisable_as_strict_json(self, tmp_path):
+        # docs/api.md types every scene timestamp and brightness as a number,
+        # and the WebSocket hello frame is json.dumps of exactly this payload.
+        path = tmp_path / "state.json"
+        path.write_text(
+            '{"brightness": NaN, "scenes": ['
+            '{"id": "a", "name": "bad", "effect": "solid", "created_at": Infinity},'
+            '{"id": "b", "name": "ok", "effect": "solid"}]}',
+            encoding="utf-8",
+        )
+
+        payload = StateStore(path).load().to_dict()
+
+        # allow_nan=False is what Starlette's JSONResponse uses; the WebSocket
+        # path is the permissive default, so the payload itself has to be clean.
+        json.dumps(payload, allow_nan=False)
 
     def test_a_persisted_scene_with_a_non_finite_value_is_dropped(self, tmp_path):
         path = tmp_path / "state.json"

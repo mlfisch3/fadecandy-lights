@@ -61,11 +61,17 @@ class Scene:
                 name=str(raw["name"]),
                 effect=effect_name,
                 params=effect_cls.coerce_params(raw.get("params") or {}),
-                brightness=_clamp_unit(float(raw.get("brightness", 1.0))),
-                created_at=float(raw.get("created_at", now)),
-                updated_at=float(raw.get("updated_at", now)),
+                brightness=_clamp_unit(raw.get("brightness", 1.0)),
+                created_at=_finite(raw.get("created_at", now)),
+                updated_at=_finite(raw.get("updated_at", now)),
             )
-        except (KeyError, TypeError, ValueError, effects.UnknownEffectError) as exc:
+        except (
+            KeyError,
+            TypeError,
+            ValueError,
+            OverflowError,
+            effects.UnknownEffectError,
+        ) as exc:
             raise StateError(f"unusable scene: {exc}") from exc
 
 
@@ -108,11 +114,21 @@ class State:
         raise StateError(f"no scene with id {scene_id!r}")
 
 
-def _clamp_unit(value: float) -> float:
+def _finite(value: Any) -> float:
+    """Coerce a persisted number, refusing NaN and the infinities.
+
+    These do not survive the round trip: ``json.dumps`` writes them back as
+    bare ``NaN`` and ``Infinity`` tokens, which are not valid JSON, so a phone
+    reading the WebSocket cannot parse the frame at all.
+    """
     number = float(value)
     if not math.isfinite(number):
         raise StateError(f"expected a finite number, got {value!r}")
-    return min(1.0, max(0.0, number))
+    return number
+
+
+def _clamp_unit(value: float) -> float:
+    return min(1.0, max(0.0, _finite(value)))
 
 
 def _int_or(value: Any, default: int) -> int:
@@ -183,8 +199,8 @@ def state_from_dict(raw: dict[str, Any]) -> State:
         active = None
 
     try:
-        brightness = _clamp_unit(float(raw.get("brightness", base.brightness)))
-    except (TypeError, ValueError):
+        brightness = _clamp_unit(raw.get("brightness", base.brightness))
+    except (TypeError, ValueError, OverflowError):
         brightness = base.brightness
 
     return State(

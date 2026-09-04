@@ -9,9 +9,9 @@ Rendering contract
 ------------------
 ``render`` receives a preallocated ``(N, 3)`` float32 buffer and must fill every
 pixel.  Values are 0..1 in the strip's own (pre-gamma) space; gamma and
-whitepoint are fcserver's job.  Work over whole frames with numpy - this loop
-runs 60 times a second for months on a Pi 3 B+, and a per-pixel Python loop
-would spend the board's headroom on nothing.
+whitepoint are fcserver's job.  Work over whole frames with numpy - this loop is
+meant to run 60 times a second for months on a Pi 3 B+, and a per-pixel Python
+loop would spend the board's headroom on nothing.
 """
 
 from __future__ import annotations

@@ -44,7 +44,7 @@ If you find yourself wanting to gamma-correct in an effect, don't: it would doub
 ## Scale and target
 
 - One Fadecandy board today: 8 outputs of 64 pixels, 512 in total.
-- 60 fps sustained, configurable.
+- 60 fps target, configurable.
 - Raspberry Pi 3 B+ (BCM2837B0, 1 GB RAM, onboard WiFi).
 
 A Fadecandy output is hard-capped at **64 pixels** and a board at **512**, so an installation of around 18 runs needs three boards.

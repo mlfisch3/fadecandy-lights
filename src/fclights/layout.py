@@ -12,11 +12,15 @@ The file format is JSON.  See ``config/layout.example.json`` and ``docs/api.md``
 from __future__ import annotations
 
 import json
+import math
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
 import numpy as np
+
+from fclights.jsonio import JSONDocumentError
+from fclights.jsonio import loads as load_json_document
 
 # A Fadecandy board has eight outputs, and each output is hard-capped at 64
 # pixels by the hardware. 512 pixels per board is a ceiling, not a guideline.
@@ -209,13 +213,32 @@ class Layout:
         }
 
 
+def _finite(value: Any, what: str) -> float:
+    """Coerce a coordinate-ish number, refusing NaN and the infinities.
+
+    A non-finite coordinate does not fail loudly anywhere downstream: it spreads
+    through the derived position arrays, and ``Layout.to_dict`` then serves it
+    to the phone as ``null`` over REST and as a bare ``NaN`` token over the
+    WebSocket, which is not valid JSON at all.
+    """
+    try:
+        number = float(value)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise LayoutError(f"{what} must be a number: {exc}") from exc
+    if not math.isfinite(number):
+        raise LayoutError(f"{what} must be a finite number, got {value!r}")
+    return number
+
+
 def _output_from_dict(
     raw: dict[str, Any], device_id: str, pitch: float
 ) -> Output:
     try:
         index = int(raw["index"])
         count = int(raw["count"])
-    except (KeyError, TypeError, ValueError) as exc:
+    except (KeyError, TypeError, ValueError, OverflowError) as exc:
+        # int() raises OverflowError, not ValueError, for an infinity, and
+        # float() does the same for an integer literal too large to represent.
         raise LayoutError(
             f"device {device_id!r}: output needs integer 'index' and 'count'"
         ) from exc
@@ -231,7 +254,8 @@ def _output_from_dict(
 
     points = raw.get("points")
     if points is not None:
-        pts = tuple(tuple(float(v) for v in p) for p in points)
+        where = f"device {device_id!r} output {index}: points"
+        pts = tuple(tuple(_finite(v, where) for v in p) for p in points)
         if len(pts) != count:
             raise LayoutError(
                 f"device {device_id!r} output {index}: {len(pts)} points for count {count}"
@@ -243,9 +267,12 @@ def _output_from_dict(
 
     def vec(key: str, default: tuple[float, float, float]) -> tuple[float, float, float]:
         value = raw.get(key, default)
-        seq = tuple(float(v) for v in value)
+        where = f"device {device_id!r} output {index}: {key}"
+        if isinstance(value, (str, bytes)) or not isinstance(value, (list, tuple)):
+            raise LayoutError(f"{where} must be [x, y, z]")
+        seq = tuple(_finite(v, where) for v in value)
         if len(seq) != 3:
-            raise LayoutError(f"device {device_id!r} output {index}: {key} must be [x, y, z]")
+            raise LayoutError(f"{where} must be [x, y, z]")
         return seq
 
     return Output(
@@ -275,7 +302,10 @@ def _device_from_dict(raw: dict[str, Any], pitch: float) -> Device:
             raise LayoutError(f"device {device_id!r}: output index {o.index} listed twice")
         seen.add(o.index)
 
-    channel = int(raw.get("opc_channel", 0))
+    try:
+        channel = int(raw.get("opc_channel", 0))
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise LayoutError(f"device {device_id!r}: opc_channel must be an integer: {exc}") from exc
     if not 0 <= channel <= 255:
         raise LayoutError(f"device {device_id!r}: opc_channel {channel} outside 0..255")
 
@@ -296,10 +326,9 @@ def build_layout(raw: dict[str, Any]) -> Layout:
     if not devices_raw:
         raise LayoutError("layout needs a non-empty 'devices' list")
 
-    try:
-        pixels_per_metre = float(raw.get("pixels_per_metre", DEFAULT_PIXELS_PER_METRE))
-    except (TypeError, ValueError) as exc:
-        raise LayoutError(f"pixels_per_metre must be a number: {exc}") from exc
+    pixels_per_metre = _finite(
+        raw.get("pixels_per_metre", DEFAULT_PIXELS_PER_METRE), "pixels_per_metre"
+    )
     if pixels_per_metre <= 0:
         raise LayoutError(f"pixels_per_metre must be positive, got {pixels_per_metre}")
 
@@ -362,11 +391,13 @@ def load_layout(path: str | Path) -> Layout:
     """Read and validate a layout JSON file."""
     path = Path(path)
     try:
-        raw = json.loads(path.read_text(encoding="utf-8"))
+        raw = load_json_document(path.read_text(encoding="utf-8"))
     except FileNotFoundError as exc:
         raise LayoutError(f"layout file not found: {path}") from exc
     except OSError as exc:
         raise LayoutError(f"layout file {path} cannot be read: {exc}") from exc
+    except JSONDocumentError as exc:
+        raise LayoutError(f"layout file {path}: {exc}") from exc
     except json.JSONDecodeError as exc:
         raise LayoutError(f"layout file {path} is not valid JSON: {exc}") from exc
     return build_layout(raw)

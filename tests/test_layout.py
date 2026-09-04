@@ -292,3 +292,80 @@ class TestFileLoading:
         json.dumps(payload)
         assert payload["pixel_count"] == 512
         assert len(payload["devices"][0]["outputs"]) == 8
+
+
+NON_FINITE_LITERALS = ["NaN", "Infinity", "-Infinity", "1e400", "-1e400"]
+
+
+class TestNonFiniteNumbersAreRefused:
+    """A layout file is a document from outside the process.
+
+    A non-finite number in one fails nowhere useful: it spreads silently through
+    the derived position arrays, and `Layout.to_dict` then serves it to the phone
+    as `null` over REST and as a bare `NaN` token over the WebSocket, which is
+    not valid JSON. `int(inf)` also raises OverflowError rather than ValueError,
+    which used to escape `LayoutError` entirely and surface as a traceback.
+    """
+
+    @pytest.mark.parametrize("value", [float("nan"), float("inf"), float("-inf")])
+    def test_a_non_finite_density_is_refused(self, value):
+        with pytest.raises(LayoutError, match="finite"):
+            build_layout({"pixels_per_metre": value, **one_output(8)})
+
+    @pytest.mark.parametrize("value", [float("nan"), float("inf"), float("-inf")])
+    @pytest.mark.parametrize("key", ["origin", "step"])
+    def test_a_non_finite_coordinate_is_refused(self, value, key):
+        with pytest.raises(LayoutError, match="finite"):
+            build_layout(one_output(8, **{key: [value, 0.0, 0.0]}))
+
+    @pytest.mark.parametrize("value", [float("nan"), float("inf"), float("-inf")])
+    def test_a_non_finite_explicit_point_is_refused(self, value):
+        with pytest.raises(LayoutError, match="finite"):
+            build_layout(one_output(2, points=[[value, 0.0, 0.0], [1.0, 0.0, 0.0]]))
+
+    @pytest.mark.parametrize("value", [float("nan"), float("inf")])
+    @pytest.mark.parametrize("key", ["index", "count"])
+    def test_a_non_finite_output_integer_is_refused(self, value, key):
+        raw = {"devices": [{"id": "fc0", "outputs": [{"index": 0, "count": 8, key: value}]}]}
+        with pytest.raises(LayoutError):
+            build_layout(raw)
+
+    @pytest.mark.parametrize("value", [float("nan"), float("inf")])
+    def test_a_non_finite_opc_channel_is_refused(self, value):
+        raw = {"devices": [{"id": "fc0", "opc_channel": value,
+                            "outputs": [{"index": 0, "count": 8}]}]}
+        with pytest.raises(LayoutError):
+            build_layout(raw)
+
+    @pytest.mark.parametrize("literal", NON_FINITE_LITERALS)
+    def test_the_loader_refuses_the_document(self, tmp_path, literal):
+        path = tmp_path / "layout.json"
+        path.write_text(
+            f'{{"pixels_per_metre": {literal}, "devices": [{{"id": "fc0", '
+            f'"outputs": [{{"index": 0, "count": 8}}]}}]}}'
+        )
+        with pytest.raises(LayoutError):
+            load_layout(path)
+
+    @pytest.mark.parametrize("literal", NON_FINITE_LITERALS)
+    def test_the_loader_refuses_it_in_an_integer_position_too(self, tmp_path, literal):
+        path = tmp_path / "layout.json"
+        path.write_text(
+            f'{{"devices": [{{"id": "fc0", "outputs": [{{"index": 0, "count": {literal}}}]}}]}}'
+        )
+        with pytest.raises(LayoutError):
+            load_layout(path)
+
+    def test_a_valid_layout_still_loads(self, tmp_path):
+        path = tmp_path / "layout.json"
+        path.write_text(
+            json.dumps(
+                {
+                    "pixels_per_metre": 30.0,
+                    "devices": [{"id": "fc0", "outputs": [{"index": 0, "count": 8}]}],
+                }
+            )
+        )
+        layout = load_layout(path)
+        assert layout.pixel_count == 8
+        assert np.isfinite(layout.positions).all()

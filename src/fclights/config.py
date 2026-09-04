@@ -16,6 +16,8 @@ from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Any
 
+from fclights.jsonio import JSONDocumentError
+from fclights.jsonio import loads as load_json_document
 from fclights.power import DEFAULT_IDLE_MA_PER_PIXEL, DEFAULT_MA_PER_CHANNEL
 
 DEFAULT_CONFIG_PATH = Path("/etc/fclights/fclights.json")
@@ -173,7 +175,10 @@ def config_from_dict(raw: dict[str, Any]) -> Config:
             cors_origins=tuple(str(o) for o in server_raw.get("cors_origins", ())),
         )
         simulate_pixels = int(raw.get("simulate_pixels", defaults.simulate_pixels))
-    except (TypeError, ValueError) as exc:
+    except (TypeError, ValueError, OverflowError) as exc:
+        # OverflowError is what int() raises for an infinity and what float()
+        # raises for an integer literal too large to represent; neither is a
+        # ValueError, so both would otherwise escape as a traceback.
         raise ConfigError(f"config contains a badly typed value: {exc}") from exc
 
     for key, number in (
@@ -218,11 +223,13 @@ def load_config(path: str | Path | None) -> Config:
         return Config()
     path = Path(path)
     try:
-        raw = json.loads(path.read_text(encoding="utf-8"))
+        raw = load_json_document(path.read_text(encoding="utf-8"))
     except FileNotFoundError as exc:
         raise ConfigError(f"config file not found: {path}") from exc
     except OSError as exc:
         raise ConfigError(f"config file {path} cannot be read: {exc}") from exc
+    except JSONDocumentError as exc:
+        raise ConfigError(f"config file {path}: {exc}") from exc
     except json.JSONDecodeError as exc:
         raise ConfigError(f"config file {path} is not valid JSON: {exc}") from exc
     return config_from_dict(raw)

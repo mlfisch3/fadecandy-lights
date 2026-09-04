@@ -13,9 +13,11 @@ block, downstream of us.  Applying them here as well would double-correct and
 crush the low end, which is exactly the range the Fadecandy's dithering exists
 to rescue.
 
-Everything is whole-frame numpy.  At 512 pixels and 60 fps a Pi 3 B+ spends a
-low single-digit percentage of one core here, which is what lets this run for
-months without cooking the board, and leaves room to grow past one Fadecandy.
+Everything is whole-frame numpy.  At 512 pixels and 60 fps that should cost a
+Pi 3 B+ a low single-digit percentage of one core, which is what should let this
+run for months without cooking the board and leaves room to grow past one
+Fadecandy.  That is reasoned from the frame arithmetic, not measured on a board;
+``GET /api/status`` reports ``render_ms`` so it can be checked on the real one.
 """
 
 from __future__ import annotations

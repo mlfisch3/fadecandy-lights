@@ -194,6 +194,41 @@ class TestConfigMistakesAreReportedNotThrown:
         assert captured.err.startswith("fclights: ")
         assert "finite" in captured.err
 
+    @pytest.mark.parametrize("literal", ["NaN", "Infinity", "-Infinity", "1e400", "-1e400"])
+    @pytest.mark.parametrize(
+        "body",
+        [
+            '{{"opc": {{"port": {literal}}}}}',
+            '{{"server": {{"port": {literal}}}}}',
+            '{{"simulate_pixels": {literal}}}',
+        ],
+        ids=["opc-port", "server-port", "simulate-pixels"],
+    )
+    def test_a_non_finite_integer_field_is_refused_with_a_message(
+        self, capsys, tmp_path, body, literal
+    ):
+        # int(inf) raises OverflowError, not ValueError, and `1e400` needs no
+        # JSON extension at all - it is an ordinary literal that overflows.
+        path = tmp_path / "c.json"
+        path.write_text(body.format(literal=literal))
+
+        code = main(["check", "-c", str(path), "--simulate", "--pixels", "64"])
+        captured = capsys.readouterr()
+
+        assert code == 2
+        assert captured.err.startswith("fclights: ")
+        assert "Traceback" not in captured.err
+
+    def test_an_integer_literal_too_large_for_a_float_is_refused(self, capsys, tmp_path):
+        path = tmp_path / "c.json"
+        path.write_text('{"fps": 1' + "0" * 400 + "}")
+
+        code = main(["check", "-c", str(path), "--simulate", "--pixels", "64"])
+        captured = capsys.readouterr()
+
+        assert code == 2
+        assert "Traceback" not in captured.err
+
     def test_a_non_finite_flag_is_refused_too(self, capsys):
         code = main(["check", "--simulate", "--pixels", "512", "--limit-amps", "nan"])
         captured = capsys.readouterr()
