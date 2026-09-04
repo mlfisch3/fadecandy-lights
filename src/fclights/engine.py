@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import copy
 import logging
 import time
 from dataclasses import dataclass
@@ -66,8 +67,10 @@ class Engine:
     """Renders the current state to the strip, continuously.
 
     The engine does not own state; it is handed a :class:`~fclights.state.State`
-    and rebuilds its effect instance whenever the state's revision changes.  That
-    keeps the API free to mutate state without reaching into the render loop.
+    and rebuilds its effect instance only when the effect's own identity - its
+    name and its parameters - changes.  That keeps the API free to mutate state
+    without reaching into the render loop, and it means a brightness or master
+    power change cannot reset a stateful effect's accumulated heat or energy.
     """
 
     def __init__(
@@ -91,14 +94,24 @@ class Engine:
         )
 
         self._frame = np.zeros((layout.pixel_count, 3), dtype=np.float32)
-        self._channels = layout.channel_slices()
+        # A Fadecandy addresses output n from device pixel 64 * n, but the frame
+        # packs outputs back to back, so a short output has to be expanded into
+        # the board's address space on the way out. Gaps are board pixel slots
+        # with no LED wired to them and stay black for the life of the process.
+        self._channels = layout.channel_maps()
+        self._channel_buffers: list[np.ndarray | None] = [
+            None
+            if cmap.contiguous
+            else np.zeros((cmap.device_pixel_count, 3), dtype=np.uint8)
+            for cmap in self._channels
+        ]
         # fcserver's OPC input is 8-bit only, so this is where float precision
         # would be lost. See fclights.opc for why that matters here.
         self._dither = (
             TemporalDither((layout.pixel_count, 3)) if config.dither else None
         )
         self._effect: effects.Effect | None = None
-        self._effect_revision: int | None = None
+        self._effect_key: tuple[str, dict[str, Any]] | None = None
         self._state = State()
         self._animation_time = 0.0
         self._last_render: float | None = None
@@ -115,20 +128,28 @@ class Engine:
         self._state = state
 
     def _ensure_effect(self) -> effects.Effect:
-        if self._effect is None or self._effect_revision != self._state.revision:
-            try:
-                effect_cls = effects.get(self._state.effect)
-                params = effect_cls.coerce_params(self._state.params)
-                self._effect = effect_cls(self.layout, params)
-            except (effects.UnknownEffectError, effects.ParamError) as exc:
-                # Never let a bad parameter take the lights down; hold the last
-                # good effect and say so.
-                log.error("cannot build effect %r (%s); keeping the previous one",
-                          self._state.effect, exc)
-                if self._effect is None:
-                    fallback = effects.get(effects.DEFAULT_EFFECT)
-                    self._effect = fallback(self.layout, fallback.defaults())
-            self._effect_revision = self._state.revision
+        # Keyed on what actually determines the effect. The revision counter is
+        # bumped by brightness, power and scene edits too, and rebuilding on
+        # those would zero a Fire's heat or a Twinkle's energy every frame the
+        # slider moves.
+        key = (self._state.effect, self._state.params)
+        if self._effect is not None and self._effect_key == key:
+            return self._effect
+        try:
+            effect_cls = effects.get(self._state.effect)
+            params = effect_cls.coerce_params(self._state.params)
+            self._effect = effect_cls(self.layout, params)
+        except (effects.UnknownEffectError, effects.ParamError) as exc:
+            # Never let a bad parameter take the lights down; hold the last
+            # good effect and say so.
+            log.error("cannot build effect %r (%s); keeping the previous one",
+                      self._state.effect, exc)
+            if self._effect is None:
+                fallback = effects.get(effects.DEFAULT_EFFECT)
+                self._effect = fallback(self.layout, fallback.defaults())
+        # Recorded even when the build failed, so a bad parameter is reported
+        # once rather than once per frame.
+        self._effect_key = (self._state.effect, copy.deepcopy(self._state.params))
         return self._effect
 
     # -- rendering ------------------------------------------------------
@@ -161,13 +182,26 @@ class Engine:
         Quantisation happens once, over the whole frame, before it is split
         across channels: the dither carries residuals per pixel, and slicing
         first would give each device its own accumulator for no reason.
+
+        Each message is indexed by *device* pixel, not by frame position, so
+        fcserver's map is the identity over a board's pixels no matter how the
+        runs are split across its outputs.  See :meth:`Layout.fcserver_map`.
         """
         quantized = (
             self._dither.quantize(self._frame)
             if self._dither is not None
             else quantize_plain(self._frame)
         )
-        return [encode_frame(channel, quantized[span]) for channel, span in self._channels]
+        messages: list[bytes] = []
+        for cmap, buffer in zip(self._channels, self._channel_buffers, strict=True):
+            block = quantized[cmap.frame_slice]
+            if buffer is None:
+                payload = block
+            else:
+                buffer[cmap.device_indices] = block
+                payload = buffer
+            messages.append(encode_frame(cmap.opc_channel, payload))
+        return messages
 
     @property
     def frame(self) -> np.ndarray:

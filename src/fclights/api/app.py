@@ -261,13 +261,14 @@ def build_router() -> APIRouter:
             raise HTTPException(
                 status_code=400, detail="supply a new name, capture=true, or both"
             )
-        if not body.capture:
-            # Renaming must not silently redefine what the scene shows, so put
-            # the stored look back before recapturing under the new name.
-            controller.store.recall_scene(scene_id)
 
         try:
-            state, scene = controller.store.save_scene(body.name or existing.name, scene_id)
+            if body.capture:
+                state, scene = controller.store.save_scene(body.name or existing.name, scene_id)
+            else:
+                # A rename is metadata only: it must leave both the stored look
+                # and whatever is currently on the strip exactly as they were.
+                state, scene = controller.store.rename_scene(scene_id, body.name)
         except StateError as exc:
             raise _bad_request(exc) from exc
         await controller.commit(state)
@@ -357,6 +358,16 @@ def create_app(controller: Controller) -> FastAPI:
                          else str(error.get("msg", "invalid")))
         return JSONResponse(
             status_code=422, content=_error_body(422, "; ".join(parts) or "invalid request body")
+        )
+
+    @app.exception_handler(Exception)
+    async def unhandled_error(_: Request, exc: Exception) -> JSONResponse:
+        # docs/api.md promises {error, detail} for every status including 500,
+        # and the Android client has one parser. Starlette's default 500 is
+        # plain text, which that parser cannot read.
+        log.exception("unhandled error serving a request")
+        return JSONResponse(
+            status_code=500, content=_error_body(500, "internal server error")
         )
 
     @app.websocket("/api/ws")

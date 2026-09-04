@@ -89,6 +89,32 @@ class Device:
 
 
 @dataclass(frozen=True)
+class ChannelMap:
+    """How one board's pixels sit in the frame and where they land on the board.
+
+    ``frame_slice`` is the contiguous span of the render buffer the board owns.
+    ``device_indices`` gives, for every pixel in that span, the Fadecandy pixel
+    index it must be written to: a board addresses output *n* starting at pixel
+    ``64 * n`` whether or not the preceding outputs are full, so an output with
+    fewer than 64 pixels leaves a gap in the device's address space that the
+    frame does not have.  The engine expands the span through these indices
+    before encoding, which is what keeps a short output from shifting every
+    output after it.
+    """
+
+    opc_channel: int
+    frame_slice: slice
+    device_indices: np.ndarray = field(repr=False)
+    device_pixel_count: int
+    """Device pixels the encoded message spans, gaps included."""
+
+    @property
+    def contiguous(self) -> bool:
+        """True when the frame span already is the device's pixel order."""
+        return self.device_pixel_count == self.frame_slice.stop - self.frame_slice.start
+
+
+@dataclass(frozen=True)
 class Layout:
     """The whole installation, plus the derived arrays effects render against."""
 
@@ -111,19 +137,50 @@ class Layout:
     def segment_count(self) -> int:
         return int(self.segment.max()) + 1 if self.pixel_count else 0
 
-    def channel_slices(self) -> list[tuple[int, slice]]:
-        """Return ``(opc_channel, slice)`` pairs covering the frame buffer.
+    def channel_maps(self) -> list[ChannelMap]:
+        """Return one :class:`ChannelMap` per device, in layout order.
 
         Pixels are laid out device by device, in the order the layout file lists
-        them, so each device owns one contiguous slice.
+        them, so each device owns one contiguous slice of the frame.
         """
-        out: list[tuple[int, slice]] = []
+        out: list[ChannelMap] = []
         start = 0
         for device in self.devices:
+            indices = np.concatenate(
+                [
+                    np.arange(
+                        o.index * MAX_PIXELS_PER_OUTPUT,
+                        o.index * MAX_PIXELS_PER_OUTPUT + o.count,
+                        dtype=np.int32,
+                    )
+                    for o in device.outputs
+                ]
+            )
             end = start + device.pixel_count
-            out.append((device.opc_channel, slice(start, end)))
+            out.append(
+                ChannelMap(
+                    opc_channel=device.opc_channel,
+                    frame_slice=slice(start, end),
+                    device_indices=indices,
+                    device_pixel_count=int(indices[-1]) + 1,
+                )
+            )
             start = end
         return out
+
+    def channel_slices(self) -> list[tuple[int, slice]]:
+        """Return ``(opc_channel, slice)`` pairs covering the frame buffer."""
+        return [(m.opc_channel, m.frame_slice) for m in self.channel_maps()]
+
+    def fcserver_map(self) -> list[list[int]]:
+        """The ``devices[].map`` entries fcserver needs for this layout.
+
+        Because the engine sends each board a frame already indexed by device
+        pixel, every entry is the identity mapping over that board's pixels:
+        ``[opc_channel, 0, 0, device_pixel_count]``.  Nothing in the map has to
+        track how the runs are split across outputs.
+        """
+        return [[m.opc_channel, 0, 0, m.device_pixel_count] for m in self.channel_maps()]
 
     def to_dict(self) -> dict[str, Any]:
         """Serialise the layout for the control API."""

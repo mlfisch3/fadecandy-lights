@@ -305,7 +305,22 @@ Validate it without starting anything:
 fclights check --layout /etc/fclights/layout.json
 ```
 
-Keep the pixel count in `map` in `/etc/fclights/fcserver.json` in step with this file.
+### How the layout lines up with fcserver's `map`
+
+A Fadecandy addresses output *n* starting at board pixel `64 * n`, whether or not the outputs before it are full.
+The render buffer does not work that way - it packs the outputs back to back, so a run of 30 pixels takes 30 slots, not 64.
+
+The engine reconciles the two before anything leaves the process: each board's OPC message is indexed by *board* pixel, with the unused slots of a short output sent as black.
+So fcserver's `map` is always the identity over a board's pixels, whatever the runs are:
+
+```json
+"map": [ [0, 0, 0, 512] ]
+```
+
+The four numbers are `[OPC channel, first OPC pixel, first board pixel, pixel count]`, and the count is `64 * (highest output index) + (pixels on that output)` - 512 for a fully populated board.
+`fclights check` prints the exact entries for your layout under `fcserver map`; paste them into `/etc/fclights/fcserver.json`.
+
+Do **not** write one `map` entry per run with running offsets - that describes the packed frame, not what is sent, and would shift every output after the first short one.
 
 ## Growing past one Fadecandy
 
@@ -313,7 +328,7 @@ You will need to.
 A Fadecandy output is hard-capped at 64 pixels and a board at 512, so at an estimated 30 LEDs/m one output covers about 2.1 m, and around 18 runs comes to roughly 1150 pixels - three boards.
 
 The growth path is not built, but it is not architected shut either.
-Additional boards are additional entries in `devices`, each with its own `opc_channel` (1, 2, ... - not 0, which is broadcast and would mirror rather than extend), and a matching entry in fcserver's `map`; fcserver already supports several devices in one config.
+Additional boards are additional entries in `devices`, each with its own `opc_channel` (1, 2, ... - not 0, which is broadcast and would mirror rather than extend), and a matching entry in fcserver's `map` as printed by `fclights check`; fcserver already supports several devices in one config.
 The engine already emits one OPC message per device channel, the layout already lays devices out as contiguous slices of the frame, and the power governor already accounts for the whole installation rather than one board.
 
 What is missing is per-board serial number pinning, so that outputs do not swap when the boards enumerate in a different order after a reboot.

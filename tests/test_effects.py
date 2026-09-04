@@ -453,6 +453,29 @@ class TestSpecificBehaviour:
         faded = render_sequence(quiet, layout.pixel_count, frames=120)
         assert faded[-1].max() < 1e-3
 
+    def test_twinkle_jitter_moves_the_hue_and_nothing_else(self, layout):
+        # color_jitter is documented as a hue spread, so a jittered spark must
+        # keep the chosen colour's brightness rather than igniting at full duty.
+        cls = effects.get("twinkle")
+        half_red = {"color": [128, 0, 0], "background": [0, 0, 0], "seed": 5,
+                    "density": 200.0, "decay": 0.2}
+        peak = 128 / 255
+
+        jittered = render_sequence(
+            cls(layout, cls.coerce_params({**half_red, "color_jitter": 0.2})),
+            layout.pixel_count,
+            frames=60,
+        )
+        assert jittered.max() > 0.4, "no spark ever lit"
+        assert jittered.max() <= peak + 1e-5
+
+        plain = render_sequence(
+            cls(layout, cls.coerce_params({**half_red, "color_jitter": 0.0})),
+            layout.pixel_count,
+            frames=60,
+        )
+        assert jittered.max() == pytest.approx(plain.max(), abs=1e-5)
+
     def test_twinkle_with_zero_density_shows_only_the_background(self, small_layout):
         cls = effects.get("twinkle")
         effect = cls(

@@ -286,6 +286,25 @@ class TestScenes:
         assert renamed["scene"]["effect"] == "fire"
         assert renamed["scene"]["params"]["cooling"] == 0.8
 
+    def test_renaming_leaves_the_live_look_alone(self, client):
+        # docs/api.md: "PUT with only name renames without changing what the
+        # scene shows". It must not change what the STRIP shows either.
+        client.put("/api/effect", json={"effect": "fire", "params": {"cooling": 0.8}})
+        client.put("/api/brightness", json={"brightness": 0.6})
+        scene = client.post("/api/scenes", json={"name": "Hearth"}).json()["scene"]
+
+        client.put("/api/effect", json={"effect": "rainbow"})
+        client.put("/api/brightness", json={"brightness": 0.1})
+        live_before = state_of(client.get("/api/state"))
+
+        client.put(f"/api/scenes/{scene['id']}", json={"name": "Fireplace"})
+        live_after = state_of(client.get("/api/state"))
+
+        assert live_after["effect"] == live_before["effect"] == "rainbow"
+        assert live_after["params"] == live_before["params"]
+        assert live_after["brightness"] == live_before["brightness"] == 0.1
+        assert live_after["active_scene"] == live_before["active_scene"]
+
     def test_recapturing_overwrites_the_look_and_keeps_the_id(self, client):
         client.put("/api/effect", json={"effect": "fire"})
         scene = client.post("/api/scenes", json={"name": "Hearth"}).json()["scene"]
@@ -401,3 +420,21 @@ class TestErrorShape:
     def test_a_wrong_method_shares_the_shape(self, client):
         body = client.post("/api/brightness", json={"brightness": 0.5}).json()
         assert set(body) == {"error", "detail"}
+
+    def test_an_unhandled_failure_shares_the_shape(self, config, monkeypatch):
+        # The Android app has one error parser. Starlette's stock 500 is plain
+        # text, which that parser cannot read.
+        service = build_service(config)
+        with TestClient(
+            create_app(service.controller), raise_server_exceptions=False
+        ) as test_client:
+            def explode() -> dict:
+                raise RuntimeError("the render loop ate the telemetry")
+
+            monkeypatch.setattr(service.engine, "status", explode)
+            response = test_client.get("/api/status")
+
+            assert response.status_code == 500
+            body = response.json()
+            assert set(body) == {"error", "detail"}
+            assert body["error"] == "internal_error"

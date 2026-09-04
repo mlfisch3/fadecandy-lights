@@ -111,6 +111,14 @@ def _clamp_unit(value: float) -> float:
     return float(min(1.0, max(0.0, value)))
 
 
+def _int_or(value: Any, default: int) -> int:
+    """Coerce a persisted integer, falling back rather than raising."""
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
 def default_state() -> State:
     """A valid starting state: the default effect at its default parameters."""
     effect_cls = effects.get(effects.DEFAULT_EFFECT)
@@ -128,7 +136,7 @@ def state_from_dict(raw: dict[str, Any]) -> State:
     if not isinstance(raw, dict):
         raise StateError("state document must be a JSON object")
 
-    version = int(raw.get("version", STATE_VERSION))
+    version = _int_or(raw.get("version", STATE_VERSION), STATE_VERSION)
     if version > STATE_VERSION:
         raise StateError(
             f"state file is version {version}, but this build only understands {STATE_VERSION}"
@@ -145,14 +153,22 @@ def state_from_dict(raw: dict[str, Any]) -> State:
         effect_cls = effects.get(base.effect)
 
     try:
-        params = effect_cls.coerce_params(raw.get("params") or {})
+        raw_params = raw.get("params") or {}
+        params = effect_cls.coerce_params(raw_params if isinstance(raw_params, dict) else {})
     except effects.ParamError as exc:
         log.warning("persisted parameters for %r are unusable (%s); using defaults",
                     effect_cls.name, exc)
         params = effect_cls.defaults()
 
     scenes: list[Scene] = []
-    for scene_raw in raw.get("scenes") or []:
+    raw_scenes = raw.get("scenes") or []
+    if not isinstance(raw_scenes, (list, tuple)):
+        log.warning("persisted 'scenes' is not a list; dropping it")
+        raw_scenes = []
+    for scene_raw in raw_scenes:
+        if not isinstance(scene_raw, dict):
+            log.warning("dropping unusable saved scene: not a JSON object")
+            continue
         try:
             scenes.append(Scene.from_dict(scene_raw))
         except StateError as exc:
@@ -174,8 +190,17 @@ def state_from_dict(raw: dict[str, Any]) -> State:
         params=params,
         scenes=tuple(scenes),
         active_scene=active,
-        revision=int(raw.get("revision", 0)),
+        revision=_int_or(raw.get("revision", 0), 0),
     )
+
+
+def _clean_scene_name(name: str) -> str:
+    clean = str(name).strip()
+    if not clean:
+        raise StateError("scene name must not be empty")
+    if len(clean) > MAX_SCENE_NAME:
+        raise StateError(f"scene name must be at most {MAX_SCENE_NAME} characters")
+    return clean
 
 
 class StateStore:
@@ -203,8 +228,12 @@ class StateStore:
             raw = json.loads(self.path.read_text(encoding="utf-8"))
             self._state = state_from_dict(raw)
             log.info("restored state from %s (revision %d)", self.path, self._state.revision)
-        except (OSError, json.JSONDecodeError, StateError) as exc:
-            # A corrupt state file is not worth refusing to light up over.
+        except Exception as exc:
+            # A corrupt state file is not worth refusing to light up over. The
+            # unit runs unattended under Restart=always, so *nothing* a
+            # hand-edited or truncated document can throw - a wrong type, a null
+            # where a number belongs, nested garbage - may be allowed to escape
+            # here and crash-loop the installation into the dark.
             log.error("could not restore state from %s (%s); starting from defaults",
                       self.path, exc)
             self._state = default_state()
@@ -273,11 +302,7 @@ class StateStore:
 
     def save_scene(self, name: str, scene_id: str | None = None) -> tuple[State, Scene]:
         """Capture the current look as a scene, or overwrite an existing one."""
-        clean = str(name).strip()
-        if not clean:
-            raise StateError("scene name must not be empty")
-        if len(clean) > MAX_SCENE_NAME:
-            raise StateError(f"scene name must be at most {MAX_SCENE_NAME} characters")
+        clean = _clean_scene_name(name)
 
         now = time.time()
         existing = None
@@ -305,6 +330,19 @@ class StateStore:
         new = self._commit(
             replace(self._state, scenes=scenes, active_scene=scene.id), clear_scene=False
         )
+        return new, scene
+
+    def rename_scene(self, scene_id: str, name: str) -> tuple[State, Scene]:
+        """Rename a scene, leaving the live look and the stored look untouched.
+
+        Renaming is metadata, not a redefinition: it must not disturb the effect
+        currently on the strip, and it must not recapture the live look into the
+        scene.  Both would follow from recalling and re-saving it.
+        """
+        existing = self._state.scene(scene_id)
+        scene = replace(existing, name=_clean_scene_name(name), updated_at=time.time())
+        scenes = tuple(scene if s.id == scene.id else s for s in self._state.scenes)
+        new = self._commit(replace(self._state, scenes=scenes), clear_scene=False)
         return new, scene
 
     def delete_scene(self, scene_id: str) -> State:

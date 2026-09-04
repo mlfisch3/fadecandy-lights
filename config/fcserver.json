@@ -9,7 +9,7 @@
     "whitepoint": [0.9, 1.0, 1.0]
   },
 
-  "//devices": "One board, OPC channel 0 (broadcast), 512 pixels. To add a second board give each one its own serial and its own OPC channel (1, 2, ...) and match those channels in layout.json.",
+  "//devices": "One board, OPC channel 0 (broadcast), 512 pixels. Each entry is [OPC channel, first OPC pixel, first board pixel, pixel count]; fclights sends every board a frame already indexed by board pixel, so the mapping is always the identity and `fclights check` prints the exact entries for your layout. To add a second board give each one its own serial and its own OPC channel (1, 2, ...) and match those channels in layout.json.",
   "devices": [
     {
       "type": "fadecandy",

@@ -164,6 +164,38 @@ class TestScenes:
         with pytest.raises(StateError, match="at most"):
             store.save_scene("x" * 500)
 
+    def test_renaming_touches_neither_the_live_look_nor_the_stored_one(self, store):
+        store.set_effect("fire", {"cooling": 0.8})
+        store.set_brightness(0.6)
+        _, scene = store.save_scene("Hearth")
+
+        store.set_effect("rainbow")
+        store.set_brightness(0.1)
+        before = store.state
+
+        state, renamed = store.rename_scene(scene.id, "  Fireplace  ")
+
+        assert renamed.name == "Fireplace"
+        assert renamed.effect == "fire"
+        assert renamed.params == scene.params
+        assert renamed.brightness == 0.6
+        assert renamed.id == scene.id
+        assert renamed.created_at == scene.created_at
+
+        assert state.effect == before.effect
+        assert state.params == before.params
+        assert state.brightness == before.brightness
+        assert state.active_scene == before.active_scene
+
+    def test_renaming_rejects_an_empty_name(self, store):
+        _, scene = store.save_scene("Hearth")
+        with pytest.raises(StateError, match="empty"):
+            store.rename_scene(scene.id, "   ")
+
+    def test_renaming_an_unknown_scene_is_refused(self, store):
+        with pytest.raises(StateError, match="no scene"):
+            store.rename_scene("ghost", "Nope")
+
     def test_scene_ids_are_unique(self, store):
         ids = {store.save_scene(f"scene {i}")[1].id for i in range(20)}
         assert len(ids) == 20
@@ -269,6 +301,82 @@ class TestRestoringDamagedDocuments:
     def test_a_non_object_document_is_refused(self):
         with pytest.raises(StateError, match="JSON object"):
             state_from_dict(["not", "an", "object"])
+
+
+HOSTILE_DOCUMENTS = [
+    pytest.param({"revision": "abc"}, id="revision-is-a-string"),
+    pytest.param({"revision": None}, id="revision-is-null"),
+    pytest.param({"revision": {"nested": "garbage"}}, id="revision-is-an-object"),
+    pytest.param({"version": "one"}, id="version-is-a-string"),
+    pytest.param({"version": None}, id="version-is-null"),
+    pytest.param({"brightness": None}, id="brightness-is-null"),
+    pytest.param({"brightness": "half"}, id="brightness-is-a-string"),
+    pytest.param({"brightness": [0.5]}, id="brightness-is-a-list"),
+    pytest.param({"effect": None}, id="effect-is-null"),
+    pytest.param({"effect": {"name": "solid"}}, id="effect-is-an-object"),
+    pytest.param({"params": "not-a-mapping"}, id="params-is-a-string"),
+    pytest.param({"params": [1, 2, 3]}, id="params-is-a-list"),
+    pytest.param({"params": {"color": {"mode": "kelvin", "kelvin": None}}}, id="param-is-null"),
+    pytest.param({"scenes": 5}, id="scenes-is-a-number"),
+    pytest.param({"scenes": {"a": 1}}, id="scenes-is-an-object"),
+    pytest.param({"scenes": ["not-an-object"]}, id="scene-is-a-string"),
+    pytest.param({"scenes": [None]}, id="scene-is-null"),
+    pytest.param({"scenes": [[1, 2]]}, id="scene-is-a-list"),
+    pytest.param({"scenes": [{"name": "x", "effect": "solid", "brightness": None}]},
+                 id="scene-brightness-is-null"),
+    pytest.param({"scenes": [{"name": None, "effect": "solid"}]}, id="scene-name-is-null"),
+    pytest.param({"scenes": [{"name": "x", "effect": "solid", "created_at": "soon"}]},
+                 id="scene-timestamp-is-a-string"),
+    pytest.param({"active_scene": {"id": "ghost"}}, id="active-scene-is-an-object"),
+    pytest.param({"power": {"on": True}}, id="power-is-an-object"),
+    pytest.param({"scenes": [{"name": "x", "effect": "solid", "params": [1]}]},
+                 id="scene-params-is-a-list"),
+]
+
+
+class TestHostileStateFilesNeverStopTheLightsComingUp:
+    """The unit runs unattended under Restart=always.
+
+    A state file the operator has hand-edited into nonsense - and setup.sh tells
+    them where it lives - must degrade to defaults rather than crash-loop the
+    installation into the dark.
+    """
+
+    @pytest.mark.parametrize("document", HOSTILE_DOCUMENTS)
+    def test_load_recovers_rather_than_raising(self, tmp_path, document):
+        path = tmp_path / "state.json"
+        path.write_text(json.dumps(document), encoding="utf-8")
+
+        state = StateStore(path).load()
+
+        # Whatever it fell back to, it is a state the engine can render.
+        assert isinstance(state.revision, int)
+        assert 0.0 <= state.brightness <= 1.0
+        assert effects.get(state.effect) is not None
+        assert state.params == effects.get(state.effect).coerce_params(state.params)
+
+    def test_a_hand_edited_revision_falls_back_to_zero(self, tmp_path):
+        path = tmp_path / "state.json"
+        path.write_text(json.dumps({"revision": "abc", "effect": "fire"}), encoding="utf-8")
+
+        state = StateStore(path).load()
+
+        assert state.revision == 0
+        assert state.effect == "fire"
+
+    def test_a_document_of_pure_garbage_still_boots(self, tmp_path):
+        path = tmp_path / "state.json"
+        path.write_text("{\"scenes\": [[[[1]]]], \"revision\": [], \"version\": {}}",
+                        encoding="utf-8")
+
+        state = StateStore(path).load()
+
+        assert state == default_state()
+
+    def test_truncated_json_still_boots(self, tmp_path):
+        path = tmp_path / "state.json"
+        path.write_text('{"effect": "fi', encoding="utf-8")
+        assert StateStore(path).load() == default_state()
 
 
 class TestSerialisation:

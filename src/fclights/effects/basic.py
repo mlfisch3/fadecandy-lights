@@ -272,6 +272,11 @@ class Twinkle(Effect):
         self._bg = color_to_rgb(params["background"])
         self._density = float(params["density"])
         self._jitter = float(params["color_jitter"])
+        # Jitter is a hue spread, so a jittered spark keeps the chosen colour's
+        # saturation and brightness and only its hue moves.
+        self._fg_hue = _rgb_to_hue(self._fg)
+        self._fg_saturation = _rgb_to_saturation(self._fg)
+        self._fg_value = float(self._fg.max())
         # Exponential decay to 1/10 over `decay` seconds.
         self._decay_rate = np.log(10.0) / float(params["decay"])
         self._rng = np.random.default_rng(int(params["seed"]) or None)
@@ -293,9 +298,8 @@ class Twinkle(Effect):
                 self._energy[idx] = 1.0
                 if self._jitter > 0:
                     hue_shift = self._rng.uniform(-self._jitter, self._jitter, size=idx.size)
-                    base_hue = _rgb_to_hue(self._fg)
                     self._tint[idx] = hsv_to_rgb_array(
-                        base_hue + hue_shift, _rgb_to_saturation(self._fg), 1.0
+                        self._fg_hue + hue_shift, self._fg_saturation, self._fg_value
                     )
 
         e = self._energy[:, None]

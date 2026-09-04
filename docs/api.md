@@ -206,15 +206,15 @@ Engine and power telemetry. Also pushed over the WebSocket every 2 seconds.
     "late_frames": 0
   },
   "power": {
-    "requested_amps": 12.4,
-    "delivered_amps": 5.0,
-    "limit_amps": 5.0,
-    "headroom_amps": 0.0,
-    "scale": 0.402,
+    "requested_amps": 31.232,
+    "delivered_amps": 23.9998,
+    "limit_amps": 24.0,
+    "headroom_amps": 0.0002,
+    "scale": 0.764576,
     "clamped": true
   },
   "power_model": {
-    "limit_amps": 5.0,
+    "limit_amps": 24.0,
     "full_white_amps": 31.232,
     "idle_amps": 0.512,
     "ma_per_channel": 20.0,

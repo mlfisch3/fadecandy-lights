@@ -19,6 +19,7 @@ import pytest
 from fclights import effects
 from fclights.config import PowerConfig
 from fclights.engine import Engine
+from fclights.layout import build_layout
 from fclights.opc import OPC_HEADER_BYTES, NullSink, OPCClient
 from fclights.power import PowerGovernor
 from fclights.state import default_state
@@ -447,6 +448,158 @@ def longest_run(values: list[int]) -> int:
         run = run + 1 if current == previous else 1
         longest = max(longest, run)
     return longest
+
+
+class TestShortOutputsLandOnTheRightBoardPixels:
+    """A Fadecandy addresses output *n* from board pixel ``64 * n``.
+
+    The frame packs outputs back to back, so anything short of 64 pixels would
+    shift every output after it if the engine sent the frame as packed.  The
+    shipped 8x64 example hides this; the real installation - around 18 runs of
+    varying length - would not.
+    """
+
+    @staticmethod
+    def uneven_layout():
+        # Output 0 is short, output 2 is not wired at all, output 3 is short.
+        return build_layout(
+            {
+                "devices": [
+                    {
+                        "id": "fc0",
+                        "outputs": [
+                            {"index": 0, "count": 30},
+                            {"index": 1, "count": 64},
+                            {"index": 3, "count": 10},
+                        ],
+                    }
+                ]
+            }
+        )
+
+    @staticmethod
+    def sent_pixels(engine):
+        messages = engine.encode()
+        assert len(messages) == 1
+        return np.frombuffer(messages[0][OPC_HEADER_BYTES:], dtype=np.uint8).reshape(-1, 3)
+
+    def test_each_output_starts_at_its_own_sixty_four_pixel_slot(self, config):
+        layout = self.uneven_layout()
+        engine = Engine(layout, NullSink(), replace(config, dither=False))
+        # A unique level per frame pixel, so any shift shows up as a wrong value
+        # rather than as a plausible-looking frame.
+        engine.frame[:, 0] = (np.arange(layout.pixel_count) + 1) / 255.0
+
+        pixels = self.sent_pixels(engine)
+
+        assert pixels.shape[0] == 3 * 64 + 10
+        np.testing.assert_array_equal(pixels[0:30, 0], np.arange(1, 31))
+        np.testing.assert_array_equal(pixels[64:128, 0], np.arange(31, 95))
+        np.testing.assert_array_equal(pixels[192:202, 0], np.arange(95, 105))
+
+    def test_unwired_board_slots_are_sent_black(self, config):
+        layout = self.uneven_layout()
+        engine = Engine(layout, NullSink(), replace(config, dither=False))
+        engine.frame[:] = 1.0
+
+        pixels = self.sent_pixels(engine)
+
+        assert pixels[30:64].max() == 0, "output 0's unused tail must stay dark"
+        assert pixels[128:192].max() == 0, "output 2 is not wired"
+        assert pixels[0:30].min() == 255
+        assert pixels[64:128].min() == 255
+        assert pixels[192:202].min() == 255
+
+    def test_the_fcserver_map_matches_what_is_actually_sent(self, config):
+        # The two cannot drift: the map is derived from the same layout the
+        # engine encodes against, and it covers exactly the message it sends.
+        layout = self.uneven_layout()
+        engine = Engine(layout, NullSink(), config)
+
+        entries = layout.fcserver_map()
+        assert entries == [[0, 0, 0, 202]]
+        assert self.sent_pixels(engine).shape[0] == entries[0][3]
+
+    def test_a_full_board_needs_no_padding(self, layout, config):
+        engine = Engine(layout, NullSink(), config)
+        assert layout.fcserver_map() == [[0, 0, 0, 512]]
+        assert self.sent_pixels(engine).shape[0] == 512
+
+    def test_every_board_gets_its_own_identity_map(self):
+        layout = build_layout(
+            {
+                "devices": [
+                    {"id": "fc0", "opc_channel": 1, "outputs": [{"index": 0, "count": 20}]},
+                    {"id": "fc1", "opc_channel": 2, "outputs": [{"index": 7, "count": 5}]},
+                ]
+            }
+        )
+        assert layout.fcserver_map() == [[1, 0, 0, 20], [2, 0, 0, 453]]
+
+
+class TestEffectIdentity:
+    """The effect is rebuilt when the effect changes, and not otherwise.
+
+    Rebuilding zeroes a Fire's heat and a Twinkle's energy, so keying the cache
+    on the revision counter - which every mutation bumps - makes the flame go
+    black for as long as a finger is on the brightness slider.
+    """
+
+    @staticmethod
+    def settled_fire(config, layout):
+        engine = Engine(layout, NullSink(), replace(config, power=PowerConfig(limit_amps=40.0)))
+        state = replace(
+            default_state(),
+            revision=1,
+            effect="fire",
+            params=effects.get("fire").coerce_params({"seed": 11}),
+            brightness=1.0,
+        )
+        engine.apply_state(state)
+        for _ in range(180):
+            engine.render_frame(1 / 60)
+        return engine, state
+
+    def test_dragging_brightness_keeps_the_flame_alight(self, layout, config):
+        engine, state = self.settled_fire(config, layout)
+        settled = float(engine.frame.sum())
+        assert settled > 0.0, "the fire never caught"
+
+        # What the phone does with a finger on the slider: many small commits,
+        # each bumping the revision.
+        for step in range(20):
+            state = replace(state, brightness=1.0 - step * 0.025, revision=2 + step)
+            engine.apply_state(state)
+            engine.render_frame(1 / 60)
+
+        expected = settled * (1.0 - 19 * 0.025)
+        assert float(engine.frame.sum()) == pytest.approx(expected, rel=0.25)
+
+    def test_a_revision_bump_alone_does_not_restart_the_effect(self, layout, config):
+        engine, state = self.settled_fire(config, layout)
+        settled = float(engine.frame.sum())
+
+        # What saving a scene, or toggling master power back on, looks like here.
+        engine.apply_state(replace(state, revision=99))
+        engine.render_frame(1 / 60)
+
+        assert float(engine.frame.sum()) == pytest.approx(settled, rel=0.25)
+
+    def test_changing_a_parameter_does_rebuild_the_effect(self, layout, config):
+        engine, state = self.settled_fire(config, layout)
+        assert float(engine.frame.sum()) > 0.0
+
+        engine.apply_state(
+            replace(
+                state,
+                params=effects.get("fire").coerce_params({"seed": 11, "sparking": 0.0}),
+                revision=50,
+            )
+        )
+        engine.render_frame(1 / 60)
+
+        # A fresh Fire that cannot spark starts from zero heat and is black.
+        assert float(engine.frame.sum()) == pytest.approx(0.0, abs=1e-6)
 
 
 class TestStatus:

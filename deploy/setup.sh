@@ -154,9 +154,9 @@ cat <<EOT
     state        ${STATE_DIR}/state.json
     logs         journalctl -u fclights -u fcserver -f
 
-    The power ceiling defaults to 5 A, which is deliberately timid. Read the
-    sizing section of README.md and raise it to match your supply before you
-    expect full brightness.
+    The power ceiling defaults to 24 A, the 30 A supply derated to 80%. Read
+    the sizing section of README.md and set it to the real usable current of
+    the supply feeding YOUR strip before you expect full brightness.
 
     Now work through docs/bring-up.md with the strip connected.
 

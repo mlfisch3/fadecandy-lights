@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import logging
 import sys
 from pathlib import Path
@@ -200,6 +201,11 @@ def cmd_check(args: argparse.Namespace) -> int:
     print(f"frame rate      {config.fps:g} fps")
     print(f"API             http://{config.server.host}:{config.server.port}")
     print(f"OPC sink        {config.opc.host}:{config.opc.port}")
+    print()
+    entries = layout.fcserver_map()
+    print("fcserver map    " + json.dumps(entries[0]))
+    for entry in entries[1:]:
+        print("                " + json.dumps(entry))
     print()
     print(f"supply ceiling  {governor.limit_amps:.2f} A at 5 V")
     print(f"idle draw       {governor.idle_amps:.3f} A (all pixels off)")
