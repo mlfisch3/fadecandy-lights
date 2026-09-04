@@ -252,13 +252,16 @@ A meter reading *above* it means the current model is wrong for your particular 
 Copper on an LED strip is thin, and 5 V has no headroom to lose.
 Voltage drop along a long run shows up as the far end being dimmer and pinker than the near end - the blue channel has the highest forward voltage, so it fades first.
 
-Rules of thumb for 5 V WS2812B at 60 LEDs/m:
+These strips measure **33 mm centre to centre**, so 30.3 LEDs/m and a full 64-pixel output is **2.11 m**.
 
-- **Inject at both ends of any run over about 2 m** (roughly 120 pixels).
-- **Inject every 2 to 2.5 m** on longer continuous runs.
+Rules of thumb for 5 V WS2812B at that density:
+
+- **Inject at both ends of any run over about 2 m** (roughly 60 pixels at this pitch).
+- **A full 64-pixel run is 2.11 m, so it is over that threshold: inject at both ends of every one.** Feed 5 V and ground at the far end as well as the near end.
+- **Inject every 2 to 2.5 m** on anything longer than a single output.
 - Run injection wire back to the **supply**, not along the strip. 18 AWG for injection runs; 16 AWG if the run is long or the current is high.
 - Every injection point ties 5 V to 5 V and ground to ground. The data line is **not** injected; it continues pixel to pixel as normal.
-- Splitting the installation across the Fadecandy's eight outputs helps here anyway: eight 64-pixel runs each need far less injection than one 512-pixel chain, and 64 pixels at 1/60 m is a little over a metre.
+- Splitting the installation across the Fadecandy's eight outputs still helps: eight 2.11 m runs fed at both ends are a far easier wiring problem than one 512-pixel, 16.9 m chain.
 
 If you are feeding it all from one supply, size the wire from the supply to each injection point for that segment's share of the total, not the average.
 
@@ -278,7 +281,7 @@ A gradient sweeping "left to right" then means the same thing whether the strip 
 ```json
 {
   "name": "living room",
-  "pixels_per_metre": 30,
+  "pixels_per_metre": 30.3,
   "devices": [
     {
       "id": "fc0",
@@ -305,11 +308,11 @@ A gradient sweeping "left to right" then means the same thing whether the strip 
 
 ### Measure your strip density
 
-`pixels_per_metre` defaults to **30**, and that number is an *estimate read off photographs of the reels*, not a measured figure.
+`pixels_per_metre` defaults to **30.3**, measured on these reels at **33 mm centre to centre**.
 Nothing in the code assumes it - it is a config value, and it only affects the spatial coordinates effects animate along - but if it is wrong, a "sweep across the room at 0.5 m/s" will not move at the speed it claims and outputs will be placed wrongly relative to each other.
 
-Count the LEDs in a measured metre of your actual strip and put the answer in the layout file.
-On these strips there is a cut pad at every LED, so counting cut marks along a metre is the easiest way.
+If you use strip of a different density, measure its pitch and put the answer in the layout file.
+There is a cut pad at every LED, so measuring across a run of them is the easiest way to get the pitch.
 
 Validate it without starting anything:
 
@@ -337,7 +340,7 @@ Do **not** write one `map` entry per run with running offsets - that describes t
 ## Growing past one Fadecandy
 
 You will need to.
-A Fadecandy output is hard-capped at 64 pixels and a board at 512, so at an estimated 30 LEDs/m one output covers about 2.1 m, and around 18 runs comes to roughly 1150 pixels - three boards.
+A Fadecandy output is hard-capped at 64 pixels and a board at 512, so at the measured 30.3 LEDs/m one output covers 2.11 m, and around 18 runs comes to roughly 1150 pixels - three boards.
 
 The growth path is not built, but it is not architected shut either.
 Additional boards are additional entries in `devices`, each with its own `opc_channel` (1, 2, ... - not 0, which is broadcast and would mirror rather than extend), and a matching entry in fcserver's `map` as printed by `fclights check`; fcserver already supports several devices in one config.

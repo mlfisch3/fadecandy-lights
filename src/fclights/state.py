@@ -121,7 +121,10 @@ def _finite(value: Any) -> float:
     bare ``NaN`` and ``Infinity`` tokens, which are not valid JSON, so a phone
     reading the WebSocket cannot parse the frame at all.
     """
-    number = float(value)
+    try:
+        number = float(value)
+    except OverflowError as exc:
+        raise StateError(f"expected a finite number, got {value!r}") from exc
     if not math.isfinite(number):
         raise StateError(f"expected a finite number, got {value!r}")
     return number
@@ -175,7 +178,7 @@ def state_from_dict(raw: dict[str, Any]) -> State:
     try:
         raw_params = raw.get("params") or {}
         params = effect_cls.coerce_params(raw_params if isinstance(raw_params, dict) else {})
-    except effects.ParamError as exc:
+    except (effects.ParamError, OverflowError) as exc:
         log.warning("persisted parameters for %r are unusable (%s); using defaults",
                     effect_cls.name, exc)
         params = effect_cls.defaults()
@@ -302,6 +305,10 @@ class StateStore:
     def set_brightness(self, brightness: float) -> State:
         try:
             value = float(brightness)
+        except OverflowError as exc:
+            raise StateError(
+                f"brightness must be a finite number, got {brightness!r}"
+            ) from exc
         except (TypeError, ValueError) as exc:
             raise StateError(f"brightness must be a number, got {brightness!r}") from exc
         if not math.isfinite(value):

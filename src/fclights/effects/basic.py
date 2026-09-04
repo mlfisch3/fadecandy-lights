@@ -11,6 +11,19 @@ from fclights.color import DEFAULT_KELVIN
 from fclights.effects.base import Effect, ParamSpec, color_to_rgb, hsv_to_rgb_array
 from fclights.layout import Layout
 
+AUTO_SEED = -1
+"""Seed value meaning "draw a fresh one each time".
+
+It sits below the usable range on purpose. Every seed a client can pick from
+0..2**31-1 replays exactly, which is what the parameter's published description
+promises; a sentinel *inside* that range would make one ordinary-looking value -
+and it was the default - the single one that did not.
+"""
+
+
+def _seeded_rng(seed: int) -> np.random.Generator:
+    return np.random.default_rng(None if seed <= AUTO_SEED else seed)
+
 
 def _speed_spec(default: float = 0.2, maximum: float = 5.0) -> ParamSpec:
     return ParamSpec(
@@ -260,9 +273,12 @@ class Twinkle(Effect):
             name="seed",
             type="int",
             default=0,
-            minimum=0,
+            minimum=AUTO_SEED,
             maximum=2**31 - 1,
-            description="Random seed. The same seed replays the same twinkle.",
+            description=(
+                "Random seed. The same seed replays the same twinkle. "
+                "-1 draws a fresh one each time instead."
+            ),
         ),
     )
 
@@ -279,7 +295,7 @@ class Twinkle(Effect):
         self._fg_value = float(self._fg.max())
         # Exponential decay to 1/10 over `decay` seconds.
         self._decay_rate = np.log(10.0) / float(params["decay"])
-        self._rng = np.random.default_rng(int(params["seed"]) or None)
+        self._rng = _seeded_rng(int(params["seed"]))
         n = layout.pixel_count
         self._energy = np.zeros(n, dtype=np.float32)
         self._tint = np.tile(self._fg, (n, 1))
@@ -346,7 +362,17 @@ class Fire(Effect):
             default=True,
             description="Burn each output as its own flame instead of one run-long flame.",
         ),
-        ParamSpec(name="seed", type="int", default=0, minimum=0, maximum=2**31 - 1),
+        ParamSpec(
+            name="seed",
+            type="int",
+            default=0,
+            minimum=AUTO_SEED,
+            maximum=2**31 - 1,
+            description=(
+                "Random seed. The same seed replays the same flame. "
+                "-1 draws a fresh one each time instead."
+            ),
+        ),
     )
 
     def __init__(self, layout: Layout, params: dict) -> None:
@@ -355,7 +381,7 @@ class Fire(Effect):
         self._sparking = float(params["sparking"])
         self._speed = float(params["speed"])
         self._hue = float(params["hue"])
-        self._rng = np.random.default_rng(int(params["seed"]) or None)
+        self._rng = _seeded_rng(int(params["seed"]))
 
         n = layout.pixel_count
         self._heat = np.zeros(n, dtype=np.float32)
@@ -363,6 +389,10 @@ class Fire(Effect):
         # Precompute the "one pixel closer to the base" gather index, so the
         # heat-rises step is a single vectorised take rather than a shift loop.
         groups = layout.segment if params["per_segment"] else np.zeros(n, dtype=np.int32)
+        # Cooling is scaled by the length of the run a pixel belongs to, not by
+        # the size of the installation: a flame has to look the same on a given
+        # output whether that output is the only one or one of twenty-four.
+        self._group_length = np.maximum(np.bincount(groups)[groups], 1).astype(np.float32)
         idx = np.arange(n, dtype=np.int64)
         below = np.maximum(idx - 1, 0)
         # At a segment boundary there is no pixel below, so it feeds from itself.
@@ -395,7 +425,11 @@ class Fire(Effect):
         n = self._heat.size
 
         # Cool every cell by a random amount, more for cells further from base.
-        cooling = self._rng.random(n).astype(np.float32) * self._cooling * (10.0 / max(n, 1)) * 8.0
+        cooling = (
+            self._rng.random(n).astype(np.float32)
+            * self._cooling
+            * (10.0 / self._group_length)
+        )
         np.subtract(self._heat, cooling, out=self._heat)
         np.clip(self._heat, 0.0, 1.0, out=self._heat)
 

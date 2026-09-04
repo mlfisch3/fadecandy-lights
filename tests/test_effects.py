@@ -509,6 +509,31 @@ class TestSpecificBehaviour:
         effect.render(buffer, 0.3, 1 / 60)
         np.testing.assert_allclose(buffer, 1.0, atol=1e-5)
 
+    @pytest.mark.parametrize("effect_name", ["twinkle", "fire"])
+    @pytest.mark.parametrize("seed", [0, 1, 99, 2**31 - 1])
+    def test_every_seed_in_the_published_range_replays(self, layout, effect_name, seed):
+        # The schema says "the same seed replays"; 0 is the default a client
+        # sees first, and it used to be the one value that did not.
+        cls = effects.get(effect_name)
+        params = cls.coerce_params({"seed": seed, "density": 40.0}
+                                   if effect_name == "twinkle" else {"seed": seed})
+        a = render_sequence(cls(layout, params), layout.pixel_count, frames=40)
+        b = render_sequence(cls(layout, params), layout.pixel_count, frames=40)
+        np.testing.assert_allclose(a, b)
+
+    @pytest.mark.parametrize("effect_name", ["twinkle", "fire"])
+    def test_the_auto_seed_sits_below_the_replayable_range(self, layout, effect_name):
+        cls = effects.get(effect_name)
+        spec = next(p for p in cls.params if p.name == "seed")
+        assert spec.minimum == -1
+        assert spec.default == 0
+
+        params = cls.coerce_params({"seed": -1, "density": 40.0}
+                                   if effect_name == "twinkle" else {"seed": -1})
+        a = render_sequence(cls(layout, params), layout.pixel_count, frames=40)
+        b = render_sequence(cls(layout, params), layout.pixel_count, frames=40)
+        assert not np.allclose(a, b), "-1 should draw a fresh seed each time"
+
     def test_twinkle_is_reproducible_for_a_given_seed(self, layout):
         cls = effects.get("twinkle")
         params = cls.coerce_params({"seed": 99, "density": 40.0})
@@ -565,6 +590,39 @@ class TestSpecificBehaviour:
         buffer = np.zeros((small_layout.pixel_count, 3), dtype=np.float32)
         effect.render(buffer, 0.0, 1 / 60)
         np.testing.assert_allclose(buffer[0], [10 / 255, 20 / 255, 30 / 255], atol=1e-6)
+
+    def test_fire_flame_height_does_not_depend_on_the_installation_size(self):
+        # The captain's install needs three boards. A flame whose height changes
+        # when boards two and three arrive would be a silent visual regression
+        # on the strips that were already up.
+        cls = effects.get("fire")
+        params = cls.coerce_params({"seed": 5, "sparking": 1.0})
+
+        def burn(total_pixels):
+            layout = simple_layout(total_pixels)
+            effect = cls(layout, params)
+            rendered = render_sequence(effect, layout.pixel_count, frames=240)
+            lit = rendered[-60:].max(axis=(0, 2)) > 0.05
+            # Height of the flame on the first 64-pixel output.
+            return int(np.count_nonzero(lit[:64]))
+
+        one_board = burn(512)
+        three_boards = burn(1152)
+
+        assert one_board > 4, "the fire never caught"
+        assert three_boards == pytest.approx(one_board, abs=6)
+
+    def test_fire_burns_each_output_over_its_own_length(self, small_layout):
+        # per_segment=False burns the whole run as one flame, so its height
+        # scales with the run rather than with an output.
+        cls = effects.get("fire")
+        layout = simple_layout(128)
+        whole = cls(layout, cls.coerce_params({"seed": 5, "sparking": 1.0,
+                                               "per_segment": False}))
+        rendered = render_sequence(whole, layout.pixel_count, frames=240)
+        lit = rendered[-60:].max(axis=(0, 2)) > 0.05
+        # One flame from pixel 0, not one per 64-pixel output.
+        assert np.count_nonzero(lit[64:]) == 0 or lit[:64].all()
 
     def test_fire_warms_up_and_stays_bounded(self, layout):
         cls = effects.get("fire")

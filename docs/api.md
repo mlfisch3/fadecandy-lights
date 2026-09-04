@@ -166,7 +166,7 @@ Build the UI from this. Do not hardcode the effect list; effects added on the Pi
 {
   "name": "living room",
   "pixel_count": 512,
-  "pixels_per_metre": 30.0,
+  "pixels_per_metre": 30.3,
   "devices": [
     {
       "id": "fc0",
@@ -370,7 +370,7 @@ The rest depend on the type:
 
 Booleans are not accepted where a number is expected: sending `true` for `speed` is a `400`, not `1.0`.
 
-Neither are the non-finite values JSON parsers accept as an extension: `NaN`, `Infinity` and `-Infinity` are a `400` for any numeric parameter, for `brightness`, and for a colour's components.
+Neither are the non-finite values JSON parsers accept as an extension, nor integer literals too large to be a `double`. For an effect parameter or a colour component they are a `400`; for `brightness` they fail the body schema first and are a `422`, like any other out-of-range brightness.
 
 ### v1 effects
 

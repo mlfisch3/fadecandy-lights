@@ -369,3 +369,66 @@ class TestNonFiniteNumbersAreRefused:
         layout = load_layout(path)
         assert layout.pixel_count == 8
         assert np.isfinite(layout.positions).all()
+
+
+class TestStructurallyWrongDocumentsAreRefused:
+    """A hand-edited layout must report cleanly, not crash-loop the service.
+
+    `deploy/fclights.service` sets Restart=always with RestartSec=3, so anything
+    that escapes LayoutError is a traceback every three seconds with the strip
+    dark. Iterating a JSON object yields its keys, so the wrong container type
+    is walked silently rather than reported unless it is checked for.
+    """
+
+    @pytest.mark.parametrize(
+        "raw",
+        [
+            pytest.param({"devices": [{"id": "fc0", "outputs": 5}]}, id="outputs-is-a-number"),
+            pytest.param({"devices": [{"id": "fc0", "outputs": "abc"}]}, id="outputs-is-a-string"),
+            pytest.param(
+                {"devices": {"fc0": {"outputs": [{"index": 0, "count": 8}]}}},
+                id="devices-is-an-object",
+            ),
+            pytest.param({"devices": "fc0"}, id="devices-is-a-string"),
+            pytest.param({"devices": [5]}, id="device-is-a-number"),
+            pytest.param({"devices": [{"id": "fc0", "outputs": [5]}]}, id="output-is-a-number"),
+            pytest.param(
+                {"devices": [{"id": 5, "outputs": [{"index": 0, "count": 8}]}]},
+                id="device-id-is-a-number",
+            ),
+            pytest.param(
+                {"devices": [{"id": "fc0", "serial": 5, "outputs": [{"index": 0, "count": 8}]}]},
+                id="serial-is-a-number",
+            ),
+            pytest.param(
+                {"devices": [{"id": "fc0", "outputs": [{"index": 0, "count": 8, "name": 5}]}]},
+                id="output-name-is-a-number",
+            ),
+            pytest.param({"name": 5, **one_output(8)}, id="layout-name-is-a-number"),
+            pytest.param(
+                {"devices": [{"id": "fc0", "outputs": [{"index": 0, "count": 3,
+                                                        "points": [0, 0, 0]}]}]},
+                id="points-is-a-flat-list",
+            ),
+            pytest.param(
+                {"devices": [{"id": "fc0", "outputs": [{"index": 0, "count": 2,
+                                                        "points": "abc"}]}]},
+                id="points-is-a-string",
+            ),
+            pytest.param(one_output(8, origin="abc"), id="origin-is-a-string"),
+            pytest.param(one_output(8, step=5), id="step-is-a-number"),
+        ],
+    )
+    def test_the_wrong_json_type_is_a_layout_error(self, raw):
+        with pytest.raises(LayoutError):
+            build_layout(raw)
+
+    def test_the_loader_reports_them_too(self, tmp_path):
+        path = tmp_path / "layout.json"
+        path.write_text('{"devices": [{"id": "fc0", "outputs": 5}]}')
+        with pytest.raises(LayoutError):
+            load_layout(path)
+
+    def test_an_oversized_integer_is_a_layout_error(self):
+        with pytest.raises(LayoutError):
+            build_layout({"pixels_per_metre": 10**400, **one_output(8)})

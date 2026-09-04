@@ -55,7 +55,7 @@ class TestMutation:
         with pytest.raises(StateError, match="must be a number"):
             store.set_brightness("bright")
 
-    @pytest.mark.parametrize("bad", [float("nan"), float("inf"), float("-inf")])
+    @pytest.mark.parametrize("bad", [float("nan"), float("inf"), float("-inf"), 10**400])
     def test_non_finite_brightness_is_rejected(self, store, bad):
         with pytest.raises(StateError, match="finite"):
             store.set_brightness(bad)
@@ -431,6 +431,23 @@ class TestHostileStateFilesNeverStopTheLightsComingUp:
         state = StateStore(path).load()
 
         assert [scene.name for scene in state.scenes] == ["ok"]
+
+    def test_an_oversized_param_costs_the_effect_not_the_scenes(self, tmp_path):
+        # state.py promises per-field repair. math.isfinite() raises
+        # OverflowError for a very wide int, which escaped the ParamError guard
+        # and took the whole document - and every saved scene - down with it.
+        path = tmp_path / "state.json"
+        path.write_text(
+            '{"effect": "breathe", "params": {"speed": 1'
+            + "0" * 400
+            + '}, "scenes": [{"id": "b", "name": "keep", "effect": "solid"}]}',
+            encoding="utf-8",
+        )
+
+        state = StateStore(path).load()
+
+        assert [scene.name for scene in state.scenes] == ["keep"]
+        assert state.params == effects.get(state.effect).defaults()
 
     def test_restored_state_is_always_serialisable_as_strict_json(self, tmp_path):
         # docs/api.md types every scene timestamp and brightness as a number,

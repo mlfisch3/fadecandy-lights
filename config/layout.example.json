@@ -1,6 +1,6 @@
 {
   "name": "living room",
-  "pixels_per_metre": 30,
+  "pixels_per_metre": 30.3,
   "devices": [
     {
       "id": "fc0",

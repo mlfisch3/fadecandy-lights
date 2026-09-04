@@ -119,6 +119,27 @@ def _section(raw: dict[str, Any], key: str) -> dict[str, Any]:
     return value
 
 
+def _text(raw: dict[str, Any], key: str, default: Any, where: str) -> str:
+    """Read a string field, refusing any other JSON type.
+
+    ``raw.get(key, default)`` returns None when the key is present and null, so
+    the default never applies; ``str(None)`` would then quietly become the
+    string "None" and ``Path(None)`` a TypeError outside the ConfigError guard.
+    """
+    value = raw.get(key, default)
+    if isinstance(value, Path):
+        return str(value)
+    if not isinstance(value, str):
+        raise ConfigError(f"{where} must be a string, got {value!r}")
+    return value
+
+
+def _origin(value: Any) -> str:
+    if not isinstance(value, str):
+        raise ConfigError(f"server.cors_origins entries must be strings, got {value!r}")
+    return value
+
+
 def _unknown(raw: dict[str, Any], allowed: set[str], where: str) -> None:
     extra = set(raw) - allowed
     if extra:
@@ -166,15 +187,21 @@ def config_from_dict(raw: dict[str, Any]) -> Config:
             gamma=float(power_raw.get("gamma", defaults.power.gamma)),
         )
         opc = OPCConfig(
-            host=str(opc_raw.get("host", defaults.opc.host)),
+            host=_text(opc_raw, "host", defaults.opc.host, "opc.host"),
             port=int(opc_raw.get("port", defaults.opc.port)),
         )
+        origins_raw = server_raw.get("cors_origins", ())
+        if isinstance(origins_raw, (str, bytes)) or not isinstance(origins_raw, (list, tuple)):
+            raise ConfigError(f"server.cors_origins must be a list, got {origins_raw!r}")
         server = ServerConfig(
-            host=str(server_raw.get("host", defaults.server.host)),
+            host=_text(server_raw, "host", defaults.server.host, "server.host"),
             port=int(server_raw.get("port", defaults.server.port)),
-            cors_origins=tuple(str(o) for o in server_raw.get("cors_origins", ())),
+            cors_origins=tuple(_origin(o) for o in origins_raw),
         )
         simulate_pixels = int(raw.get("simulate_pixels", defaults.simulate_pixels))
+        layout_path = Path(_text(raw, "layout_path", defaults.layout_path, "layout_path"))
+        state_path = Path(_text(raw, "state_path", defaults.state_path, "state_path"))
+        log_level = _text(raw, "log_level", defaults.log_level, "log_level").upper()
     except (TypeError, ValueError, OverflowError) as exc:
         # OverflowError is what int() raises for an infinity and what float()
         # raises for an integer literal too large to represent; neither is a
@@ -205,11 +232,11 @@ def config_from_dict(raw: dict[str, Any]) -> Config:
         power=power,
         opc=opc,
         server=server,
-        layout_path=Path(raw.get("layout_path", defaults.layout_path)),
-        state_path=Path(raw.get("state_path", defaults.state_path)),
+        layout_path=layout_path,
+        state_path=state_path,
         simulate=bool(raw.get("simulate", defaults.simulate)),
         simulate_pixels=simulate_pixels,
-        log_level=str(raw.get("log_level", defaults.log_level)).upper(),
+        log_level=log_level,
     )
 
 

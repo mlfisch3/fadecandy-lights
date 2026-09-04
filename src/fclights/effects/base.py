@@ -118,8 +118,15 @@ class ParamSpec:
         # NaN and the infinities have to go before the range check, not after:
         # every comparison against NaN is False, so it would pass any minimum
         # and any maximum and then propagate through the frame into the power
-        # governor and the temporal dither's residual.
-        if not math.isfinite(value):
+        # governor and the temporal dither's residual. An integer literal wider
+        # than a float is the same class of input - json.loads builds those from
+        # ordinary JSON, and isfinite() raises OverflowError rather than
+        # returning False for them.
+        try:
+            finite = math.isfinite(value)
+        except OverflowError:
+            finite = False
+        if not finite:
             raise ParamError(f"{self.name}: expected a finite number, got {value!r}")
         number = round(value) if self.type == "int" else float(value)
         if self.minimum is not None and number < self.minimum:

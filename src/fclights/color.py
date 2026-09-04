@@ -159,7 +159,10 @@ def _parse_color_object(value: dict[str, Any], field: str) -> dict[str, Any]:
         kelvin = value.get("kelvin")
         if isinstance(kelvin, bool) or not isinstance(kelvin, (int, float)):
             raise ColorError(f"{field}: kelvin must be a number, got {kelvin!r}")
-        kelvin = float(kelvin)
+        try:
+            kelvin = float(kelvin)
+        except OverflowError as exc:
+            raise ColorError(f"{field}: kelvin is not a usable number: {kelvin!r}") from exc
         if not MIN_KELVIN <= kelvin <= MAX_KELVIN:
             raise ColorError(
                 f"{field}: {kelvin:g} K is outside the supported "
@@ -194,7 +197,11 @@ def _parse_rgb_sequence(value: Any, field: str) -> list[int]:
     for component in value:
         if isinstance(component, bool) or not isinstance(component, (int, float)):
             raise ColorError(f"{field}: rgb components must be numbers 0..255")
-        if not math.isfinite(component):
+        try:
+            finite = math.isfinite(component)
+        except OverflowError:
+            finite = False
+        if not finite:
             raise ColorError(f"{field}: rgb components must be finite, got {component!r}")
         out.append(int(np.clip(round(component), 0, 255)))
     return out

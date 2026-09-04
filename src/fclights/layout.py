@@ -28,14 +28,14 @@ OUTPUTS_PER_DEVICE = 8
 MAX_PIXELS_PER_OUTPUT = 64
 PIXELS_PER_DEVICE = OUTPUTS_PER_DEVICE * MAX_PIXELS_PER_OUTPUT
 
-DEFAULT_PIXELS_PER_METRE = 30.0
+DEFAULT_PIXELS_PER_METRE = 30.3
 """Fallback strip density, used only when the layout does not state one.
 
-This is an ESTIMATE read off photographs of the reels, not a measured figure.
+Measured on the actual reels at 33 mm centre to centre, which is 30.3 LEDs/m.
 Nothing in the code assumes it: it is the default of a config value, it only
 affects the spatial coordinates effects animate along, and it is wrong for any
-strip of a different density. Count the LEDs in a measured metre of your actual
-strip and put the answer in the layout file.
+strip of a different density. Measure the pitch on your own strip - there is a
+cut pad at every LED - and put the answer in the layout file.
 """
 
 
@@ -213,6 +213,11 @@ class Layout:
         }
 
 
+def _is_sequence(value: Any) -> bool:
+    """True for a JSON array. A string is iterable but is never a coordinate."""
+    return not isinstance(value, (str, bytes)) and isinstance(value, (list, tuple))
+
+
 def _finite(value: Any, what: str) -> float:
     """Coerce a coordinate-ish number, refusing NaN and the infinities.
 
@@ -233,6 +238,8 @@ def _finite(value: Any, what: str) -> float:
 def _output_from_dict(
     raw: dict[str, Any], device_id: str, pitch: float
 ) -> Output:
+    if not isinstance(raw, dict):
+        raise LayoutError(f"device {device_id!r}: each output must be a JSON object")
     try:
         index = int(raw["index"])
         count = int(raw["count"])
@@ -255,6 +262,8 @@ def _output_from_dict(
     points = raw.get("points")
     if points is not None:
         where = f"device {device_id!r} output {index}: points"
+        if not _is_sequence(points) or not all(_is_sequence(p) for p in points):
+            raise LayoutError(f"{where} must be a list of [x, y, z] triples")
         pts = tuple(tuple(_finite(v, where) for v in p) for p in points)
         if len(pts) != count:
             raise LayoutError(
@@ -268,17 +277,21 @@ def _output_from_dict(
     def vec(key: str, default: tuple[float, float, float]) -> tuple[float, float, float]:
         value = raw.get(key, default)
         where = f"device {device_id!r} output {index}: {key}"
-        if isinstance(value, (str, bytes)) or not isinstance(value, (list, tuple)):
+        if not _is_sequence(value):
             raise LayoutError(f"{where} must be [x, y, z]")
         seq = tuple(_finite(v, where) for v in value)
         if len(seq) != 3:
             raise LayoutError(f"{where} must be [x, y, z]")
         return seq
 
+    name = raw.get("name", "")
+    if not isinstance(name, str):
+        raise LayoutError(f"device {device_id!r} output {index}: name must be a string")
+
     return Output(
         index=index,
         count=count,
-        name=str(raw.get("name", "")),
+        name=name,
         origin=vec("origin", (0.0, 0.0, 0.0)),
         # An output that does not state its own step inherits the layout's
         # pixel density, so the density is stated once rather than copied into
@@ -290,8 +303,18 @@ def _output_from_dict(
 
 
 def _device_from_dict(raw: dict[str, Any], pitch: float) -> Device:
-    device_id = str(raw.get("id", "fc0"))
+    if not isinstance(raw, dict):
+        raise LayoutError(f"each device must be a JSON object, got {raw!r}")
+    device_id = raw.get("id", "fc0")
+    if not isinstance(device_id, str):
+        raise LayoutError(f"device id must be a string, got {device_id!r}")
+    serial = raw.get("serial")
+    if serial is not None and not isinstance(serial, str):
+        raise LayoutError(f"device {device_id!r}: serial must be a string or null")
+
     outputs_raw = raw.get("outputs")
+    if not _is_sequence(outputs_raw):
+        raise LayoutError(f"device {device_id!r}: 'outputs' must be a list")
     if not outputs_raw:
         raise LayoutError(f"device {device_id!r}: needs at least one output")
 
@@ -313,7 +336,7 @@ def _device_from_dict(raw: dict[str, Any], pitch: float) -> Device:
         id=device_id,
         outputs=tuple(sorted(outputs, key=lambda o: o.index)),
         opc_channel=channel,
-        serial=raw.get("serial"),
+        serial=serial,
     )
 
 
@@ -323,8 +346,14 @@ def build_layout(raw: dict[str, Any]) -> Layout:
         raise LayoutError("layout must be a JSON object")
 
     devices_raw = raw.get("devices")
-    if not devices_raw:
+    if not _is_sequence(devices_raw) or not devices_raw:
+        # Iterating a JSON object yields its keys, so an object here would be
+        # silently walked as a list of strings rather than reported.
         raise LayoutError("layout needs a non-empty 'devices' list")
+
+    name = raw.get("name", "strip")
+    if not isinstance(name, str):
+        raise LayoutError(f"layout name must be a string, got {name!r}")
 
     pixels_per_metre = _finite(
         raw.get("pixels_per_metre", DEFAULT_PIXELS_PER_METRE), "pixels_per_metre"
@@ -375,7 +404,7 @@ def build_layout(raw: dict[str, Any]) -> Layout:
         u = np.linspace(0.0, 1.0, pixel_count, dtype=np.float32)
 
     return Layout(
-        name=str(raw.get("name", "strip")),
+        name=name,
         devices=devices,
         pixel_count=pixel_count,
         pixels_per_metre=pixels_per_metre,

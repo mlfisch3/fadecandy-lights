@@ -27,7 +27,7 @@ uv venv --python 3.11 .venv && VIRTUAL_ENV=.venv uv pip install -e '.[dev]'
 
 **fcserver's OPC input is 8-bit only.** Its command enum has `SetPixelColors = 0x00` and `SystemExclusive = 0xFF`; the 16-bit OPC command 2 is not implemented, so do not reach for it. Precision on slow fades is recovered by `TemporalDither` in `src/fclights/opc.py`, which is load-bearing for the project's main use case and not an optimisation to drop.
 
-**Do not hardcode strip density or a single Fadecandy.** `pixels_per_metre` defaults to 30, which is an *estimate from photographs*, and the real installation (~18 runs, ~1150 pixels) needs three boards. Layout, pixel addressing and the OPC client all take a device list; keep it that way. A Fadecandy output is hard-capped at 64 pixels, a board at 512.
+**Do not hardcode strip density or a single Fadecandy.** `pixels_per_metre` defaults to 30.3, *measured* at 33 mm centre to centre, and the real installation (~18 runs, ~1150 pixels) needs three boards. A full 64-pixel output is 2.11 m, so it needs power injection at both ends. Layout, pixel addressing and the OPC client all take a device list; keep it that way. A Fadecandy output is hard-capped at 64 pixels, a board at 512.
 
 **Colour values are objects, not arrays.** `{"mode": "kelvin", "kelvin": 2700, "rgb": [...]}` or `{"mode": "rgb", "rgb": [...]}`. A kelvin colour keeps its temperature so the phone's warm-to-cool slider can be restored, and is re-derived in float rather than read back from the 8-bit `rgb`.
 

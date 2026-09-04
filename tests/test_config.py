@@ -236,6 +236,48 @@ class TestConfigMistakesAreReportedNotThrown:
         assert code == 2
         assert "finite" in captured.err
 
+    @pytest.mark.parametrize(
+        "body",
+        [
+            '{"layout_path": 5}',
+            '{"layout_path": null}',
+            '{"state_path": null}',
+            '{"state_path": ["a"]}',
+            '{"log_level": null}',
+            '{"opc": {"host": {"a": 1}}}',
+            '{"server": {"host": 5}}',
+            '{"server": {"cors_origins": 5}}',
+            '{"server": {"cors_origins": [5]}}',
+            '{"server": {"cors_origins": "http://x"}}',
+        ],
+    )
+    def test_a_wrongly_typed_config_field_is_refused_with_a_message(
+        self, capsys, tmp_path, body
+    ):
+        # `raw.get(key, default)` returns None when the key is present and null,
+        # so the default never applies and Path(None) used to raise a TypeError
+        # outside the ConfigError guard.
+        path = tmp_path / "c.json"
+        path.write_text(body)
+
+        code = main(["check", "-c", str(path), "--simulate", "--pixels", "64"])
+        captured = capsys.readouterr()
+
+        assert code == 2
+        assert captured.err.startswith("fclights: ")
+        assert "Traceback" not in captured.err
+
+    @pytest.mark.parametrize("field", ["speed", "seed"])
+    def test_an_oversized_integer_param_is_refused_not_thrown(self, field):
+        # json.loads builds arbitrary-precision ints from ordinary JSON, and
+        # math.isfinite() raises OverflowError rather than returning False.
+        from fclights import effects
+
+        with pytest.raises(effects.ParamError, match="finite"):
+            effects.get("breathe" if field == "speed" else "twinkle").coerce_params(
+                {field: 10**400}
+            )
+
     def test_a_usable_configuration_still_exits_zero(self, capsys):
         assert main(["check", "--simulate", "--pixels", "512"]) == 0
         assert "supply ceiling" in capsys.readouterr().out

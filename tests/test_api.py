@@ -400,6 +400,14 @@ class TestWebSocket:
         assert client.put("/api/brightness", json={"brightness": 0.5}).status_code == 200
 
 
+BIG_INT = "1" + "0" * 400
+"""An ordinary JSON integer literal too wide to be a double.
+
+No JSON extension is involved: `json.loads` builds arbitrary-precision ints, and
+`math.isfinite`/`float` raise OverflowError rather than returning False for them.
+"""
+
+
 class TestNonFiniteValuesAreRefused:
     """JSON parsers accept the bare `NaN` literal; the service must not.
 
@@ -412,7 +420,7 @@ class TestNonFiniteValuesAreRefused:
     def raw_put(client, url: str, body: str):
         return client.put(url, content=body, headers={"content-type": "application/json"})
 
-    @pytest.mark.parametrize("literal", ["NaN", "Infinity", "-Infinity"])
+    @pytest.mark.parametrize("literal", ["NaN", "Infinity", "-Infinity", BIG_INT])
     def test_an_effect_parameter_is_a_400(self, client, literal):
         response = self.raw_put(
             client, "/api/effect", f'{{"effect": "breathe", "params": {{"speed": {literal}}}}}'
@@ -420,14 +428,14 @@ class TestNonFiniteValuesAreRefused:
         assert response.status_code == 400
         assert set(response.json()) == {"error", "detail"}
 
-    @pytest.mark.parametrize("literal", ["NaN", "Infinity", "-Infinity"])
+    @pytest.mark.parametrize("literal", ["NaN", "Infinity", "-Infinity", BIG_INT])
     def test_an_int_parameter_is_a_400_not_a_500(self, client, literal):
         response = self.raw_put(
             client, "/api/effect", f'{{"effect": "twinkle", "params": {{"seed": {literal}}}}}'
         )
         assert response.status_code == 400
 
-    @pytest.mark.parametrize("literal", ["NaN", "Infinity", "-Infinity"])
+    @pytest.mark.parametrize("literal", ["NaN", "Infinity", "-Infinity", BIG_INT])
     def test_a_colour_component_is_a_400_not_a_500(self, client, literal):
         response = self.raw_put(
             client,
@@ -436,10 +444,23 @@ class TestNonFiniteValuesAreRefused:
         )
         assert response.status_code == 400
 
-    @pytest.mark.parametrize("literal", ["NaN", "Infinity", "-Infinity"])
-    def test_brightness_is_refused_in_the_documented_shape(self, client, literal):
+    @pytest.mark.parametrize("literal", ["NaN", "Infinity", "-Infinity", BIG_INT])
+    def test_brightness_is_refused_with_the_documented_status(self, client, literal):
+        # docs/api.md types brightness with a 0..1 bound, so the body schema
+        # rejects it before the handler runs: 422, not 400. Asserting the exact
+        # code is the point - a range assertion cannot catch a contract error.
         response = self.raw_put(client, "/api/brightness", f'{{"brightness": {literal}}}')
-        assert 400 <= response.status_code < 500
+        assert response.status_code == 422
+        assert response.json()["error"] == "unprocessable_entity"
+
+    @pytest.mark.parametrize("literal", ["NaN", "Infinity", "-Infinity", BIG_INT])
+    def test_a_kelvin_colour_is_a_400_not_a_500(self, client, literal):
+        response = self.raw_put(
+            client,
+            "/api/effect",
+            f'{{"effect": "solid", "params": {{"color": {{"kelvin": {literal}}}}}}}',
+        )
+        assert response.status_code == 400
         assert set(response.json()) == {"error", "detail"}
 
     def test_a_refused_value_leaves_the_live_state_alone(self, client):

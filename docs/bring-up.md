@@ -256,7 +256,7 @@ Only now connect the full 512-pixel installation.
 Before powering on:
 
 1. Set `power.limit_amps` in `/etc/fclights/fclights.json` to the real usable current of the supply feeding the strip. The packaged default of 24 A is the 30 A supply derated to 80%; on the 60 A supply the equivalent is 48. Read the sizing section of the README first.
-2. **Measure your strip density** and set `pixels_per_metre` in `/etc/fclights/layout.json`. The shipped value of 30 is an estimate from photographs, not a measurement. Count the cut pads along a measured metre of the actual strip.
+2. **Check your strip density** and set `pixels_per_metre` in `/etc/fclights/layout.json`. The shipped value of 30.3 is the measured pitch of these reels, 33 mm centre to centre. If you are using strip of another density, measure its pitch across a run of cut pads and set the value to match.
 3. Check `/etc/fclights/layout.json` matches how the strip is actually split across the Fadecandy's outputs, then run `fclights check` and copy the `fcserver map` entries it prints into `/etc/fclights/fcserver.json`. Each entry is `[OPC channel, first OPC pixel, first board pixel, pixel count]`, and the count covers the board's whole address space - a Fadecandy addresses output *n* from board pixel `64 * n`, so a run shorter than 64 leaves a gap the engine sends as black rather than closing up.
 4. Confirm your power injection points, per the README.
 
