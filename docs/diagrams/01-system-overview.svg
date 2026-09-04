@@ -1,0 +1,260 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1180 880" width="1180" height="880"
+     role="img" aria-labelledby="t1 d1">
+  <title id="t1">Fadecandy system overview: one Raspberry Pi, one Fadecandy, eight LED runs, one 5 V supply</title>
+  <desc id="d1">The Raspberry Pi 3B+ connects to a Fadecandy board over USB. The Fadecandy's eight
+  outputs each drive the DI pad of one 64-pixel WS2812B run with a yellow DATA wire. The 5 V power
+  supply feeds a red +5 V bus and a black GND bus that power the runs directly. The Fadecandy's
+  ground ties to the same GND bus. Strip current flows only between the supply and the runs; it
+  never passes through the Fadecandy or the Pi.</desc>
+
+  <style>
+    .bg      { fill:#F7F6F1; stroke:#C7C3B8; stroke-width:2; }
+    .ttl     { font:700 25px ui-sans-serif,system-ui,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; fill:#15140F; }
+    .sub     { font:400 14.5px ui-sans-serif,system-ui,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; fill:#4A4740; }
+    .lbl     { font:600 13px ui-sans-serif,system-ui,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; fill:#15140F; }
+    .lbls    { font:400 11.5px ui-sans-serif,system-ui,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; fill:#4A4740; }
+    .wlbl    { font:700 11px ui-sans-serif,system-ui,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; fill:#15140F; }
+    .boxttl  { font:700 15px ui-sans-serif,system-ui,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; fill:#15140F; }
+    .mono    { font:600 11px ui-monospace,'SFMono-Regular',Consolas,'Liberation Mono',monospace; fill:#15140F; }
+
+    .box     { fill:#FFFFFF; stroke:#37342C; stroke-width:2; }
+    .panel   { fill:#EFEDE5; stroke:#B9B5A8; stroke-width:1.5; }
+    .strip   { fill:#FFFFFF; stroke:#37342C; stroke-width:1.8; }
+    .led     { fill:#E8E4D6; stroke:#9A9587; stroke-width:0.8; }
+
+    .gnd     { stroke:#111111; stroke-width:3.2; fill:none; }
+    .pwr     { stroke:#CE2318; stroke-width:3.2; fill:none; }
+    .datc    { stroke:#4A3800; stroke-width:6;   fill:none; }
+    .dat     { stroke:#F5B70A; stroke-width:3;   fill:none; }
+
+    .busg    { stroke:#111111; stroke-width:7; fill:none; stroke-linecap:round; }
+    .busp    { stroke:#CE2318; stroke-width:7; fill:none; stroke-linecap:round; }
+
+    .bandc   { stroke:#4A3800; stroke-width:34; fill:none; stroke-linejoin:round; stroke-linecap:round; }
+    .band    { stroke:#F5B70A; stroke-width:26; fill:none; stroke-linejoin:round; stroke-linecap:round; }
+
+    .usbc    { stroke:#37342C; stroke-width:9; fill:none; stroke-linecap:round; }
+    .usb     { stroke:#FFFFFF; stroke-width:4; fill:none; stroke-linecap:round; stroke-dasharray:6 5; }
+
+    .dot     { fill:#111111; }
+    .dotr    { fill:#CE2318; }
+    .note    { fill:#FFF9E3; stroke:#C9A227; stroke-width:1.6; }
+    .notet   { font:600 12.5px ui-sans-serif,system-ui,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; fill:#3D3200; }
+    .warn    { fill:#FFEFEC; stroke:#CE2318; stroke-width:1.6; }
+    .warnt   { font:600 12.5px ui-sans-serif,system-ui,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; fill:#7A140C; }
+  </style>
+
+  <rect class="bg" x="1" y="1" width="1178" height="878" rx="6"/>
+
+  <text class="ttl" x="40" y="46">Diagram 1 - System overview: one control point, eight runs</text>
+  <text class="sub" x="40" y="72">Strip current flows only between the 5 V supply and the runs. It never passes through the Fadecandy or the Pi.</text>
+
+  <!-- ===================== LEGEND ===================== -->
+  <rect class="panel" x="40" y="90" width="1100" height="56" rx="5"/>
+  <text class="lbl" x="56" y="115">Legend</text>
+
+  <path class="gnd" d="M 120 111 H 168"/>
+  <text class="wlbl" x="176" y="115">GND</text>
+  <text class="lbls" x="176" y="131">black wire</text>
+
+  <path class="datc" d="M 250 111 H 298"/><path class="dat" d="M 250 111 H 298"/>
+  <text class="wlbl" x="306" y="115">DATA</text>
+  <text class="lbls" x="306" y="131">yellow wire</text>
+
+  <path class="pwr" d="M 390 111 H 438"/>
+  <text class="wlbl" x="446" y="115">+5 V</text>
+  <text class="lbls" x="446" y="131">red wire</text>
+
+  <path class="gnd" d="M 530 104 V 118"/><path class="gnd" d="M 516 111 H 544"/>
+  <circle class="dot" cx="530" cy="111" r="4.2"/>
+  <text class="wlbl" x="552" y="115">Joined</text>
+  <text class="lbls" x="552" y="131">filled dot = connection</text>
+
+  <path class="gnd" d="M 700 111 H 728"/>
+  <path class="datc" d="M 714 96 V 104 A 7 7 0 0 1 714 118 V 126"/>
+  <path class="dat"  d="M 714 96 V 104 A 7 7 0 0 1 714 118 V 126"/>
+  <text class="wlbl" x="742" y="115">Hop</text>
+  <text class="lbls" x="742" y="131">arc = crossing, NOT joined</text>
+
+  <rect x="900" y="98" width="26" height="26" class="strip"/>
+  <text class="wlbl" x="936" y="115">Run</text>
+  <text class="lbls" x="936" y="131">one 64-px WS2812B run, 2.11 m</text>
+
+  <!-- ===================== RUNS ===================== -->
+  <g>
+    <!-- run 0 -->
+    <text class="lbl" x="224" y="176" text-anchor="middle">Run 1</text>
+    <text class="lbls" x="224" y="190" text-anchor="middle">ch 0</text>
+    <rect class="strip" x="200" y="198" width="48" height="152" rx="4"/>
+    <!-- run 1 -->
+    <text class="lbl" x="336" y="176" text-anchor="middle">Run 2</text>
+    <text class="lbls" x="336" y="190" text-anchor="middle">ch 1</text>
+    <rect class="strip" x="312" y="198" width="48" height="152" rx="4"/>
+    <!-- run 2 -->
+    <text class="lbl" x="448" y="176" text-anchor="middle">Run 3</text>
+    <text class="lbls" x="448" y="190" text-anchor="middle">ch 2</text>
+    <rect class="strip" x="424" y="198" width="48" height="152" rx="4"/>
+    <!-- run 3 -->
+    <text class="lbl" x="560" y="176" text-anchor="middle">Run 4</text>
+    <text class="lbls" x="560" y="190" text-anchor="middle">ch 3</text>
+    <rect class="strip" x="536" y="198" width="48" height="152" rx="4"/>
+    <!-- run 4 -->
+    <text class="lbl" x="672" y="176" text-anchor="middle">Run 5</text>
+    <text class="lbls" x="672" y="190" text-anchor="middle">ch 4</text>
+    <rect class="strip" x="648" y="198" width="48" height="152" rx="4"/>
+    <!-- run 5 -->
+    <text class="lbl" x="784" y="176" text-anchor="middle">Run 6</text>
+    <text class="lbls" x="784" y="190" text-anchor="middle">ch 5</text>
+    <rect class="strip" x="760" y="198" width="48" height="152" rx="4"/>
+    <!-- run 6 -->
+    <text class="lbl" x="896" y="176" text-anchor="middle">Run 7</text>
+    <text class="lbls" x="896" y="190" text-anchor="middle">ch 6</text>
+    <rect class="strip" x="872" y="198" width="48" height="152" rx="4"/>
+    <!-- run 7 -->
+    <text class="lbl" x="1008" y="176" text-anchor="middle">Run 8</text>
+    <text class="lbls" x="1008" y="190" text-anchor="middle">ch 7</text>
+    <rect class="strip" x="984" y="198" width="48" height="152" rx="4"/>
+  </g>
+  <!-- LED pips inside each run -->
+  <g>
+    <g><rect class="led" x="208" y="206" width="32" height="12"/><rect class="led" x="208" y="224" width="32" height="12"/><rect class="led" x="208" y="242" width="32" height="12"/><rect class="led" x="208" y="260" width="32" height="12"/><rect class="led" x="208" y="278" width="32" height="12"/><rect class="led" x="208" y="296" width="32" height="12"/><text class="lbls" x="224" y="325" text-anchor="middle">64 px</text></g>
+    <g><rect class="led" x="320" y="206" width="32" height="12"/><rect class="led" x="320" y="224" width="32" height="12"/><rect class="led" x="320" y="242" width="32" height="12"/><rect class="led" x="320" y="260" width="32" height="12"/><rect class="led" x="320" y="278" width="32" height="12"/><rect class="led" x="320" y="296" width="32" height="12"/><text class="lbls" x="336" y="325" text-anchor="middle">64 px</text></g>
+    <g><rect class="led" x="432" y="206" width="32" height="12"/><rect class="led" x="432" y="224" width="32" height="12"/><rect class="led" x="432" y="242" width="32" height="12"/><rect class="led" x="432" y="260" width="32" height="12"/><rect class="led" x="432" y="278" width="32" height="12"/><rect class="led" x="432" y="296" width="32" height="12"/><text class="lbls" x="448" y="325" text-anchor="middle">64 px</text></g>
+    <g><rect class="led" x="544" y="206" width="32" height="12"/><rect class="led" x="544" y="224" width="32" height="12"/><rect class="led" x="544" y="242" width="32" height="12"/><rect class="led" x="544" y="260" width="32" height="12"/><rect class="led" x="544" y="278" width="32" height="12"/><rect class="led" x="544" y="296" width="32" height="12"/><text class="lbls" x="560" y="325" text-anchor="middle">64 px</text></g>
+    <g><rect class="led" x="656" y="206" width="32" height="12"/><rect class="led" x="656" y="224" width="32" height="12"/><rect class="led" x="656" y="242" width="32" height="12"/><rect class="led" x="656" y="260" width="32" height="12"/><rect class="led" x="656" y="278" width="32" height="12"/><rect class="led" x="656" y="296" width="32" height="12"/><text class="lbls" x="672" y="325" text-anchor="middle">64 px</text></g>
+    <g><rect class="led" x="768" y="206" width="32" height="12"/><rect class="led" x="768" y="224" width="32" height="12"/><rect class="led" x="768" y="242" width="32" height="12"/><rect class="led" x="768" y="260" width="32" height="12"/><rect class="led" x="768" y="278" width="32" height="12"/><rect class="led" x="768" y="296" width="32" height="12"/><text class="lbls" x="784" y="325" text-anchor="middle">64 px</text></g>
+    <g><rect class="led" x="880" y="206" width="32" height="12"/><rect class="led" x="880" y="224" width="32" height="12"/><rect class="led" x="880" y="242" width="32" height="12"/><rect class="led" x="880" y="260" width="32" height="12"/><rect class="led" x="880" y="278" width="32" height="12"/><rect class="led" x="880" y="296" width="32" height="12"/><text class="lbls" x="896" y="325" text-anchor="middle">64 px</text></g>
+    <g><rect class="led" x="992" y="206" width="32" height="12"/><rect class="led" x="992" y="224" width="32" height="12"/><rect class="led" x="992" y="242" width="32" height="12"/><rect class="led" x="992" y="260" width="32" height="12"/><rect class="led" x="992" y="278" width="32" height="12"/><rect class="led" x="992" y="296" width="32" height="12"/><text class="lbls" x="1008" y="325" text-anchor="middle">64 px</text></g>
+  </g>
+
+  <!-- ===================== PIGTAIL LEADS ===================== -->
+  <!-- For each run cx: GND at cx-16 to bus y=400; +5V at cx+16 to bus y=440 (hop at 400); DATA at cx to band y=505 (hops at 400 and 440) -->
+  <g>
+    <!-- GND leads -->
+    <path class="gnd" d="M 208 350 V 400"/><path class="gnd" d="M 320 350 V 400"/>
+    <path class="gnd" d="M 432 350 V 400"/><path class="gnd" d="M 544 350 V 400"/>
+    <path class="gnd" d="M 656 350 V 400"/><path class="gnd" d="M 768 350 V 400"/>
+    <path class="gnd" d="M 880 350 V 400"/><path class="gnd" d="M 992 350 V 400"/>
+    <!-- +5V leads, hop over GND bus -->
+    <path class="pwr" d="M 240 350 V 393 A 7 7 0 0 1 240 407 V 440"/>
+    <path class="pwr" d="M 352 350 V 393 A 7 7 0 0 1 352 407 V 440"/>
+    <path class="pwr" d="M 464 350 V 393 A 7 7 0 0 1 464 407 V 440"/>
+    <path class="pwr" d="M 576 350 V 393 A 7 7 0 0 1 576 407 V 440"/>
+    <path class="pwr" d="M 688 350 V 393 A 7 7 0 0 1 688 407 V 440"/>
+    <path class="pwr" d="M 800 350 V 393 A 7 7 0 0 1 800 407 V 440"/>
+    <path class="pwr" d="M 912 350 V 393 A 7 7 0 0 1 912 407 V 440"/>
+    <path class="pwr" d="M 1024 350 V 393 A 7 7 0 0 1 1024 407 V 440"/>
+    <!-- DATA leads, hop over both buses -->
+    <g>
+      <path class="datc" d="M 224 350 V 393 A 7 7 0 0 1 224 407 V 433 A 7 7 0 0 1 224 447 V 507"/>
+      <path class="dat"  d="M 224 350 V 393 A 7 7 0 0 1 224 407 V 433 A 7 7 0 0 1 224 447 V 507"/>
+      <path class="datc" d="M 336 350 V 393 A 7 7 0 0 1 336 407 V 433 A 7 7 0 0 1 336 447 V 507"/>
+      <path class="dat"  d="M 336 350 V 393 A 7 7 0 0 1 336 407 V 433 A 7 7 0 0 1 336 447 V 507"/>
+      <path class="datc" d="M 448 350 V 393 A 7 7 0 0 1 448 407 V 433 A 7 7 0 0 1 448 447 V 507"/>
+      <path class="dat"  d="M 448 350 V 393 A 7 7 0 0 1 448 407 V 433 A 7 7 0 0 1 448 447 V 507"/>
+      <path class="datc" d="M 560 350 V 393 A 7 7 0 0 1 560 407 V 433 A 7 7 0 0 1 560 447 V 507"/>
+      <path class="dat"  d="M 560 350 V 393 A 7 7 0 0 1 560 407 V 433 A 7 7 0 0 1 560 447 V 507"/>
+      <path class="datc" d="M 672 350 V 393 A 7 7 0 0 1 672 407 V 433 A 7 7 0 0 1 672 447 V 507"/>
+      <path class="dat"  d="M 672 350 V 393 A 7 7 0 0 1 672 407 V 433 A 7 7 0 0 1 672 447 V 507"/>
+      <path class="datc" d="M 784 350 V 393 A 7 7 0 0 1 784 407 V 433 A 7 7 0 0 1 784 447 V 507"/>
+      <path class="dat"  d="M 784 350 V 393 A 7 7 0 0 1 784 407 V 433 A 7 7 0 0 1 784 447 V 507"/>
+      <path class="datc" d="M 896 350 V 393 A 7 7 0 0 1 896 407 V 433 A 7 7 0 0 1 896 447 V 507"/>
+      <path class="dat"  d="M 896 350 V 393 A 7 7 0 0 1 896 407 V 433 A 7 7 0 0 1 896 447 V 507"/>
+      <path class="datc" d="M 1008 350 V 393 A 7 7 0 0 1 1008 407 V 433 A 7 7 0 0 1 1008 447 V 507"/>
+      <path class="dat"  d="M 1008 350 V 393 A 7 7 0 0 1 1008 407 V 433 A 7 7 0 0 1 1008 447 V 507"/>
+    </g>
+  </g>
+
+  <!-- pigtail annotation -->
+  <path d="M 1052 250 H 1040 Q 1032 250 1032 262 V 344" fill="none" stroke="#8A857A" stroke-width="1.2"/>
+  <text class="lbls" x="1048" y="204">Each run's black /</text>
+  <text class="lbls" x="1048" y="219">yellow / red pigtail</text>
+  <text class="lbls" x="1048" y="234">is at its DI end.</text>
+  <text class="lbls" x="1048" y="249">Far end: unused.</text>
+
+  <!-- ===================== BUSES ===================== -->
+  <path class="busg" d="M 80 400 H 1120"/>
+  <path class="busp" d="M 110 440 H 1120"/>
+  <g>
+    <circle class="dot" cx="208" cy="400" r="4.4"/><circle class="dot" cx="320" cy="400" r="4.4"/>
+    <circle class="dot" cx="432" cy="400" r="4.4"/><circle class="dot" cx="544" cy="400" r="4.4"/>
+    <circle class="dot" cx="656" cy="400" r="4.4"/><circle class="dot" cx="768" cy="400" r="4.4"/>
+    <circle class="dot" cx="880" cy="400" r="4.4"/><circle class="dot" cx="992" cy="400" r="4.4"/>
+    <circle class="dotr" cx="240" cy="440" r="4.4"/><circle class="dotr" cx="352" cy="440" r="4.4"/>
+    <circle class="dotr" cx="464" cy="440" r="4.4"/><circle class="dotr" cx="576" cy="440" r="4.4"/>
+    <circle class="dotr" cx="688" cy="440" r="4.4"/><circle class="dotr" cx="800" cy="440" r="4.4"/>
+    <circle class="dotr" cx="912" cy="440" r="4.4"/><circle class="dotr" cx="1024" cy="440" r="4.4"/>
+  </g>
+  <text class="wlbl" x="92" y="391">GND BUS</text>
+  <text class="wlbl" x="92" y="431">+5 V BUS</text>
+
+  <!-- ===================== DATA BAND ===================== -->
+  <path class="bandc" d="M 1008 520 H 140 V 585"/>
+  <path class="band"  d="M 1008 520 H 140 V 585"/>
+  <text class="mono" x="560" y="524" text-anchor="middle">8 &#215; DATA  -  one yellow wire per Fadecandy channel, ch 0 … ch 7</text>
+
+  <!-- ===================== FADECANDY ===================== -->
+  <rect class="box" x="60" y="590" width="250" height="120" rx="5"/>
+  <text class="boxttl" x="76" y="616">Fadecandy fc64x8</text>
+  <text class="lbls" x="76" y="634">8 outputs, 64 px each</text>
+  <text class="lbls" x="76" y="650">5 V level-shifted data</text>
+  <text class="lbls" x="76" y="666">USB bus-powered, ~tens of mA</text>
+  <text class="mono" x="76" y="690">J2: 8 &#215; ( &#8722; = GND, + = DATA )</text>
+  <!-- header stub on top edge -->
+  <rect x="126" y="583" width="28" height="14" fill="#FFFFFF" stroke="#37342C" stroke-width="1.6"/>
+
+  <!-- Fadecandy ground riser to the GND bus -->
+  <path class="gnd" d="M 80 590 V 400"/>
+  <circle class="dot" cx="80" cy="400" r="4.4"/>
+  <circle class="dot" cx="80" cy="590" r="4.4"/>
+  <text class="wlbl" x="50" y="500" transform="rotate(-90 50 500)" text-anchor="middle">GND  (mandatory)</text>
+
+  <!-- ===================== RASPBERRY PI ===================== -->
+  <rect class="box" x="60" y="752" width="250" height="98" rx="5"/>
+  <text class="boxttl" x="76" y="778">Raspberry Pi 3 Model B+</text>
+  <text class="lbls" x="76" y="796">runs fcserver</text>
+  <text class="lbls" x="76" y="812">Android app talks to it over Wi-Fi / LAN</text>
+  <text class="lbls" x="76" y="836">its own 5 V PSU - not the LED supply</text>
+
+  <path class="usbc" d="M 185 752 V 710"/>
+  <path class="usb"  d="M 185 750 V 712"/>
+  <text class="wlbl" x="200" y="736">USB</text>
+
+  <!-- ===================== POWER SUPPLY ===================== -->
+  <rect class="box" x="790" y="612" width="350" height="176" rx="5"/>
+  <text class="boxttl" x="806" y="640">5 V DC power supply</text>
+  <text class="lbls" x="806" y="659">sompom S-300-5  (5 V, 60 A)  or</text>
+  <text class="lbls" x="806" y="675">LETOUR S-150-5  (5 V, 30 A)</text>
+  <text class="lbls" x="806" y="699">Open-frame: MUST be enclosed and earthed.</text>
+  <text class="lbls" x="806" y="715">Set output to 5.00 V with a meter - see &#167; Safety.</text>
+  <text class="mono" x="806" y="740">V+  &#8594; +5 V bus      V&#8722;  &#8594; GND bus</text>
+  <text class="lbls" x="806" y="764">Mains in on the far side, behind a barrier.</text>
+
+  <!-- terminals -->
+  <rect x="1052" y="605" width="20" height="14" fill="#FFFFFF" stroke="#111111" stroke-width="1.6"/>
+  <text class="mono" x="1062" y="601" text-anchor="middle">V&#8722;</text>
+  <rect x="1096" y="605" width="20" height="14" fill="#FFFFFF" stroke="#CE2318" stroke-width="1.6"/>
+  <text class="mono" x="1106" y="601" text-anchor="middle">V+</text>
+
+  <!-- risers: V- up to GND bus (hop over +5V bus); V+ up to +5V bus -->
+  <path class="gnd" d="M 1062 605 V 447 A 7 7 0 0 1 1062 433 V 400"/>
+  <circle class="dot" cx="1062" cy="400" r="4.4"/>
+  <path class="pwr" d="M 1106 605 V 440"/>
+  <circle class="dotr" cx="1106" cy="440" r="4.4"/>
+
+  <!-- ===================== NOTES ===================== -->
+  <rect class="warn" x="340" y="600" width="424" height="88" rx="5"/>
+  <text class="warnt" x="356" y="622">The Fadecandy carries no strip current.</text>
+  <text class="warnt" x="356" y="642" style="font-weight:400">Its J2 header has GND and DATA pins only - there is no</text>
+  <text class="warnt" x="356" y="659" style="font-weight:400">+5 V pin on it. Strip current leaves the supply's V+, goes</text>
+  <text class="warnt" x="356" y="676" style="font-weight:400">through the LEDs, and returns to the supply's V&#8722;.</text>
+
+  <rect class="note" x="340" y="706" width="424" height="144" rx="5"/>
+  <text class="notet" x="356" y="728">Why the ground tie is mandatory</text>
+  <text class="notet" x="356" y="748" style="font-weight:400">The DATA signal is a voltage measured against ground. The</text>
+  <text class="notet" x="356" y="765" style="font-weight:400">Fadecandy drives it against ITS ground; each WS2812B reads</text>
+  <text class="notet" x="356" y="782" style="font-weight:400">it against the SUPPLY's ground. If those two grounds are not</text>
+  <text class="notet" x="356" y="799" style="font-weight:400">bonded, the LEDs have no reference, and the run will show</text>
+  <text class="notet" x="356" y="816" style="font-weight:400">nothing, flicker, or display garbage colours.</text>
+  <text class="notet" x="356" y="838">Data and ground always travel together. Always.</text>
+</svg>

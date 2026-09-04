@@ -1,0 +1,225 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1180 880" width="1180" height="880"
+     role="img" aria-labelledby="t2 d2">
+  <title id="t2">One Fadecandy channel wired to one 64-pixel run, with the common ground shown</title>
+  <desc id="d2">Fadecandy channel 0 drives one 64-pixel WS2812B run. A yellow DATA wire runs from the
+  channel's + pad to the run's DI pigtail. A black GND wire runs from the same channel's minus pad
+  and joins the run's black pigtail lead at a junction. From that junction the black lead continues
+  to the supply's V-minus terminal, and the run's red lead goes to V-plus. The Fadecandy carries no
+  strip current; it only shares the ground reference.</desc>
+
+  <style>
+    .bg      { fill:#F7F6F1; stroke:#C7C3B8; stroke-width:2; }
+    .ttl     { font:700 25px ui-sans-serif,system-ui,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; fill:#15140F; }
+    .sub     { font:400 14.5px ui-sans-serif,system-ui,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; fill:#4A4740; }
+    .lbl     { font:600 13px ui-sans-serif,system-ui,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; fill:#15140F; }
+    .lbls    { font:400 11.5px ui-sans-serif,system-ui,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; fill:#4A4740; }
+    .wlbl    { font:700 11px ui-sans-serif,system-ui,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; fill:#15140F; }
+    .boxttl  { font:700 15px ui-sans-serif,system-ui,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; fill:#15140F; }
+    .mono    { font:600 11px ui-monospace,'SFMono-Regular',Consolas,'Liberation Mono',monospace; fill:#15140F; }
+    .monos   { font:400 10.5px ui-monospace,'SFMono-Regular',Consolas,'Liberation Mono',monospace; fill:#3A382F; }
+    .pinnum  { font:700 12px ui-sans-serif,system-ui,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; fill:#15140F; }
+
+    .box     { fill:#FFFFFF; stroke:#37342C; stroke-width:2; }
+    .panel   { fill:#EFEDE5; stroke:#B9B5A8; stroke-width:1.5; }
+    .inset   { fill:#FFFFFF; stroke:#B9B5A8; stroke-width:1.5; stroke-dasharray:5 4; }
+    .chip    { fill:#EFEDE5; stroke:#37342C; stroke-width:1.6; }
+    .strip   { fill:#FFFFFF; stroke:#37342C; stroke-width:2; }
+    .led     { fill:#E8E4D6; stroke:#9A9587; stroke-width:0.8; }
+    .padd    { fill:#FFF3CE; stroke:#4A3800; stroke-width:1.6; }
+    .padg    { fill:#E4E2DA; stroke:#111111; stroke-width:1.6; }
+
+    .gnd     { stroke:#111111; stroke-width:3.6; fill:none; stroke-linejoin:round; stroke-linecap:round; }
+    .pwr     { stroke:#CE2318; stroke-width:3.6; fill:none; stroke-linejoin:round; stroke-linecap:round; }
+    .datc    { stroke:#4A3800; stroke-width:7;   fill:none; stroke-linejoin:round; stroke-linecap:round; }
+    .dat     { stroke:#F5B70A; stroke-width:3.6; fill:none; stroke-linejoin:round; stroke-linecap:round; }
+    .lead    { stroke:#8A857A; stroke-width:1.2; fill:none; stroke-dasharray:4 3; }
+    .brk     { stroke:#8A857A; stroke-width:1.2; fill:none; }
+    .sig     { stroke:#37342C; stroke-width:2; fill:none; }
+
+    .dot     { fill:#111111; }
+    .note    { fill:#FFF9E3; stroke:#C9A227; stroke-width:1.6; }
+    .notet   { font:600 12.5px ui-sans-serif,system-ui,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; fill:#3D3200; }
+    .notep   { font:400 12.5px ui-sans-serif,system-ui,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; fill:#3D3200; }
+    .warn    { fill:#FFEFEC; stroke:#CE2318; stroke-width:1.8; }
+    .warnt   { font:700 12.5px ui-sans-serif,system-ui,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; fill:#7A140C; }
+    .warnp   { font:400 12.5px ui-sans-serif,system-ui,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; fill:#7A140C; }
+    .hl      { fill:none; stroke:#0B7285; stroke-width:2.4; }
+    .hlt     { font:700 12px ui-sans-serif,system-ui,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; fill:#0B5A69; }
+  </style>
+
+  <rect class="bg" x="1" y="1" width="1178" height="878" rx="6"/>
+
+  <text class="ttl" x="40" y="46">Diagram 2 - One channel in detail, and where ground is made common</text>
+  <text class="sub" x="40" y="72">Fadecandy channel 0 &#8594; the DI pigtail of one 64-pixel run. Power for that run comes only from the 5 V supply.</text>
+
+  <!-- ===================== LEGEND ===================== -->
+  <rect class="panel" x="40" y="90" width="1100" height="52" rx="5"/>
+  <text class="lbl" x="56" y="121">Legend</text>
+  <path class="gnd" d="M 120 117 H 166"/><text class="wlbl" x="174" y="121">GND &#183; black</text>
+  <path class="datc" d="M 290 117 H 336"/><path class="dat" d="M 290 117 H 336"/><text class="wlbl" x="344" y="121">DATA &#183; yellow</text>
+  <path class="pwr" d="M 470 117 H 516"/><text class="wlbl" x="524" y="121">+5 V &#183; red</text>
+  <circle class="dot" cx="646" cy="117" r="5"/><text class="wlbl" x="660" y="121">filled dot = wires joined</text>
+  <rect class="padd" x="856" y="110" width="14" height="14"/><text class="wlbl" x="878" y="121">+ pad = DATA</text>
+  <rect class="padg" x="1000" y="110" width="14" height="14"/><text class="wlbl" x="1022" y="121">&#8722; pad = GND</text>
+
+  <!-- ===================== FADECANDY BOARD ===================== -->
+  <rect class="box" x="60" y="175" width="360" height="205" rx="5"/>
+  <rect x="215" y="167" width="44" height="12" fill="#FFFFFF" stroke="#37342C" stroke-width="1.6"/>
+  <text class="lbls" x="266" y="177">USB</text>
+
+  <text class="boxttl" x="78" y="203">Fadecandy fc64x8 Rev B</text>
+  <text class="lbls" x="78" y="222">Output header J2, component side. Channel digits</text>
+  <text class="lbls" x="78" y="239">0&#8230;7 are printed on the silkscreen. The row nearest</text>
+  <text class="lbls" x="78" y="256">the board edge is &#8722; (GND); the inner row is + (DATA).</text>
+  <text class="warnt" x="78" y="280">There is NO +5 V pin anywhere on this header.</text>
+
+  <!-- channel digits -->
+  <text class="pinnum" x="130" y="316" text-anchor="middle">0</text>
+  <text class="pinnum" x="164" y="316" text-anchor="middle">1</text>
+  <text class="pinnum" x="198" y="316" text-anchor="middle">2</text>
+  <text class="pinnum" x="232" y="316" text-anchor="middle">3</text>
+  <text class="pinnum" x="266" y="316" text-anchor="middle">4</text>
+  <text class="pinnum" x="300" y="316" text-anchor="middle">5</text>
+  <text class="pinnum" x="334" y="316" text-anchor="middle">6</text>
+  <text class="pinnum" x="368" y="316" text-anchor="middle">7</text>
+
+  <!-- + (DATA) row -->
+  <g>
+    <rect class="padd" x="123.5" y="323.5" width="13" height="13"/>
+    <rect class="padd" x="157.5" y="323.5" width="13" height="13"/>
+    <rect class="padd" x="191.5" y="323.5" width="13" height="13"/>
+    <rect class="padd" x="225.5" y="323.5" width="13" height="13"/>
+    <rect class="padd" x="259.5" y="323.5" width="13" height="13"/>
+    <rect class="padd" x="293.5" y="323.5" width="13" height="13"/>
+    <rect class="padd" x="327.5" y="323.5" width="13" height="13"/>
+    <rect class="padd" x="361.5" y="323.5" width="13" height="13"/>
+  </g>
+  <!-- - (GND) row, nearest the board edge -->
+  <g>
+    <rect class="padg" x="123.5" y="351.5" width="13" height="13"/>
+    <rect class="padg" x="157.5" y="351.5" width="13" height="13"/>
+    <rect class="padg" x="191.5" y="351.5" width="13" height="13"/>
+    <rect class="padg" x="225.5" y="351.5" width="13" height="13"/>
+    <rect class="padg" x="259.5" y="351.5" width="13" height="13"/>
+    <rect class="padg" x="293.5" y="351.5" width="13" height="13"/>
+    <rect class="padg" x="327.5" y="351.5" width="13" height="13"/>
+    <rect class="padg" x="361.5" y="351.5" width="13" height="13"/>
+  </g>
+  <text class="pinnum" x="392" y="334">+</text>
+  <text class="pinnum" x="392" y="366">&#8722;</text>
+  <text class="lbls" x="404" y="334">DATA</text>
+  <text class="lbls" x="404" y="366">GND</text>
+
+  <!-- highlight on channel 0 -->
+  <rect class="hl" x="117" y="306" width="26" height="66" rx="5"/>
+  <text class="hlt" x="112" y="300" text-anchor="end">ch 0</text>
+
+  <!-- ===================== INTERNAL CHAIN INSET ===================== -->
+  <rect class="inset" x="170" y="400" width="386" height="78" rx="5"/>
+  <text class="wlbl" x="182" y="418">What is behind each + pad (from the fc64x8 schematic)</text>
+  <rect class="chip" x="182" y="428" width="104" height="44" rx="3"/>
+  <text class="monos" x="234" y="446" text-anchor="middle">MK20DX128</text>
+  <text class="monos" x="234" y="460" text-anchor="middle">PTD0 &#183; 3.3 V</text>
+  <path class="sig" d="M 286 450 H 312"/><path class="sig" d="M 306 445 l 8 5 l -8 5" stroke-linejoin="round"/>
+  <rect class="chip" x="314" y="428" width="118" height="44" rx="3"/>
+  <text class="monos" x="373" y="446" text-anchor="middle">SN74HCT245</text>
+  <text class="monos" x="373" y="460" text-anchor="middle">VCC = 5.0 V</text>
+  <path class="sig" d="M 432 450 H 458"/><path class="sig" d="M 452 445 l 8 5 l -8 5" stroke-linejoin="round"/>
+  <rect class="chip" x="460" y="428" width="52" height="44" rx="3"/>
+  <text class="monos" x="486" y="446" text-anchor="middle">68 &#937;</text>
+  <text class="monos" x="486" y="460" text-anchor="middle">series</text>
+  <path class="sig" d="M 512 450 H 534"/><path class="sig" d="M 528 445 l 8 5 l -8 5" stroke-linejoin="round"/>
+  <text class="monos" x="540" y="454">pad</text>
+
+  <!-- ===================== THE RUN ===================== -->
+  <text class="boxttl" x="560" y="176">One run &#183; 64 &#215; WS2812B &#183; 30 LEDs/m &#183; 2.11 m</text>
+  <rect class="strip" x="560" y="188" width="580" height="56" rx="5"/>
+  <g>
+    <rect class="led" x="626" y="198" width="18" height="36"/><rect class="led" x="654" y="198" width="18" height="36"/>
+    <rect class="led" x="682" y="198" width="18" height="36"/><rect class="led" x="710" y="198" width="18" height="36"/>
+    <rect class="led" x="738" y="198" width="18" height="36"/><rect class="led" x="766" y="198" width="18" height="36"/>
+    <rect class="led" x="794" y="198" width="18" height="36"/><rect class="led" x="822" y="198" width="18" height="36"/>
+    <rect class="led" x="850" y="198" width="18" height="36"/><rect class="led" x="878" y="198" width="18" height="36"/>
+    <rect class="led" x="906" y="198" width="18" height="36"/><rect class="led" x="934" y="198" width="18" height="36"/>
+    <rect class="led" x="962" y="198" width="18" height="36"/><rect class="led" x="990" y="198" width="18" height="36"/>
+    <rect class="led" x="1018" y="198" width="18" height="36"/><rect class="led" x="1046" y="198" width="18" height="36"/>
+    <rect class="led" x="1074" y="198" width="18" height="36"/><rect class="led" x="1102" y="198" width="18" height="36"/>
+  </g>
+  <text class="mono" x="592" y="212" text-anchor="middle">DI</text>
+  <text class="monos" x="592" y="228" text-anchor="middle">px 1</text>
+  <text class="lbls" x="760" y="264">px 2 &#8594; 64, each pixel re-drives the next</text>
+  <text class="lbls" x="1140" y="284" text-anchor="end">far end: unterminated, nothing connected</text>
+
+  <!-- ===================== WIRING ===================== -->
+  <!-- ch0 DATA: pad (130,330) jog left to x=112, down to y=500, right to 572, up to 300 -->
+  <path class="datc" d="M 130 330 L 112 348 V 500 H 572 V 300"/>
+  <path class="dat"  d="M 130 330 L 112 348 V 500 H 572 V 300"/>
+  <!-- ch0 GND: pad (130,358) jog left to x=94, down to y=530, right to 588 -->
+  <path class="gnd" d="M 130 358 L 94 376 V 530 H 588"/>
+
+  <!-- Run pigtail: DATA x=572, GND x=588, +5V x=604 -->
+  <path class="datc" d="M 572 244 V 300"/><path class="dat" d="M 572 244 V 300"/>
+  <path class="gnd" d="M 588 244 V 793 H 812"/>
+  <path class="pwr" d="M 604 244 V 733 H 812"/>
+
+  <circle class="dot" cx="588" cy="530" r="6.5"/>
+
+  <!-- pigtail bracket -->
+  <path class="brk" d="M 566 298 H 610"/>
+  <text class="lbls" x="620" y="302">the run's own 3-wire pigtail, all at the DI end</text>
+
+  <!-- wire labels -->
+  <text class="wlbl" x="300" y="494">DATA &#183; ch 0 &#8594; DI</text>
+  <text class="wlbl" x="300" y="524">GND &#183; return - twist with the data wire</text>
+  <text class="wlbl" x="630" y="727">+5 V &#183; supply V+ &#8594; run</text>
+  <text class="wlbl" x="630" y="787">GND &#183; run &#8594; supply V&#8722;</text>
+  <text class="wlbl" x="548" y="328" text-anchor="end">DATA</text>
+  <path class="brk" d="M 592 326 H 618"/>
+  <text class="wlbl" x="622" y="330">GND</text>
+  <path class="brk" d="M 606 346 H 618"/>
+  <text class="wlbl" x="622" y="350">+5 V</text>
+
+  <!-- common ground callout -->
+  <path class="hl" d="M 588 530 m -22 0 a 22 22 0 1 0 44 0 a 22 22 0 1 0 -44 0"/>
+  <path class="lead" d="M 610 540 L 700 578"/>
+  <rect class="warn" x="700" y="546" width="440" height="124" rx="5"/>
+  <text class="warnt" x="716" y="572">GROUND IS MADE COMMON HERE</text>
+  <text class="warnp" x="716" y="594">The Fadecandy's &#8722; wire and the run's black lead meet, and</text>
+  <text class="warnp" x="716" y="611">from that point one black conductor carries on to supply V&#8722;.</text>
+  <text class="warnp" x="716" y="632">This is not optional. Without it the WS2812B has no reference</text>
+  <text class="warnp" x="716" y="649">for the data signal: the run stays dark, flickers, or glitches.</text>
+
+  <!-- ===================== POWER SUPPLY ===================== -->
+  <rect class="box" x="820" y="690" width="320" height="170" rx="5"/>
+  <text class="boxttl" x="838" y="718">5 V DC supply</text>
+  <text class="lbls" x="838" y="738">Set to 5.00 V - not higher. See the note at left.</text>
+  <text class="lbls" x="838" y="756">The only source of strip current in this drawing.</text>
+  <text class="lbls" x="838" y="774">Mains side: enclosed, earthed, fused.</text>
+  <text class="mono" x="838" y="800">64 px &#215; 60 mA = 3.84 A worst case</text>
+  <text class="mono" x="838" y="820">= 19.2 W for this one run at full white</text>
+  <text class="lbls" x="838" y="842">Warm ambient scenes draw far less than that.</text>
+  <rect x="812" y="726" width="18" height="14" fill="#FFFFFF" stroke="#CE2318" stroke-width="1.8"/>
+  <text class="mono" x="806" y="737" text-anchor="end">V+</text>
+  <rect x="812" y="786" width="18" height="14" fill="#FFFFFF" stroke="#111111" stroke-width="1.8"/>
+  <text class="mono" x="806" y="797" text-anchor="end">V&#8722;</text>
+
+  <!-- ===================== LOGIC LEVEL NOTE ===================== -->
+  <rect class="note" x="60" y="552" width="496" height="298" rx="5"/>
+  <text class="notet" x="76" y="576">Why this works - and why not to turn the supply above 5.0 V</text>
+
+  <text class="notep" x="76" y="600">The Fadecandy does not drive the strip straight from the micro-</text>
+  <text class="notep" x="76" y="617">controller. Every output passes through an SN74HCT245 buffer whose</text>
+  <text class="notep" x="76" y="634">rail is a regulated 5.0 V charge pump, then a 68 &#937; series resistor.</text>
+  <text class="notep" x="76" y="651">The edge that leaves the board is a 5 V edge, not a 3.3 V one.</text>
+
+  <text class="notet" x="76" y="680">The margin, worst case</text>
+  <text class="mono"  x="76" y="704">SN74HCT245 VOH min   3.84 V  (VCC 4.5 V, IOH &#8722;6 mA, over temp)</text>
+  <text class="mono"  x="76" y="722">                     4.40 V  (VCC 4.5 V, IOH &#8722;20 &#181;A, light load)</text>
+  <text class="mono"  x="76" y="746">WS2812B VIH min = 0.7 &#215; VDD of the strip</text>
+  <text class="mono"  x="76" y="764">  strip at 5.0 V     3.50 V  &#8594; 0.34 V margin worst case.  OK</text>
+  <text class="mono"  x="76" y="782">  strip at 5.5 V     3.85 V  &#8594; margin gone.               NOT OK</text>
+
+  <text class="notep" x="76" y="808">The WS2812B threshold is a fraction of ITS OWN supply, so turning the</text>
+  <text class="notep" x="76" y="825">trimpot up to "make up for voltage drop" raises the bar the Fadecandy</text>
+  <text class="notep" x="76" y="842">must clear. Set 5.00 V and fix drop with copper. See Diagram 4.</text>
+</svg>

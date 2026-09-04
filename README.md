@@ -6,6 +6,7 @@ It is built for everyday apartment lighting that approximates natural light - tu
 
 This repository is the Pi side: the animation engine, the power governor, and the control API.
 The Android app is a separate piece of work built against [docs/api.md](docs/api.md).
+Wiring, power distribution and safety are covered in full, with diagrams, in [docs/wiring.md](docs/wiring.md).
 
 ## What it is
 
@@ -112,6 +113,9 @@ The API behaves identically, which is how the Android app gets built before the 
 ---
 
 # Wiring
+
+This is the short version.
+[docs/wiring.md](docs/wiring.md) is the authoritative record, with colour diagrams of the zone topology, the power distribution and the multi-board layout.
 
 ## Data
 
