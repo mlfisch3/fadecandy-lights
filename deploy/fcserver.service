@@ -1,0 +1,39 @@
+# Stock Fadecandy server. It owns the USB link to the Fadecandy board and
+# listens for Open Pixel Control on localhost.
+#
+# This is upstream's binary, unmodified. Its temporal dithering and
+# interpolation are the reason this rig uses a Fadecandy at all, so the
+# controller talks to it over OPC rather than driving the strip itself.
+[Unit]
+Description=Fadecandy server (USB to LED, OPC on localhost)
+Documentation=https://github.com/scanlime/fadecandy
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/fcserver /etc/fclights/fcserver.json
+Restart=always
+RestartSec=2
+
+# fcserver needs raw USB access to the Fadecandy. The udev rule installed by
+# setup.sh gives the plugdev group access to the device, so this does not need
+# to run as root.
+User=fclights
+Group=fclights
+SupplementaryGroups=plugdev
+
+# The lights are the point of this machine; do not let anything else starve it.
+Nice=-5
+
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictNamespaces=true
+MemoryMax=128M
+
+[Install]
+WantedBy=multi-user.target

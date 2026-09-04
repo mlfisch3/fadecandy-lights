@@ -1,0 +1,44 @@
+# The control service: renders frames, enforces the power ceiling, and serves
+# the REST and WebSocket API the Android app talks to.
+[Unit]
+Description=fclights LED controller and control API
+Documentation=file:///opt/fclights/docs/api.md
+After=network-online.target fcserver.service
+Wants=network-online.target
+# Not Requires=: if fcserver is down the API should still answer, and the OPC
+# client reconnects on its own once fcserver comes back.
+After=avahi-daemon.service
+
+[Service]
+Type=simple
+ExecStart=/opt/fclights/venv/bin/fclights run --config /etc/fclights/fclights.json
+Restart=always
+RestartSec=3
+
+User=fclights
+Group=fclights
+
+# State is the one thing this service must be able to write: it is what brings
+# the last scene back after a power cut.
+StateDirectory=fclights
+ReadWritePaths=/var/lib/fclights
+
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictNamespaces=true
+LockPersonality=true
+MemoryMax=256M
+
+# Journal only; the SD card does not need a second copy of every log line.
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

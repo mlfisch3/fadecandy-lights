@@ -1,0 +1,8 @@
+# Runtime dependencies, pinned to compatible ranges.
+# All of these ship prebuilt wheels for linux aarch64 and armv7l, so `pip install`
+# on a Raspberry Pi 3 B+ does not trigger a source build.
+numpy>=1.24,<3
+fastapi>=0.110,<1
+uvicorn>=0.27,<1
+websockets>=12,<16
+pydantic>=2.6,<3
