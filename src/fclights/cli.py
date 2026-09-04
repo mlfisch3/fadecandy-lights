@@ -17,6 +17,7 @@ from fclights.config import (
     load_config,
 )
 from fclights.layout import LayoutError
+from fclights.power import PowerConfigError
 
 # In simulate mode the packaged defaults point at /etc and /var, which a
 # developer running this on a laptop cannot write. Fall back to the working
@@ -254,7 +255,7 @@ def main(argv: list[str] | None = None) -> int:
 
     try:
         return handler(args)
-    except (ConfigError, LayoutError) as exc:
+    except (ConfigError, LayoutError, PowerConfigError) as exc:
         print(f"fclights: {exc}", file=sys.stderr)
         return 2
     except KeyboardInterrupt:

@@ -34,7 +34,9 @@ class TestShipping512:
 
     def test_a_single_device_sends_on_the_broadcast_channel(self, layout):
         # Channel 0 is what fcserver's stock configuration expects.
-        assert layout.channel_slices() == [(0, slice(0, 512))]
+        assert [(m.opc_channel, m.frame_slice) for m in layout.channel_maps()] == [
+            (0, slice(0, 512))
+        ]
 
     def test_derived_arrays_have_one_entry_per_pixel(self, layout):
         for array in (layout.u, layout.segment, layout.segment_u):
@@ -205,7 +207,7 @@ class TestMultiDeviceGrowth:
 
     def test_spanning_boards_gives_each_its_own_channel_and_slice(self):
         layout = simple_layout(1152)
-        assert layout.channel_slices() == [
+        assert [(m.opc_channel, m.frame_slice) for m in layout.channel_maps()] == [
             (1, slice(0, 512)),
             (2, slice(512, 1024)),
             (3, slice(1024, 1152)),
@@ -213,7 +215,7 @@ class TestMultiDeviceGrowth:
 
     def test_a_single_board_still_uses_the_broadcast_channel(self):
         # fcserver's stock configuration expects channel 0 for one device.
-        assert simple_layout(512).channel_slices() == [(0, slice(0, 512))]
+        assert simple_layout(512).fcserver_map() == [[0, 0, 0, 512]]
 
     def test_boards_are_laid_out_continuously_in_space(self):
         layout = simple_layout(1024, pixels_per_metre=30.0)
@@ -229,7 +231,11 @@ class TestMultiDeviceGrowth:
             }
         )
         assert layout.pixel_count == 96
-        assert layout.channel_slices() == [(1, slice(0, 64)), (2, slice(64, 96))]
+        assert [(m.opc_channel, m.frame_slice) for m in layout.channel_maps()] == [
+            (1, slice(0, 64)),
+            (2, slice(64, 96)),
+        ]
+        assert layout.fcserver_map() == [[1, 0, 0, 64], [2, 0, 0, 32]]
 
     def test_two_devices_may_not_share_a_channel(self):
         with pytest.raises(LayoutError, match="own opc_channel"):

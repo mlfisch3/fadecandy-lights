@@ -203,11 +203,23 @@ fclights check --config /etc/fclights/fclights.json
 ```
 
 ```
-supply ceiling  8.00 A at 5 V
+layout          living room
+devices         1
+pixels          512
+outputs         8
+frame rate      60 fps
+API             http://0.0.0.0:7891
+OPC sink        127.0.0.1:7890
+
+fcserver map    [0, 0, 0, 512]
+
+supply ceiling  24.00 A at 5 V
 idle draw       0.512 A (all pixels off)
 full white      31.23 A
-headroom        frames are clamped at about 26% of full white (40 W)
+headroom        frames are clamped at about 77% of full white (120 W)
 ```
+
+The `fcserver map` lines are the entries `/etc/fclights/fcserver.json` needs for this layout; see [How the layout lines up with fcserver's `map`](#how-the-layout-lines-up-with-fcservers-map).
 
 ### Precision, and why we dither
 

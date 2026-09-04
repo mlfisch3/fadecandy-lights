@@ -211,7 +211,7 @@ If you have a meter in line with the strip supply, compare the measured current 
 Expect the measurement to come in **below** the prediction, because fcserver applies gamma downstream and gamma only ever lowers a value.
 A measurement *above* the prediction means the current model is wrong for your strip; lower `power.limit_amps` and investigate before scaling up.
 
-**If `clamped` is false when you expected it:** your ceiling is above full-white draw for this pixel count, which for a short test strip is entirely plausible. Set `power.limit_amps` temporarily to something small like `0.5` and repeat.
+**If `clamped` is false when you expected it:** your ceiling is above full-white draw for this pixel count, which for a short test strip is entirely plausible. Set `power.limit_amps` temporarily to something small like `2.0` and repeat. It has to stay above the idle draw of the whole configured pixel count - 0.512 A for 512 pixels - or the service refuses to start and says so; `fclights check` prints that figure as `idle draw`.
 
 ---
 

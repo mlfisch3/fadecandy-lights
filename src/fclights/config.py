@@ -211,13 +211,20 @@ def load_config(path: str | Path | None) -> Config:
         raw = json.loads(path.read_text(encoding="utf-8"))
     except FileNotFoundError as exc:
         raise ConfigError(f"config file not found: {path}") from exc
+    except OSError as exc:
+        raise ConfigError(f"config file {path} cannot be read: {exc}") from exc
     except json.JSONDecodeError as exc:
         raise ConfigError(f"config file {path} is not valid JSON: {exc}") from exc
     return config_from_dict(raw)
 
 
 def apply_overrides(config: Config, **overrides: Any) -> Config:
-    """Apply non-None command line overrides onto a loaded config."""
+    """Apply non-None command line overrides onto a loaded config.
+
+    The result is revalidated, so a flag is held to the same rules as the file
+    it overrides: ``--fps 0`` has to fail the same way ``{"fps": 0}`` does,
+    with a message rather than a broken render loop.
+    """
     supplied = {k: v for k, v in overrides.items() if v is not None}
 
     power_keys = {"limit_amps", "ma_per_channel", "idle_ma_per_pixel", "gamma"}
@@ -241,4 +248,6 @@ def apply_overrides(config: Config, **overrides: Any) -> Config:
     if server_changes:
         config = replace(config, server=replace(config.server, **server_changes))
 
-    return replace(config, **supplied) if supplied else config
+    if supplied:
+        config = replace(config, **supplied)
+    return config_from_dict(config.to_dict())

@@ -168,10 +168,6 @@ class Layout:
             start = end
         return out
 
-    def channel_slices(self) -> list[tuple[int, slice]]:
-        """Return ``(opc_channel, slice)`` pairs covering the frame buffer."""
-        return [(m.opc_channel, m.frame_slice) for m in self.channel_maps()]
-
     def fcserver_map(self) -> list[list[int]]:
         """The ``devices[].map`` entries fcserver needs for this layout.
 
@@ -369,6 +365,8 @@ def load_layout(path: str | Path) -> Layout:
         raw = json.loads(path.read_text(encoding="utf-8"))
     except FileNotFoundError as exc:
         raise LayoutError(f"layout file not found: {path}") from exc
+    except OSError as exc:
+        raise LayoutError(f"layout file {path} cannot be read: {exc}") from exc
     except json.JSONDecodeError as exc:
         raise LayoutError(f"layout file {path} is not valid JSON: {exc}") from exc
     return build_layout(raw)

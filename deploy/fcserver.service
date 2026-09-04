@@ -31,7 +31,15 @@ ProtectHome=true
 PrivateTmp=true
 ProtectKernelTunables=true
 ProtectControlGroups=true
-RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+# AF_NETLINK is not optional here, however unused it looks. libusb's hotplug
+# support on Debian and Raspberry Pi OS is built against udev, so libusb_init
+# opens a udev netlink monitor. Without AF_NETLINK the seccomp filter fails that
+# socket() with EAFNOSUPPORT, libusb_init fails, fcserver exits, and Restart=always
+# turns it into a crash loop with the strip permanently dark. Do not trim it.
+# No PrivateDevices= for the same reason: it would hide /dev/bus/usb and the
+# Fadecandy with it. DevicePolicy stays at the default `auto`, which allows the
+# USB device without an explicit DeviceAllow=.
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX AF_NETLINK
 RestrictNamespaces=true
 MemoryMax=128M
 

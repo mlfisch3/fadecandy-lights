@@ -176,7 +176,7 @@ Build the UI from this. Do not hardcode the effect list; effects added on the Pi
       "outputs": [ { "index": 0, "count": 64, "name": "run 0", "reverse": false } ]
     }
   ],
-  "bounds": { "min": [0.0, 0.0, 0.0], "max": [8.5, 0.0, 0.0] }
+  "bounds": { "min": [0.0, 0.0, 0.0], "max": [17.0333, 0.0, 0.0] }
 }
 ```
 

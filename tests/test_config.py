@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from fclights.cli import build_parser, insert_default_command, resolve_config
+from fclights.cli import build_parser, insert_default_command, main, resolve_config
 from fclights.config import Config, ConfigError, apply_overrides, config_from_dict, load_config
 
 
@@ -134,3 +134,44 @@ class TestCli:
         for command in ("run", "check", "announce"):
             args = build_parser().parse_args([command, "--simulate", "--pixels", "64"])
             assert resolve_config(args).simulate_pixels == 64
+
+
+class TestConfigMistakesAreReportedNotThrown:
+    """A misconfiguration must exit cleanly with one readable line.
+
+    ``deploy/fclights.service`` sets ``Restart=always``, so anything that leaves
+    a traceback instead repeats it in the journal every three seconds forever.
+    """
+
+    def test_a_ceiling_below_the_idle_draw_is_refused_with_a_message(self, capsys):
+        # 512 pixels draw 0.512 A with every channel off, so 0.4 A can never
+        # be satisfied. Refusing is right; a traceback is not.
+        code = main(["check", "--simulate", "--pixels", "512", "--limit-amps", "0.4"])
+        captured = capsys.readouterr()
+
+        assert code == 2
+        assert captured.err.startswith("fclights: ")
+        assert "quiescent" in captured.err
+        assert "Traceback" not in captured.err
+
+    def test_a_flag_is_validated_like_the_file_it_overrides(self, capsys):
+        code = main(["check", "--simulate", "--pixels", "512", "--fps", "0"])
+        captured = capsys.readouterr()
+
+        assert code == 2
+        assert captured.err.startswith("fclights: ")
+        assert "fps" in captured.err
+
+    def test_an_unreadable_layout_path_is_reported_not_thrown(self, capsys, tmp_path):
+        # A directory where a file was expected: neither FileNotFoundError nor
+        # a JSON error, so it used to fall straight through as an OSError.
+        code = main(["check", "--layout", str(tmp_path), "--limit-amps", "24"])
+        captured = capsys.readouterr()
+
+        assert code == 2
+        assert captured.err.startswith("fclights: ")
+        assert "Traceback" not in captured.err
+
+    def test_a_usable_configuration_still_exits_zero(self, capsys):
+        assert main(["check", "--simulate", "--pixels", "512"]) == 0
+        assert "supply ceiling" in capsys.readouterr().out
