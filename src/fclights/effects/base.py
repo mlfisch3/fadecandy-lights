@@ -17,6 +17,7 @@ would spend the board's headroom on nothing.
 from __future__ import annotations
 
 import colorsys
+import math
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any, ClassVar, Literal
@@ -114,6 +115,12 @@ class ParamSpec:
         # hides client bugs, so reject it.
         if isinstance(value, bool) or not isinstance(value, (int, float)):
             raise ParamError(f"{self.name}: expected a number, got {value!r}")
+        # NaN and the infinities have to go before the range check, not after:
+        # every comparison against NaN is False, so it would pass any minimum
+        # and any maximum and then propagate through the frame into the power
+        # governor and the temporal dither's residual.
+        if not math.isfinite(value):
+            raise ParamError(f"{self.name}: expected a finite number, got {value!r}")
         number = round(value) if self.type == "int" else float(value)
         if self.minimum is not None and number < self.minimum:
             raise ParamError(f"{self.name}: {number} is below minimum {self.minimum}")

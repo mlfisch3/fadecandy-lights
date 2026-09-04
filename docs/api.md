@@ -370,6 +370,8 @@ The rest depend on the type:
 
 Booleans are not accepted where a number is expected: sending `true` for `speed` is a `400`, not `1.0`.
 
+Neither are the non-finite values JSON parsers accept as an extension: `NaN`, `Infinity` and `-Infinity` are a `400` for any numeric parameter, for `brightness`, and for a colour's components.
+
 ### v1 effects
 
 | `name` | `display_name` | Parameters |
@@ -382,6 +384,9 @@ Booleans are not accepted where a number is expected: sending `true` for `speed`
 | `rainbow` | Rainbow | `speed`, `cycles`, `saturation`, `axis` |
 | `twinkle` | Twinkle | `color`, `background`, `density`, `decay`, `color_jitter`, `seed` |
 | `fire` | Fire | `cooling`, `sparking`, `speed`, `hue`, `per_segment`, `seed` |
+
+`slowfade.hold` is the fraction of the cycle spent parked at **each** end, not the two ends combined, so its maximum is `0.5`: at `0.5` the two dwells already fill the cycle and the crossfade has no time left to run in.
+With the default `period` of 900 s and `hold` of 0.2, each end is held for 180 s and each crossfade takes 270 s.
 
 This table is documentation, not contract.
 `GET /api/effects` is the contract; fetch it rather than embedding this.

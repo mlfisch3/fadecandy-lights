@@ -34,7 +34,7 @@ if [[ -r /proc/device-tree/model ]]; then
     echo "    board:  ${MODEL}"
     case "${MODEL}" in
         *"Raspberry Pi 3"*) : ;;
-        *"Raspberry Pi"*)   warn "built and tested for a Pi 3 B+; ${MODEL} should work but is untested" ;;
+        *"Raspberry Pi"*)   warn "targeted at a Pi 3 B+; ${MODEL} is not what this was written for" ;;
     esac
 else
     warn "this does not look like a Raspberry Pi; continuing anyway"

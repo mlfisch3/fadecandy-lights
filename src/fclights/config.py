@@ -11,6 +11,7 @@ See ``config/fclights.example.json``.
 from __future__ import annotations
 
 import json
+import math
 from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Any
@@ -175,6 +176,15 @@ def config_from_dict(raw: dict[str, Any]) -> Config:
     except (TypeError, ValueError) as exc:
         raise ConfigError(f"config contains a badly typed value: {exc}") from exc
 
+    for key, number in (
+        ("fps", fps),
+        ("power.limit_amps", power.limit_amps),
+        ("power.ma_per_channel", power.ma_per_channel),
+        ("power.idle_ma_per_pixel", power.idle_ma_per_pixel),
+        ("power.gamma", power.gamma),
+    ):
+        if not math.isfinite(number):
+            raise ConfigError(f"{key} must be a finite number, got {number}")
     if not 1.0 <= fps <= 240.0:
         raise ConfigError(f"fps must be between 1 and 240, got {fps}")
     if power.limit_amps <= 0:

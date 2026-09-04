@@ -9,11 +9,13 @@ from __future__ import annotations
 
 import json
 
+import numpy as np
 import pytest
 from fastapi.testclient import TestClient
 
 from fclights import __version__, effects
 from fclights.api import create_app
+from fclights.opc import OPC_HEADER_BYTES
 from fclights.service import build_service
 
 
@@ -396,6 +398,64 @@ class TestWebSocket:
             ws.receive_json()
         # The dropped client must not stop the next command from succeeding.
         assert client.put("/api/brightness", json={"brightness": 0.5}).status_code == 200
+
+
+class TestNonFiniteValuesAreRefused:
+    """JSON parsers accept the bare `NaN` literal; the service must not.
+
+    A NaN parameter used to be stored, rendered, multiplied through the power
+    governor and folded into the temporal dither's residual, which is carried
+    across frames - so one request darkened the strip until a restart.
+    """
+
+    @staticmethod
+    def raw_put(client, url: str, body: str):
+        return client.put(url, content=body, headers={"content-type": "application/json"})
+
+    @pytest.mark.parametrize("literal", ["NaN", "Infinity", "-Infinity"])
+    def test_an_effect_parameter_is_a_400(self, client, literal):
+        response = self.raw_put(
+            client, "/api/effect", f'{{"effect": "breathe", "params": {{"speed": {literal}}}}}'
+        )
+        assert response.status_code == 400
+        assert set(response.json()) == {"error", "detail"}
+
+    @pytest.mark.parametrize("literal", ["NaN", "Infinity", "-Infinity"])
+    def test_an_int_parameter_is_a_400_not_a_500(self, client, literal):
+        response = self.raw_put(
+            client, "/api/effect", f'{{"effect": "twinkle", "params": {{"seed": {literal}}}}}'
+        )
+        assert response.status_code == 400
+
+    @pytest.mark.parametrize("literal", ["NaN", "Infinity", "-Infinity"])
+    def test_a_colour_component_is_a_400_not_a_500(self, client, literal):
+        response = self.raw_put(
+            client,
+            "/api/effect",
+            f'{{"effect": "solid", "params": {{"color": [{literal}, 0, 0]}}}}',
+        )
+        assert response.status_code == 400
+
+    @pytest.mark.parametrize("literal", ["NaN", "Infinity", "-Infinity"])
+    def test_brightness_is_refused_in_the_documented_shape(self, client, literal):
+        response = self.raw_put(client, "/api/brightness", f'{{"brightness": {literal}}}')
+        assert 400 <= response.status_code < 500
+        assert set(response.json()) == {"error", "detail"}
+
+    def test_a_refused_value_leaves_the_live_state_alone(self, client):
+        before = state_of(client.get("/api/state"))
+        self.raw_put(client, "/api/effect", '{"effect": "breathe", "params": {"speed": NaN}}')
+        assert state_of(client.get("/api/state")) == before
+
+    def test_the_strip_still_renders_after_a_refused_value(self, client):
+        self.raw_put(client, "/api/effect", '{"effect": "breathe", "params": {"speed": NaN}}')
+        client.put("/api/effect", json={"effect": "solid", "params": {"color": [255, 255, 255]}})
+        client.put("/api/brightness", json={"brightness": 1.0})
+
+        engine = client.service.engine
+        engine.render_frame(1 / 60)
+        assert np.isfinite(engine.frame).all()
+        assert max(engine.encode()[0][OPC_HEADER_BYTES:]) > 0
 
 
 class TestErrorShape:

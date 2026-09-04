@@ -8,6 +8,7 @@ anyone reaching for a phone.
 from __future__ import annotations
 
 import json
+import math
 
 import pytest
 
@@ -53,6 +54,12 @@ class TestMutation:
     def test_non_numeric_brightness_is_rejected(self, store):
         with pytest.raises(StateError, match="must be a number"):
             store.set_brightness("bright")
+
+    @pytest.mark.parametrize("bad", [float("nan"), float("inf"), float("-inf")])
+    def test_non_finite_brightness_is_rejected(self, store, bad):
+        with pytest.raises(StateError, match="finite"):
+            store.set_brightness(bad)
+        assert store.state.brightness == default_state().brightness
 
     def test_selecting_an_effect_fills_in_defaults(self, store):
         state = store.set_effect("rainbow", {"speed": 0.5})
@@ -328,6 +335,15 @@ HOSTILE_DOCUMENTS = [
     pytest.param({"scenes": [{"name": "x", "effect": "solid", "created_at": "soon"}]},
                  id="scene-timestamp-is-a-string"),
     pytest.param({"active_scene": {"id": "ghost"}}, id="active-scene-is-an-object"),
+    pytest.param({"brightness": float("nan")}, id="brightness-is-nan"),
+    pytest.param({"brightness": float("inf")}, id="brightness-is-inf"),
+    pytest.param({"revision": float("inf")}, id="revision-is-inf"),
+    pytest.param({"effect": "breathe", "params": {"speed": float("nan")}}, id="param-is-nan"),
+    pytest.param({"effect": "twinkle", "params": {"seed": float("inf")}}, id="int-param-is-inf"),
+    pytest.param(
+        {"scenes": [{"name": "x", "effect": "solid", "brightness": float("nan")}]},
+        id="scene-brightness-is-nan",
+    ),
     pytest.param({"power": {"on": True}}, id="power-is-an-object"),
     pytest.param({"scenes": [{"name": "x", "effect": "solid", "params": [1]}]},
                  id="scene-params-is-a-list"),
@@ -351,9 +367,13 @@ class TestHostileStateFilesNeverStopTheLightsComingUp:
 
         # Whatever it fell back to, it is a state the engine can render.
         assert isinstance(state.revision, int)
+        assert math.isfinite(state.brightness)
         assert 0.0 <= state.brightness <= 1.0
         assert effects.get(state.effect) is not None
         assert state.params == effects.get(state.effect).coerce_params(state.params)
+        assert all(
+            math.isfinite(v) for v in state.params.values() if isinstance(v, (int, float))
+        )
 
     def test_a_hand_edited_revision_falls_back_to_zero(self, tmp_path):
         path = tmp_path / "state.json"
@@ -363,6 +383,29 @@ class TestHostileStateFilesNeverStopTheLightsComingUp:
 
         assert state.revision == 0
         assert state.effect == "fire"
+
+    def test_a_persisted_scene_with_a_non_finite_value_is_dropped(self, tmp_path):
+        path = tmp_path / "state.json"
+        path.write_text(
+            json.dumps(
+                {
+                    "scenes": [
+                        {"id": "a", "name": "good", "effect": "solid", "params": {}},
+                        {
+                            "id": "b",
+                            "name": "poisoned",
+                            "effect": "breathe",
+                            "params": {"speed": float("nan")},
+                        },
+                    ]
+                }
+            ),
+            encoding="utf-8",
+        )
+
+        state = StateStore(path).load()
+
+        assert [scene.name for scene in state.scenes] == ["good"]
 
     def test_a_document_of_pure_garbage_still_boots(self, tmp_path):
         path = tmp_path / "state.json"

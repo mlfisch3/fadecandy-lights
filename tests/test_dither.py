@@ -152,3 +152,35 @@ def max_run(values: list[int]) -> int:
         run = run + 1 if current == previous else 1
         longest = max(longest, run)
     return longest
+
+
+class TestNonFiniteFramesCannotPoisonTheAccumulator:
+    """The residual is carried between frames, so one bad frame is forever.
+
+    Nothing upstream should produce a NaN any more, but the dither is the last
+    gate before eight bits and is load-bearing for this installation's main use
+    case; it has to survive one anyway rather than go black until a restart.
+    """
+
+    @pytest.mark.parametrize(
+        ("value", "expected"),
+        [(float("nan"), 0), (float("inf"), 255), (float("-inf"), 0)],
+    )
+    def test_a_non_finite_frame_is_blacked_out_or_clamped_not_propagated(self, value, expected):
+        dither = TemporalDither((1, 3))
+        assert stream(dither, value, 1)[0] == expected
+
+    @pytest.mark.parametrize("value", [float("nan"), float("inf"), float("-inf")])
+    def test_later_frames_still_carry_their_full_precision(self, value):
+        dither = TemporalDither((1, 3))
+        dither.quantize(np.full((1, 3), value, dtype=np.float32))
+
+        # 127.5 can only be delivered by alternating two codes, which is exactly
+        # what a poisoned residual can no longer do.
+        emitted = stream(dither, 127.5 / 255.0, 1000)
+        assert np.mean(emitted) == pytest.approx(127.5, abs=0.02)
+        assert set(emitted) == {127, 128}
+
+    def test_plain_quantisation_is_defended_too(self):
+        frame = np.array([[float("nan"), float("inf"), float("-inf")]], dtype=np.float32)
+        np.testing.assert_array_equal(quantize_plain(frame), [[0, 255, 0]])

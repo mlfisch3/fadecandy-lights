@@ -172,6 +172,35 @@ class TestConfigMistakesAreReportedNotThrown:
         assert captured.err.startswith("fclights: ")
         assert "Traceback" not in captured.err
 
+    @pytest.mark.parametrize("literal", ["NaN", "Infinity", "-Infinity"])
+    @pytest.mark.parametrize("key", ["fps", "limit_amps"])
+    def test_a_non_finite_config_value_is_refused_with_a_message(
+        self, capsys, tmp_path, key, literal
+    ):
+        # json.loads accepts these as an extension, and a NaN ceiling passes
+        # every `<= 0` check while turning the power clamp into a NaN multiply.
+        body = (
+            f'{{"fps": {literal}}}'
+            if key == "fps"
+            else f'{{"power": {{"limit_amps": {literal}}}}}'
+        )
+        path = tmp_path / "c.json"
+        path.write_text(body)
+
+        code = main(["check", "-c", str(path), "--simulate", "--pixels", "512"])
+        captured = capsys.readouterr()
+
+        assert code == 2
+        assert captured.err.startswith("fclights: ")
+        assert "finite" in captured.err
+
+    def test_a_non_finite_flag_is_refused_too(self, capsys):
+        code = main(["check", "--simulate", "--pixels", "512", "--limit-amps", "nan"])
+        captured = capsys.readouterr()
+
+        assert code == 2
+        assert "finite" in captured.err
+
     def test_a_usable_configuration_still_exits_zero(self, capsys):
         assert main(["check", "--simulate", "--pixels", "512"]) == 0
         assert "supply ceiling" in capsys.readouterr().out

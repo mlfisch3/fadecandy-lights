@@ -106,7 +106,7 @@ class TemporalDither:
 
     def quantize(self, pixels: np.ndarray) -> np.ndarray:
         """Convert a float 0..1 buffer to uint8, carrying the residual forward."""
-        target = np.clip(pixels, 0.0, 1.0, dtype=np.float32) * 255.0
+        target = _to_codes(pixels)
         biased = target + self._error
         out = np.rint(biased)
         np.clip(out, 0.0, 255.0, out=out)
@@ -123,7 +123,24 @@ class TemporalDither:
 
 def quantize_plain(pixels: np.ndarray) -> np.ndarray:
     """Round a float 0..1 buffer to uint8 with no dithering."""
-    return np.rint(np.clip(pixels, 0.0, 1.0) * 255.0).astype(np.uint8)
+    return np.rint(_to_codes(pixels)).astype(np.uint8)
+
+
+def _to_codes(pixels: np.ndarray) -> np.ndarray:
+    """A float 0..1 buffer as float32 0..255, with non-finite values blacked out.
+
+    Nothing upstream should ever hand us a NaN - the parameter validators reject
+    non-finite input - but this is the last gate before eight bits, and the
+    dither's residual is carried across frames. One NaN reaching it would make
+    every later frame NaN too and take the installation dark until the service
+    restarted, so the invariant is enforced here rather than assumed.
+    """
+    codes = np.nan_to_num(pixels, nan=0.0, posinf=1.0, neginf=0.0).astype(
+        np.float32, copy=False
+    )
+    np.clip(codes, 0.0, 1.0, out=codes)
+    codes *= 255.0
+    return codes
 
 
 class FrameSink(Protocol):

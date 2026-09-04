@@ -169,6 +169,18 @@ class TestConfiguration:
         with pytest.raises(PowerConfigError, match="quiescent"):
             PowerGovernor(limit_amps=0.4, pixel_count=512)
 
+    @pytest.mark.parametrize("value", [float("nan"), float("inf"), float("-inf")])
+    def test_a_non_finite_ceiling_is_rejected(self, value):
+        # A NaN ceiling compares False against every frame, so the clamp would
+        # fire on every frame and scale by NaN - worse than having no governor.
+        with pytest.raises(PowerConfigError, match="finite"):
+            PowerGovernor(limit_amps=value, pixel_count=512)
+
+    @pytest.mark.parametrize("field", ["ma_per_channel", "idle_ma_per_pixel", "gamma"])
+    def test_a_non_finite_current_model_is_rejected(self, field):
+        with pytest.raises(PowerConfigError, match="finite"):
+            PowerGovernor(limit_amps=10.0, pixel_count=10, **{field: float("nan")})
+
     def test_zero_gamma_is_rejected(self):
         with pytest.raises(PowerConfigError):
             PowerGovernor(limit_amps=10.0, pixel_count=10, gamma=0.0)

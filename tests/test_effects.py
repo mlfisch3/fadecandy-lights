@@ -198,6 +198,48 @@ class TestParameterCoercion:
         assert coerced["color_a"] == effects.get("gradient").defaults()["color_a"]
 
 
+NON_FINITE = [
+    pytest.param(float("nan"), id="nan"),
+    pytest.param(float("inf"), id="+inf"),
+    pytest.param(float("-inf"), id="-inf"),
+]
+
+
+class TestNonFiniteNumbersAreRefused:
+    """NaN passes every range check, because every comparison against it is False.
+
+    Left alone it reaches the frame, the power governor's scale and the temporal
+    dither's residual, which is carried across frames - so one bad value takes
+    the installation dark until the service is restarted.
+    """
+
+    @pytest.mark.parametrize("value", NON_FINITE)
+    def test_a_float_parameter_refuses_it(self, value):
+        with pytest.raises(ParamError, match="finite"):
+            effects.get("breathe").coerce_params({"speed": value})
+
+    @pytest.mark.parametrize("value", NON_FINITE)
+    def test_an_int_parameter_refuses_it(self, value):
+        # round(nan) raises ValueError and round(inf) OverflowError, neither of
+        # which the API's handlers catch, so both used to surface as a 500.
+        with pytest.raises(ParamError, match="finite"):
+            effects.get("twinkle").coerce_params({"seed": value})
+
+    @pytest.mark.parametrize("value", NON_FINITE)
+    def test_a_colour_component_refuses_it(self, value):
+        with pytest.raises(ParamError, match="finite"):
+            effects.get("solid").coerce_params({"color": [value, 0, 0]})
+
+    @pytest.mark.parametrize("value", NON_FINITE)
+    def test_a_kelvin_colour_refuses_it(self, value):
+        with pytest.raises(ParamError):
+            effects.get("solid").coerce_params({"color": {"kelvin": value}})
+
+    def test_a_finite_value_at_the_boundary_still_passes(self):
+        params = effects.get("breathe").coerce_params({"speed": 0.0})
+        assert params["speed"] == 0.0
+
+
 class TestSpecificBehaviour:
     def test_solid_defaults_to_a_warm_white(self, small_layout):
         # This is apartment lighting, not a display piece; out of the box it
@@ -277,6 +319,44 @@ class TestSpecificBehaviour:
         assert effect._mix_at(4.0) == 0.0, "should still be parked at the near end"
         assert effect._mix_at(50.0) == pytest.approx(1.0)
         assert effect._mix_at(54.0) == pytest.approx(1.0), "should be parked at the far end"
+
+    def test_slowfade_dwell_is_per_end_not_shared_between_them(self, small_layout):
+        # The published description says "at each end", and the Android app
+        # renders it verbatim as the slider's help text, so the light has to
+        # spend `hold` of the cycle at end A and another `hold` at end B.
+        cls = effects.get("slowfade")
+        period, hold = 100.0, 0.2
+        effect = cls(
+            small_layout,
+            cls.coerce_params({"period": period, "hold": hold, "easing": "linear"}),
+        )
+        mix = np.array([effect._mix_at(t) for t in np.arange(0.0, period, 0.01)])
+
+        assert (mix == 0.0).mean() == pytest.approx(hold, abs=0.005)
+        assert (mix == 1.0).mean() == pytest.approx(hold, abs=0.005)
+        # Whatever is not dwell is travel, split evenly between the two legs.
+        assert ((mix > 0.0) & (mix < 1.0)).mean() == pytest.approx(1 - 2 * hold, abs=0.005)
+
+    def test_slowfade_dwell_stops_at_a_half(self, small_layout):
+        cls = effects.get("slowfade")
+        spec = next(p for p in cls.params if p.name == "hold")
+        assert spec.maximum == 0.5, "two ends of half a cycle each already fill the cycle"
+        with pytest.raises(ParamError, match="above maximum"):
+            cls.coerce_params({"hold": 0.6})
+
+    def test_slowfade_at_maximum_dwell_degrades_to_a_clean_switch(self, small_layout):
+        # hold=0.5 leaves zero travel; it must not divide by zero or render NaN.
+        cls = effects.get("slowfade")
+        effect = cls(small_layout, cls.coerce_params({"period": 100.0, "hold": 0.5}))
+        mix = np.array([effect._mix_at(t) for t in np.arange(0.0, 100.0, 0.01)])
+
+        assert np.isfinite(mix).all()
+        assert set(np.unique(mix)) <= {0.0, 1.0}
+        assert (mix == 0.0).mean() == pytest.approx(0.5, abs=0.005)
+
+        buffer = np.zeros((small_layout.pixel_count, 3), dtype=np.float32)
+        effect.render(buffer, 0.0, 1 / 60)
+        assert np.isfinite(buffer).all()
 
     def test_slowfade_with_no_dwell_leaves_each_end_immediately(self, small_layout):
         cls = effects.get("slowfade")

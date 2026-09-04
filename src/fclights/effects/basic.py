@@ -496,12 +496,13 @@ class SlowFade(Effect):
             type="float",
             default=0.2,
             minimum=0.0,
-            maximum=0.8,
+            maximum=0.5,
             step=0.05,
             label="Dwell",
             description=(
                 "Fraction of the cycle spent sitting at each end before moving "
-                "again. 0 fades continuously."
+                "again. 0 fades continuously; 0.5 is the maximum, because two "
+                "ends of half a cycle each already fill the cycle."
             ),
         ),
         ParamSpec(
@@ -527,10 +528,16 @@ class SlowFade(Effect):
         ramp = phase * 2.0 if phase < 0.5 else (1.0 - phase) * 2.0
 
         if self._hold > 0.0:
-            # Spend `hold` of the cycle parked at each end, and compress the
-            # travel into what is left.
-            travel = 1.0 - self._hold
-            ramp = float(np.clip((ramp - self._hold / 2.0) / travel, 0.0, 1.0))
+            # `hold` is the fraction of the cycle parked at *each* end, so the
+            # two dwells cost 2 * hold between them and the travel is compressed
+            # into what is left.
+            travel = 1.0 - 2.0 * self._hold
+            if travel <= 0.0:
+                # hold == 0.5: the two dwells fill the cycle exactly and there
+                # is no travel left to spread the crossfade over.
+                ramp = 0.0 if ramp < self._hold else 1.0
+            else:
+                ramp = float(np.clip((ramp - self._hold) / travel, 0.0, 1.0))
 
         if self._smooth:
             # Smoothstep, so the fade eases out of one end and into the other

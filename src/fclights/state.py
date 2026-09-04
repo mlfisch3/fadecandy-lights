@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import json
 import logging
+import math
 import os
 import time
 import uuid
@@ -108,14 +109,17 @@ class State:
 
 
 def _clamp_unit(value: float) -> float:
-    return float(min(1.0, max(0.0, value)))
+    number = float(value)
+    if not math.isfinite(number):
+        raise StateError(f"expected a finite number, got {value!r}")
+    return min(1.0, max(0.0, number))
 
 
 def _int_or(value: Any, default: int) -> int:
     """Coerce a persisted integer, falling back rather than raising."""
     try:
         return int(value)
-    except (TypeError, ValueError):
+    except (TypeError, ValueError, OverflowError):
         return default
 
 
@@ -284,6 +288,8 @@ class StateStore:
             value = float(brightness)
         except (TypeError, ValueError) as exc:
             raise StateError(f"brightness must be a number, got {brightness!r}") from exc
+        if not math.isfinite(value):
+            raise StateError(f"brightness must be a finite number, got {brightness!r}")
         if not 0.0 <= value <= 1.0:
             raise StateError(f"brightness must be between 0 and 1, got {value}")
         return self._commit(replace(self._state, brightness=value))

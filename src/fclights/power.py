@@ -26,6 +26,7 @@ under-predicts, so the default stays conservative.
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 
 import numpy as np
@@ -113,6 +114,13 @@ class PowerGovernor:
         idle_ma_per_pixel: float = DEFAULT_IDLE_MA_PER_PIXEL,
         gamma: float = 1.0,
     ) -> None:
+        if not all(
+            math.isfinite(value)
+            for value in (limit_amps, ma_per_channel, idle_ma_per_pixel, gamma)
+        ):
+            # A NaN ceiling would compare False against every frame and turn the
+            # hard clamp into a NaN multiply, which is worse than no governor.
+            raise PowerConfigError("power figures must be finite numbers")
         if limit_amps <= 0:
             raise PowerConfigError(f"limit_amps must be positive, got {limit_amps}")
         if pixel_count < 0:

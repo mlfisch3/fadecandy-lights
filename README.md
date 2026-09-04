@@ -53,11 +53,11 @@ Growing means adding entries to `layout.json` and to fcserver's `map`, not a red
 
 **Target OS: 64-bit Raspberry Pi OS (Bookworm), `arm64`.**
 That is the current recommended image for a Pi 3, and aarch64 has the broadest manylinux wheel coverage, so numpy, pydantic-core and uvicorn all install without compiling anything.
-32-bit `armhf` works too - the code is architecture-neutral and the dependencies publish armv7l wheels - but `arm64` is the tested and documented path.
+32-bit `armhf` should work too - the code is architecture-neutral and the dependencies publish armv7l wheels - but `arm64` is the targeted and documented path.
 The service needs Python 3.10 or newer.
 
 Nothing here needs a Pi 4, more than 1 GB of RAM, or a 64-bit-only dependency.
-At 512 pixels the render loop uses a low single-digit percentage of one core, which is what lets the board run this continuously for months and leaves headroom to grow past one Fadecandy later.
+At 512 pixels the render loop is expected to cost a low single-digit percentage of one core, which is what should let the board run this continuously for months and leaves headroom to grow past one Fadecandy later. That figure is reasoned from the frame arithmetic, not measured on a board - `GET /api/status` reports `render_ms` so you can check it on yours.
 
 ## Natural light, and its limits
 

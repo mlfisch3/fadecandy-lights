@@ -21,6 +21,7 @@ that would be correcting twice.
 
 from __future__ import annotations
 
+import math
 from typing import Any
 
 import numpy as np
@@ -193,6 +194,8 @@ def _parse_rgb_sequence(value: Any, field: str) -> list[int]:
     for component in value:
         if isinstance(component, bool) or not isinstance(component, (int, float)):
             raise ColorError(f"{field}: rgb components must be numbers 0..255")
+        if not math.isfinite(component):
+            raise ColorError(f"{field}: rgb components must be finite, got {component!r}")
         out.append(int(np.clip(round(component), 0, 255)))
     return out
 
