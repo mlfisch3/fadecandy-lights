@@ -8,7 +8,8 @@
   all eight channels of board A, the kitchen and hall take board B channels 0 to 3, and the bedroom
   takes all six used channels of board C, so that no board spans two supplies. The 60 A supply feeds
   the living room and the kitchen and hall together; the 30 A supply feeds the bedroom alone, and the
-  two supplies' V-minus terminals are bonded to each other with 8 AWG. Alongside: how to read
+  two supplies' V-minus terminals are bonded to each other with 8 AWG, so that the boards' thin
+  signal grounds are not the only tie between the two supply grounds. Alongside: how to read
   the serial numbers off the boards, how to read a map entry, and the power and cable-length
   constraints on the USB side.</desc>
 
@@ -127,10 +128,12 @@
   <path class="gnd" d="M 872 468 H 1096"/>
   <text class="tiny" x="1096" y="442" text-anchor="end">+5 V, local</text>
   <text class="tiny" x="880" y="458">GND, local - tied to that board&#39;s &#8722; pins</text>
-  <text class="warnt" x="66" y="508">Bond the two supplies&#8217; V&#8722; terminals to each other. Required, not optional.</text>
-  <text class="tiny" x="66" y="528">The Fadecandy ground wires are 24-26 AWG signal returns: the reference for the data</text>
-  <text class="tiny" x="66" y="542">line and nothing more. If a zone&#8217;s GND feeder ever works loose at its supply, this bond</text>
-  <text class="tiny" x="66" y="556">carries that zone&#8217;s return current - not the thin board grounds, and not the USB ground.</text>
+  <text class="warnt" x="66" y="502">Bond the two supplies&#8217; V&#8722; terminals to each other. Required, not optional.</text>
+  <text class="tiny" x="66" y="520">The boards and the hub already tie these two supply grounds together through 24-26 AWG</text>
+  <text class="tiny" x="66" y="534">signal returns. The bond stops that thin path being the only tie: in parallel it is about</text>
+  <text class="tiny" x="66" y="548">0.004 &#937; against roughly 0.7 &#937;, so over 99 % of any current between zones takes the bond.</text>
+  <text class="tiny" x="66" y="566">It does NOT cover a GND feeder coming loose at its supply - there it is in series with the</text>
+  <text class="tiny" x="66" y="580">thin grounds, not parallel. Ferrule and torque every GND termination. See &#167; 5.3.</text>
   <rect class="box" x="660" y="498" width="170" height="70" rx="5"/>
   <text class="wlbl" x="745" y="522" text-anchor="middle">sompom S-300-5</text>
   <text class="tiny" x="745" y="538" text-anchor="middle">60 A &#183; zones 1 and 2</text>
@@ -141,7 +144,7 @@
   <rect x="822" y="546" width="14" height="12" fill="#FFFFFF" stroke="#111111" stroke-width="1.6"/>
   <rect x="964" y="546" width="14" height="12" fill="#FFFFFF" stroke="#111111" stroke-width="1.6"/>
   <text class="tiny" x="900" y="540" text-anchor="middle">8 AWG V&#8722; to V&#8722;</text>
-  <text class="tiny" x="900" y="580" text-anchor="middle">never tie the V+ outputs</text>
+  <text class="tiny" x="900" y="582" text-anchor="middle">never tie the V+ outputs</text>
   <text class="warnt" x="66" y="596">Do not hang three boards off the Pi&#8217;s own USB ports.</text>
   <text class="tiny" x="66" y="614">The Pi 3B+ shares roughly 1.2 A across all four of its ports, and a</text>
   <text class="tiny" x="66" y="628">brown-out on one board can take the Pi down with it. A hub with its</text>
