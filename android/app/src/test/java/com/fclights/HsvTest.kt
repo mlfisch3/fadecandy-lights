@@ -3,6 +3,7 @@ package com.fclights
 import com.fclights.model.Hsv
 import com.fclights.model.HsvColor
 import com.fclights.model.HsvEdit
+import com.fclights.ui.HsvEditor
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertSame
 import org.junit.Test
@@ -122,5 +123,67 @@ class HsvEditTest {
     fun `the edit is left alone when the colour is the one it just produced`() {
         val edit = HsvEdit.of(listOf(6, 4, 12)).move(hue = 250.0)
         assertSame(edit, edit.sync(edit.rgb))
+    }
+}
+
+/**
+ * The colour control's own state, across the gestures a user actually makes.
+ *
+ * The sliders draw from this and a release sends from this, so the invariant
+ * under test is that both see one value: showing one colour while holding
+ * another means a release commits a colour nobody asked for.
+ */
+class HsvEditorTest {
+
+    @Test
+    fun `a colour changed elsewhere is what the next release sends`() {
+        // Drag the background to red, then recall a scene that sets it black.
+        val editor = HsvEditor(listOf(255, 255, 255))
+        editor.move(hue = 0.0, saturation = 1.0, value = 1.0)
+        assertEquals(listOf(255, 0, 0), editor.edit.rgb)
+
+        editor.show(listOf(0, 0, 0))
+
+        // Material3 skips onValueChange for a tap that moves nothing, but still
+        // fires onValueChangeFinished - which sends whatever this holds.
+        assertEquals(listOf(0, 0, 0), editor.edit.rgb)
+    }
+
+    @Test
+    fun `hue survives a drag through zero saturation`() {
+        val editor = HsvEditor(Hsv.toRgb255(200.0, 1.0))
+        editor.move(saturation = 0.0)
+        assertEquals(listOf(255, 255, 255), editor.edit.rgb)
+
+        // The controller echoes back the white it was sent.
+        editor.show(editor.edit.rgb)
+        assertEquals(200.0, editor.edit.hsv.hue, 0.5)
+
+        editor.move(saturation = 1.0)
+        assertEquals(Hsv.toRgb255(200.0, 1.0), editor.edit.rgb)
+    }
+
+    @Test
+    fun `hue and saturation survive a drag through zero shade`() {
+        val editor = HsvEditor(Hsv.toRgb255(120.0, 0.6))
+        editor.move(value = 0.0)
+        assertEquals(listOf(0, 0, 0), editor.edit.rgb)
+
+        editor.show(editor.edit.rgb)
+        assertEquals(120.0, editor.edit.hsv.hue, 0.5)
+        assertEquals(0.6, editor.edit.hsv.saturation, 0.01)
+
+        editor.move(value = 1.0)
+        assertEquals(Hsv.toRgb255(120.0, 0.6), editor.edit.rgb)
+    }
+
+    @Test
+    fun `a drag resumes from the colour that arrived, not the one it replaced`() {
+        val editor = HsvEditor(Hsv.toRgb255(200.0, 1.0))
+        editor.move(saturation = 0.0)
+        editor.show(Hsv.toRgb255(0.0, 1.0))
+
+        editor.move(value = 0.5)
+        assertEquals(Hsv.toRgb255(0.0, 1.0, 0.5), editor.edit.rgb)
     }
 }

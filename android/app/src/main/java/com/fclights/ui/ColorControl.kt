@@ -20,8 +20,10 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -167,21 +169,52 @@ private fun KelvinSlider(spec: ParamSpec, kelvin: Double, onChange: (ColorValue,
 }
 
 /**
+ * The state behind the hue, saturation and shade sliders.
+ *
+ * One [HsvEdit], read both to draw the sliders and to send on release, so the
+ * two cannot disagree. They can: the projection to RGB is lossy at the edges,
+ * which is why the control keeps its own axes rather than re-deriving them, but
+ * a colour can also arrive from outside it - a scene recall, another phone, a
+ * different effect - and a control holding a rendering copy and a sending copy
+ * will then show one colour and commit the other.
+ *
+ * [show] is how an outside colour is adopted, [move] is a drag. Both go through
+ * the same value, so what is on screen is always what a release sends.
+ */
+internal class HsvEditor(initial: List<Int>) {
+
+    var edit: HsvEdit by mutableStateOf(HsvEdit.of(initial))
+        private set
+
+    fun show(incoming: List<Int>): HsvEdit {
+        edit = edit.sync(incoming)
+        return edit
+    }
+
+    fun move(
+        hue: Double = edit.hsv.hue,
+        saturation: Double = edit.hsv.saturation,
+        value: Double = edit.hsv.value,
+    ): HsvEdit {
+        edit = edit.move(hue, saturation, value)
+        return edit
+    }
+}
+
+/**
  * Hue, saturation and shade.
  *
- * The sliders read from an [HsvEdit] rather than from the colour itself: the
+ * The sliders read from an [HsvEditor] rather than from the colour itself: the
  * round trip through RGB loses the hue of any grey and both axes of black, so
  * a control that re-derived its positions would throw away the colour the user
  * was in the middle of choosing the moment they dragged either axis to zero.
  */
 @Composable
 private fun ColourSliders(value: ColorValue, onChange: (ColorValue, Boolean) -> Unit) {
-    val editState = remember { mutableStateOf(HsvEdit.of(value.rgb)) }
-    val edit = editState.value.sync(value.rgb)
-    val hsv = edit.hsv
+    val editor = remember { HsvEditor(value.rgb) }
+    val hsv = editor.show(value.rgb).hsv
 
-    fun emit(next: HsvEdit, committed: Boolean) {
-        editState.value = next
+    fun send(next: HsvEdit, committed: Boolean) {
         onChange(ColorValue.ofRgb(next.rgb[0], next.rgb[1], next.rgb[2]), committed)
     }
 
@@ -200,24 +233,24 @@ private fun ColourSliders(value: ColorValue, onChange: (ColorValue, Boolean) -> 
         GradientSlider(
             colors = hueTrack,
             value = (hsv.hue / 360.0).toFloat(),
-            onValueChange = { emit(edit.move(hue = it.toDouble() * 360.0), false) },
-            onValueChangeFinished = { emit(editState.value, true) },
+            onValueChange = { send(editor.move(hue = it.toDouble() * 360.0), false) },
+            onValueChangeFinished = { send(editor.edit, true) },
         )
         Spacer(Modifier.height(4.dp))
         TrackLabel("Saturation")
         GradientSlider(
             colors = saturationTrack,
             value = hsv.saturation.toFloat(),
-            onValueChange = { emit(edit.move(saturation = it.toDouble()), false) },
-            onValueChangeFinished = { emit(editState.value, true) },
+            onValueChange = { send(editor.move(saturation = it.toDouble()), false) },
+            onValueChangeFinished = { send(editor.edit, true) },
         )
         Spacer(Modifier.height(4.dp))
         TrackLabel("Shade - how dark this colour is")
         GradientSlider(
             colors = shadeTrack,
             value = hsv.value.toFloat(),
-            onValueChange = { emit(edit.move(value = it.toDouble()), false) },
-            onValueChangeFinished = { emit(editState.value, true) },
+            onValueChange = { send(editor.move(value = it.toDouble()), false) },
+            onValueChangeFinished = { send(editor.edit, true) },
         )
     }
 }
