@@ -211,7 +211,8 @@ At 4.04 V the run is below the 4.5 V the WS2812B is characterised at.
 It goes dim and shifts pink, and because `VIH` is 0.7 × its own supply, the logic threshold moves with it.
 Making the first row work by brute force means 12 AWG to all 18 runs.
 That is a great deal of expensive copper spent solving a problem you can avoid by moving the supply.
-Note the third row: 16 AWG at 2 m spends 0.20 V of a 0.25 V budget on the branch alone, which leaves nothing for the feeder and the bus bars. That is why §6.2 rule 4 apportions the budget instead of applying it conductor by conductor.
+Note the third row: 16 AWG at 2 m spends 0.20 V of a 0.25 V budget on the branch alone, which leaves nothing for the feeder and the bus bars.
+That is why §6.2 rule 4 apportions the budget instead of applying it conductor by conductor.
 
 ### 5.2 Why long data runs are cheap, and where they stop being cheap
 
@@ -271,7 +272,8 @@ Those ties are 24-26 AWG signal returns: they are the reference for the data lin
 The heavy bond exists so that they are not.
 
 Fitted, the bond sits in *parallel* with that board-and-USB path between the two V− nodes, and current divides by resistance.
-Two metres of 8 AWG is about 0.004 Ω. Several metres of 26 AWG plus the USB cabling and the hub is on the order of 0.7 Ω.
+Two metres of 8 AWG is about 0.004 Ω.
+Several metres of 26 AWG plus the USB cabling and the hub is on the order of 0.7 Ω.
 That is a ratio near 175 : 1, so over 99 % of any circulating or equalising current between zones flows in the bond and next to none of it in the signal grounds.
 That is the whole reason to fit it.
 
@@ -457,7 +459,8 @@ At 30 % a run draws about 1.2 A, the drop falls with it, and 30 % of 64 WS2812Bs
 
 State the assumptions, not just the results.
 
-**Assumptions.** Each WS2812B contains three LED dies driven by internal constant-current sinks at a nominal 20 mA per colour channel, so a pixel at full-scale white draws about 60 mA. This is the standard figure used for sizing NeoPixel-class installations.
+**Assumptions.** Each WS2812B contains three LED dies driven by internal constant-current sinks at a nominal 20 mA per colour channel, so a pixel at full-scale white draws about 60 mA.
+This is the standard figure used for sizing NeoPixel-class installations.
 It is a ceiling: it assumes all three channels at 255 simultaneously, on every pixel, at once.
 
 ```
