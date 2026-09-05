@@ -1,11 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1180 880" width="1180" height="880"
      role="img" aria-labelledby="t1 d1">
   <title id="t1">Fadecandy system overview: one Raspberry Pi, one Fadecandy, eight LED runs, one 5 V supply</title>
-  <desc id="d1">The Raspberry Pi 3B+ connects to a Fadecandy board over USB. The Fadecandy's eight
-  outputs each drive the DI pad of one 64-pixel WS2812B run with a yellow DATA wire. The 5 V power
-  supply feeds a red +5 V bus and a black GND bus that power the runs directly. The Fadecandy's
-  ground ties to the same GND bus. Strip current flows only between the supply and the runs; it
-  never passes through the Fadecandy or the Pi.</desc>
+  <desc id="d1">The Raspberry Pi 3B+ connects to a Fadecandy board over USB. Each of the Fadecandy's
+  eight channels leaves the board as a pair: a yellow DATA wire to the DI pad of one 64-pixel WS2812B
+  run, and a black GND wire from that same channel's minus pin, twisted with it and landed on the GND
+  bus alongside that run's own ground lead. There are eight such pairs, not eight lone data wires. The
+  5 V power supply feeds a red +5 V bus and a black GND bus that power the runs directly. Strip current
+  flows only between the supply and the runs; it never passes through the Fadecandy or the Pi.</desc>
 
   <style>
     .bg      { fill:#F7F6F1; stroke:#C7C3B8; stroke-width:2; }
@@ -30,8 +31,9 @@
     .busg    { stroke:#111111; stroke-width:7; fill:none; stroke-linecap:round; }
     .busp    { stroke:#CE2318; stroke-width:7; fill:none; stroke-linecap:round; }
 
-    .bandc   { stroke:#4A3800; stroke-width:34; fill:none; stroke-linejoin:round; stroke-linecap:round; }
-    .band    { stroke:#F5B70A; stroke-width:26; fill:none; stroke-linejoin:round; stroke-linecap:round; }
+    .bandc   { stroke:#4A3800; stroke-width:20; fill:none; stroke-linejoin:round; stroke-linecap:round; }
+    .band    { stroke:#F5B70A; stroke-width:14; fill:none; stroke-linejoin:round; stroke-linecap:round; }
+    .bandg   { stroke:#111111; stroke-width:16; fill:none; stroke-linejoin:round; stroke-linecap:round; }
 
     .usbc    { stroke:#37342C; stroke-width:9; fill:none; stroke-linecap:round; }
     .usb     { stroke:#FFFFFF; stroke-width:4; fill:none; stroke-linecap:round; stroke-dasharray:6 5; }
@@ -146,22 +148,22 @@
     <path class="pwr" d="M 1024 350 V 393 A 7 7 0 0 1 1024 407 V 440"/>
     <!-- DATA leads, hop over both buses -->
     <g>
-      <path class="datc" d="M 224 350 V 393 A 7 7 0 0 1 224 407 V 433 A 7 7 0 0 1 224 447 V 507"/>
-      <path class="dat"  d="M 224 350 V 393 A 7 7 0 0 1 224 407 V 433 A 7 7 0 0 1 224 447 V 507"/>
-      <path class="datc" d="M 336 350 V 393 A 7 7 0 0 1 336 407 V 433 A 7 7 0 0 1 336 447 V 507"/>
-      <path class="dat"  d="M 336 350 V 393 A 7 7 0 0 1 336 407 V 433 A 7 7 0 0 1 336 447 V 507"/>
-      <path class="datc" d="M 448 350 V 393 A 7 7 0 0 1 448 407 V 433 A 7 7 0 0 1 448 447 V 507"/>
-      <path class="dat"  d="M 448 350 V 393 A 7 7 0 0 1 448 407 V 433 A 7 7 0 0 1 448 447 V 507"/>
-      <path class="datc" d="M 560 350 V 393 A 7 7 0 0 1 560 407 V 433 A 7 7 0 0 1 560 447 V 507"/>
-      <path class="dat"  d="M 560 350 V 393 A 7 7 0 0 1 560 407 V 433 A 7 7 0 0 1 560 447 V 507"/>
-      <path class="datc" d="M 672 350 V 393 A 7 7 0 0 1 672 407 V 433 A 7 7 0 0 1 672 447 V 507"/>
-      <path class="dat"  d="M 672 350 V 393 A 7 7 0 0 1 672 407 V 433 A 7 7 0 0 1 672 447 V 507"/>
-      <path class="datc" d="M 784 350 V 393 A 7 7 0 0 1 784 407 V 433 A 7 7 0 0 1 784 447 V 507"/>
-      <path class="dat"  d="M 784 350 V 393 A 7 7 0 0 1 784 407 V 433 A 7 7 0 0 1 784 447 V 507"/>
-      <path class="datc" d="M 896 350 V 393 A 7 7 0 0 1 896 407 V 433 A 7 7 0 0 1 896 447 V 507"/>
-      <path class="dat"  d="M 896 350 V 393 A 7 7 0 0 1 896 407 V 433 A 7 7 0 0 1 896 447 V 507"/>
-      <path class="datc" d="M 1008 350 V 393 A 7 7 0 0 1 1008 407 V 433 A 7 7 0 0 1 1008 447 V 507"/>
-      <path class="dat"  d="M 1008 350 V 393 A 7 7 0 0 1 1008 407 V 433 A 7 7 0 0 1 1008 447 V 507"/>
+      <path class="datc" d="M 224 350 V 393 A 7 7 0 0 1 224 407 V 433 A 7 7 0 0 1 224 447 V 496"/>
+      <path class="dat"  d="M 224 350 V 393 A 7 7 0 0 1 224 407 V 433 A 7 7 0 0 1 224 447 V 496"/>
+      <path class="datc" d="M 336 350 V 393 A 7 7 0 0 1 336 407 V 433 A 7 7 0 0 1 336 447 V 496"/>
+      <path class="dat"  d="M 336 350 V 393 A 7 7 0 0 1 336 407 V 433 A 7 7 0 0 1 336 447 V 496"/>
+      <path class="datc" d="M 448 350 V 393 A 7 7 0 0 1 448 407 V 433 A 7 7 0 0 1 448 447 V 496"/>
+      <path class="dat"  d="M 448 350 V 393 A 7 7 0 0 1 448 407 V 433 A 7 7 0 0 1 448 447 V 496"/>
+      <path class="datc" d="M 560 350 V 393 A 7 7 0 0 1 560 407 V 433 A 7 7 0 0 1 560 447 V 496"/>
+      <path class="dat"  d="M 560 350 V 393 A 7 7 0 0 1 560 407 V 433 A 7 7 0 0 1 560 447 V 496"/>
+      <path class="datc" d="M 672 350 V 393 A 7 7 0 0 1 672 407 V 433 A 7 7 0 0 1 672 447 V 496"/>
+      <path class="dat"  d="M 672 350 V 393 A 7 7 0 0 1 672 407 V 433 A 7 7 0 0 1 672 447 V 496"/>
+      <path class="datc" d="M 784 350 V 393 A 7 7 0 0 1 784 407 V 433 A 7 7 0 0 1 784 447 V 496"/>
+      <path class="dat"  d="M 784 350 V 393 A 7 7 0 0 1 784 407 V 433 A 7 7 0 0 1 784 447 V 496"/>
+      <path class="datc" d="M 896 350 V 393 A 7 7 0 0 1 896 407 V 433 A 7 7 0 0 1 896 447 V 496"/>
+      <path class="dat"  d="M 896 350 V 393 A 7 7 0 0 1 896 407 V 433 A 7 7 0 0 1 896 447 V 496"/>
+      <path class="datc" d="M 1008 350 V 393 A 7 7 0 0 1 1008 407 V 433 A 7 7 0 0 1 1008 447 V 496"/>
+      <path class="dat"  d="M 1008 350 V 393 A 7 7 0 0 1 1008 407 V 433 A 7 7 0 0 1 1008 447 V 496"/>
     </g>
   </g>
 
@@ -188,10 +190,26 @@
   <text class="wlbl" x="92" y="391">GND BUS</text>
   <text class="wlbl" x="92" y="431">+5 V BUS</text>
 
-  <!-- ===================== DATA BAND ===================== -->
-  <path class="bandc" d="M 1008 520 H 140 V 585"/>
-  <path class="band"  d="M 1008 520 H 140 V 585"/>
-  <text class="mono" x="560" y="524" text-anchor="middle">8 &#215; DATA  -  one yellow wire per Fadecandy channel, ch 0 … ch 7</text>
+  <!-- ================ DATA + GND BUNDLES ================ -->
+  <!-- yellow bundle: the eight DATA wires -->
+  <path class="bandc" d="M 1008 496 H 132 V 585"/>
+  <path class="band"  d="M 1008 496 H 132 V 585"/>
+  <!-- black bundle: the eight channel grounds, each twisted with its own DATA wire.
+       Each starts on the GND bus at the same point as that run's own black lead,
+       hops the +5 V bus, then hops the yellow bundle. -->
+  <g>
+    <path class="gnd" d="M 208 400 V 433 A 7 7 0 0 0 208 447 V 486 A 10 10 0 0 0 208 506 V 524"/>
+    <path class="gnd" d="M 320 400 V 433 A 7 7 0 0 0 320 447 V 486 A 10 10 0 0 0 320 506 V 524"/>
+    <path class="gnd" d="M 432 400 V 433 A 7 7 0 0 0 432 447 V 486 A 10 10 0 0 0 432 506 V 524"/>
+    <path class="gnd" d="M 544 400 V 433 A 7 7 0 0 0 544 447 V 486 A 10 10 0 0 0 544 506 V 524"/>
+    <path class="gnd" d="M 656 400 V 433 A 7 7 0 0 0 656 447 V 486 A 10 10 0 0 0 656 506 V 524"/>
+    <path class="gnd" d="M 768 400 V 433 A 7 7 0 0 0 768 447 V 486 A 10 10 0 0 0 768 506 V 524"/>
+    <path class="gnd" d="M 880 400 V 433 A 7 7 0 0 0 880 447 V 486 A 10 10 0 0 0 880 506 V 524"/>
+    <path class="gnd" d="M 992 400 V 433 A 7 7 0 0 0 992 447 V 486 A 10 10 0 0 0 992 506 V 524"/>
+  </g>
+  <path class="bandg" d="M 992 524 H 164 V 585"/>
+  <text class="mono" x="600" y="552" text-anchor="middle">8 &#215; DATA  -  one yellow wire per Fadecandy channel, ch 0 … ch 7</text>
+  <text class="mono" x="600" y="570" text-anchor="middle">8 &#215; GND  -  one black wire per channel, twisted with its DATA.  Mandatory.</text>
 
   <!-- ===================== FADECANDY ===================== -->
   <rect class="box" x="60" y="590" width="250" height="120" rx="5"/>
@@ -200,14 +218,9 @@
   <text class="lbls" x="76" y="650">5 V level-shifted data</text>
   <text class="lbls" x="76" y="666">USB bus-powered, ~tens of mA</text>
   <text class="mono" x="76" y="690">J2: 8 &#215; ( &#8722; = GND, + = DATA )</text>
-  <!-- header stub on top edge -->
-  <rect x="126" y="583" width="28" height="14" fill="#FFFFFF" stroke="#37342C" stroke-width="1.6"/>
-
-  <!-- Fadecandy ground riser to the GND bus -->
-  <path class="gnd" d="M 80 590 V 400"/>
-  <circle class="dot" cx="80" cy="400" r="4.4"/>
-  <circle class="dot" cx="80" cy="590" r="4.4"/>
-  <text class="wlbl" x="50" y="500" transform="rotate(-90 50 500)" text-anchor="middle">GND  (mandatory)</text>
+  <!-- header stubs on the top edge: the + row (DATA) and the - row (GND) -->
+  <rect x="118" y="583" width="28" height="14" fill="#FFFFFF" stroke="#37342C" stroke-width="1.6"/>
+  <rect x="152" y="583" width="28" height="14" fill="#FFFFFF" stroke="#37342C" stroke-width="1.6"/>
 
   <!-- ===================== RASPBERRY PI ===================== -->
   <rect class="box" x="60" y="752" width="250" height="98" rx="5"/>

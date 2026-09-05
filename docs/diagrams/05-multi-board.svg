@@ -4,8 +4,12 @@
   <desc id="d5">The Raspberry Pi 3B+ connects to a powered USB hub. Three Fadecandy boards hang off
   the hub, giving 24 output channels of which 18 are used. Each board is addressed in the fcserver
   configuration by its own USB serial number, and each board's channels map to a slice of the Open
-  Pixel Control pixel space. Alongside: how to read the serial numbers off the boards, how to read a
-  map entry, and the power and cable-length constraints on the USB side.</desc>
+  Pixel Control pixel space. The eighteen runs are grouped into three zones: the living room takes
+  all eight channels of board A, the kitchen and hall take board B channels 0 to 3, and the bedroom
+  takes board B channels 4 to 7 plus board C channels 0 and 1. The 60 A supply feeds the living room
+  and the kitchen and hall together; the 30 A supply feeds the bedroom alone. Alongside: how to read
+  the serial numbers off the boards, how to read a map entry, and the power and cable-length
+  constraints on the USB side.</desc>
 
   <style>
     .bg     { fill:#F7F6F1; stroke:#C7C3B8; stroke-width:2; }
@@ -43,7 +47,7 @@
 
   <rect class="pan" x="40" y="96" width="1100" height="484" rx="6"/>
   <text class="panttl" x="66" y="126">The whole chain, end to end</text>
-  <text class="lbls" x="66" y="145">Only USB leaves the Pi. Only DATA and its GND leave each Fadecandy. All strip current stays inside its own zone.</text>
+  <text class="lbls" x="66" y="145">Only USB leaves the Pi. Only DATA and its GND leave each Fadecandy. All strip current stays between a supply and the runs it feeds.</text>
   <rect class="box" x="66" y="280" width="150" height="100" rx="5"/>
   <text class="wlbl" x="141" y="308" text-anchor="middle">Raspberry Pi</text>
   <text class="wlbl" x="141" y="324" text-anchor="middle">3 Model B+</text>
@@ -81,8 +85,10 @@
   <text class="tiny" x="532" y="332">OPC px 512-1023</text>
   <rect class="code" x="530" y="338" width="228" height="20" rx="3"/>
   <text class="monos" x="536" y="352" xml:space="preserve">serial FFFFFFFFFFFF0021003B20&#8230;</text>
-  <path class="datc" d="M 772 322 H 856"/>
-  <path class="dat"  d="M 772 322 H 856"/>
+  <path class="datc" d="M 772 306 H 856"/>
+  <path class="dat"  d="M 772 306 H 856"/>
+  <path class="datc" d="M 772 340 C 812 340, 812 420, 856 420"/>
+  <path class="dat"  d="M 772 340 C 812 340, 812 420, 856 420"/>
   <path class="usbc" d="M 436 330 C 476 330, 476 430, 516 430"/>
   <path class="usb"  d="M 438 330 C 476 330, 476 430, 514 430"/>
   <rect class="fcb" x="516" y="384" width="256" height="92" rx="5"/>
@@ -91,29 +97,32 @@
   <text class="tiny" x="532" y="440">OPC px 1024-1151</text>
   <rect class="code" x="530" y="446" width="228" height="20" rx="3"/>
   <text class="monos" x="536" y="460" xml:space="preserve">serial FFFFFFFFFFFF0034005220&#8230;</text>
-  <path class="datc" d="M 772 430 H 856"/>
-  <path class="dat"  d="M 772 430 H 856"/>
+  <path class="datc" d="M 772 452 H 856"/>
+  <path class="dat"  d="M 772 452 H 856"/>
   <text class="tiny" x="476" y="180" text-anchor="middle">one hub port</text>
   <text class="tiny" x="476" y="194" text-anchor="middle">per board</text>
-  <text class="wlbl" x="814" y="180" text-anchor="middle">DATA</text>
-  <text class="tiny" x="814" y="194" text-anchor="middle">+ GND</text>
+  <text class="wlbl" x="814" y="176" text-anchor="middle">DATA</text>
+  <text class="tiny" x="814" y="189" text-anchor="middle">+ GND pairs</text>
   <rect class="box" x="856" y="168" width="256" height="92" rx="5"/>
   <text class="wlbl" x="872" y="192">Zone 1 &#183; living room</text>
-  <text class="tiny" x="872" y="210">8 runs, its own 5 V supply</text>
+  <text class="tiny" x="1096" y="192" text-anchor="end">A ch 0-7</text>
+  <text class="tiny" x="872" y="210">8 runs, 30.7 A &#183; on the S-300-5 (60 A)</text>
   <path class="pwr" d="M 872 230 H 1096"/>
   <path class="gnd" d="M 872 252 H 1096"/>
   <text class="tiny" x="1096" y="226" text-anchor="end">+5 V, local</text>
   <text class="tiny" x="880" y="242">GND, local - tied to that board&#39;s &#8722; pins</text>
   <rect class="box" x="856" y="276" width="256" height="92" rx="5"/>
-  <text class="wlbl" x="872" y="300">Zone 2 &#183; bedroom</text>
-  <text class="tiny" x="872" y="318">8 runs, its own 5 V supply</text>
+  <text class="wlbl" x="872" y="300">Zone 2 &#183; kitchen / hall</text>
+  <text class="tiny" x="1096" y="300" text-anchor="end">B ch 0-3</text>
+  <text class="tiny" x="872" y="318">4 runs, 15.4 A &#183; same S-300-5: 46.1 A, 77 %</text>
   <path class="pwr" d="M 872 338 H 1096"/>
   <path class="gnd" d="M 872 360 H 1096"/>
   <text class="tiny" x="1096" y="334" text-anchor="end">+5 V, local</text>
   <text class="tiny" x="880" y="350">GND, local - tied to that board&#39;s &#8722; pins</text>
   <rect class="box" x="856" y="384" width="256" height="92" rx="5"/>
-  <text class="wlbl" x="872" y="408">Zone 3 &#183; hall</text>
-  <text class="tiny" x="872" y="426">2 runs, its own 5 V supply</text>
+  <text class="wlbl" x="872" y="408">Zone 3 &#183; bedroom</text>
+  <text class="tiny" x="1096" y="408" text-anchor="end">B ch 4-7 + C ch 0-1</text>
+  <text class="tiny" x="872" y="426">6 runs, 23.0 A &#183; S-150-5 (30 A), 77 %</text>
   <path class="pwr" d="M 872 446 H 1096"/>
   <path class="gnd" d="M 872 468 H 1096"/>
   <text class="tiny" x="1096" y="442" text-anchor="end">+5 V, local</text>

@@ -133,7 +133,7 @@ Use the ground pin next to the channel you are using, run it alongside that chan
 
 ## 3. Diagram 1 - System overview
 
-![System overview: Pi to Fadecandy over USB, eight data channels out to eight runs, a 5 V supply feeding the runs directly, and the common ground tie](diagrams/01-system-overview.svg)
+![System overview: Pi to Fadecandy over USB, eight DATA + GND pairs out to eight runs, a 5 V supply feeding the runs directly, and the common ground tie](diagrams/01-system-overview.svg)
 
 The thing to take from this drawing is the current path.
 Strip current leaves the supply's V+, goes through the LEDs, and returns to the supply's V−.
@@ -188,6 +188,8 @@ Copper resistance at 20 °C, ohms per metre of one conductor:
 | 16 | 0.0132 | ~10 A |
 | 14 | 0.00829 | ~15 A |
 | 12 | 0.00521 | ~20 A |
+| 10 | 0.00328 | ~30 A |
+| 8 | 0.00206 | ~40 A |
 
 Those ampacity figures are typical free-air chassis-wiring values used for sizing equipment wiring, not a building-code table.
 Derate them when conductors are bundled, in conduit, or in a warm enclosure.
@@ -199,6 +201,7 @@ Budgeting 0.25 V of drop, which is 5 %:
 |---|---|---|---|---|
 | 6.0 m, 18 AWG | 0.251 Ω | 0.96 V | 4.04 V | fails |
 | 6.0 m, 12 AWG | 0.063 Ω | 0.24 V | 4.76 V | works |
+| 2.0 m, 16 AWG | 0.053 Ω | 0.20 V | 4.80 V | works |
 | 1.5 m, 16 AWG | 0.040 Ω | 0.15 V | 4.85 V | works |
 
 At 4.04 V the run is below the 4.5 V the WS2812B is characterised at.
@@ -260,18 +263,21 @@ Supply V+ → main fuse → +5 V bus bar → one branch fuse per run → that ru
 Supply V− → GND bus bar → that run's black lead.
 Data and its ground arrive separately, from the Fadecandy.
 
-The bus bars carry every run at once, so size them for the cluster total, not for one run: 14 AWG or heavier for a small cluster, 12 AWG for a larger one.
+The bus bars carry every run at once, so size them for the cluster total, not for one run.
+Multiply the runs on that block by 3.84 A and pick the first conductor in the §5.1 table whose ampacity is at or above that number.
+Worked from that table: up to 3 runs (11.5 A) is 14 AWG, up to 5 runs (19.2 A) is 12 AWG, up to 7 runs (26.9 A) is 10 AWG, and up to 10 runs (38.4 A) is 8 AWG.
+The eight-run starter cluster in §9.1 is 30.7 A, so it wants 8 AWG - 14 AWG would be carrying twice its rating.
 The GND bus is never thinner than the +5 V bus.
 All the current that goes out comes back.
 
 ### 6.2 Fusing
 
 A fuse protects the **conductor downstream of it**, not the LEDs.
-A 60 A supply will happily push 60 A into a shorted 18 AWG branch, and 18 AWG will not survive that.
+A 60 A supply will happily push 60 A into a shorted 16 AWG branch, and 16 AWG will not survive that.
 The fuse is what stops it becoming a fire.
 
-- **Branch fuse, one per run: 5 A.** A run tops out at 3.84 A, so 5 A holds it without nuisance blowing, and 5 A is comfortably inside 18 AWG's ~7 A.
-- **Main fuse, one per supply:** size it to the bus bar, not to the supply's rating. A 14 AWG bus bar wants a 15 A main; 12 AWG wants 20 A. If your cluster total exceeds the bus bar's ampacity, the bus bar is too thin, not the fuse too small.
+- **Branch fuse, one per run: 5 A.** A run tops out at 3.84 A, so 5 A holds it without nuisance blowing, and 5 A is comfortably inside 16 AWG's ~10 A.
+- **Main fuse, one per supply:** size it to the bus bar, not to the supply's rating. It has to sit **above** the cluster's worst-case current, or it opens in normal use, and **at or below** the bus bar's ampacity, or it stops protecting the bar. The eight-run cluster in §9.1 draws 30.7 A on an 8 AWG bus rated ~40 A, so 35 A. A 12 AWG bus (~20 A) wants 20 A and at most 5 runs; a 10 AWG bus (~30 A) wants 30 A and at most 7. If your cluster total exceeds the bus bar's ampacity, the bus bar is too thin, not the fuse too small.
 - **Never fuse above the ampacity of the thinnest conductor downstream of that fuse.**
 
 ### 6.3 Power injection into the far end
@@ -281,7 +287,8 @@ That number is stated for 60 LEDs/m strips, and these are 30 LEDs/m.
 Length on its own is not the variable that causes the problem; current is, and at half the LED density the same length carries half the current.
 
 A run fed from one end carries all of its current at the feed and none at the far tip, so the average current in the strip's own rail is half the total.
-That gives the half-length rule for a uniformly loaded strip:
+That halving does not survive on its own, because the current goes out along the +5 V rail and comes back along the GND rail, and both of them drop.
+The factor of two for the two rails cancels the factor of one half from the averaging - `2 × (I_total/2) × r_rail × L = I_total × r_rail × L` - which gives the half-length rule for a uniformly loaded strip:
 
 ```
 V_tip = I_total × r_rail × L        where r_rail = Ω/m of ONE rail inside the strip
@@ -298,8 +305,10 @@ Your run sits at 56 % of that threshold, so roughly 1.8× margin against it.
 Put another way, a 2.11 m run at 30 LEDs/m produces the same tip drop as about a 1.5 m run of 60 LEDs/m strip, not a 2.11 m one.
 Crossing 2 m in length is not, by itself, the thing that matters.
 
-**So: a single 64-pixel run at 30 LEDs/m does not need far-end injection.**
-That said, 1.8× is a real margin but not a wide one, so the honest answer is that it is comfortable rather than clear-cut, and two things decide it.
+**So: at the brightness you will actually run it, a single 64-pixel run at 30 LEDs/m does not need far-end injection.**
+At full white that conclusion is conditional, not automatic, and what it turns on is `r_rail`.
+From a 5.0 V feed, the tip sits at `5.0 − 8.10 × r_rail`, so it crosses below the 4.5 V floor §5.1 uses once `r_rail` exceeds about 0.062 Ω/m - a middling strip, not a bad one.
+1.8× is a real margin but not a wide one, so the honest answer at full white is that it is comfortable rather than clear-cut, and two things decide it.
 
 **Deciding factor 1: the rail resistance of your strips.**
 Substituting your numbers, `V_tip = 8.10 × r_rail`:
@@ -448,10 +457,10 @@ It is a complete, working system, and it is also the first cluster of the full b
 | Pixels | 512 |
 | Worst-case current | 30.7 A |
 | Supply | **sompom S-300-5 (60 A)** - 51 % loaded, comfortable |
-| Bus bars | 14 AWG, or 12 AWG if the block sits more than a metre from the supply |
-| Main fuse | 15 A on a 14 AWG bus |
+| Bus bars | 8 AWG, +5 V and GND alike - they carry the whole 30.7 A |
+| Main fuse | 35 A - above the 30.7 A load, inside 8 AWG's ~40 A |
 | Branch fuses | 5 A per run, 8 of them |
-| Branch wire | 18 AWG, under 2 m per run |
+| Branch wire | 16 AWG, under 2 m per run - 0.20 V of drop at 3.84 A |
 | Data | 8 × twisted DATA + GND pairs, 24-26 AWG, each under 5 m |
 | Host | Pi 3B+, its own 5 V 2.5 A supply, one USB cable to the board |
 
@@ -485,6 +494,7 @@ Data channels and power zones are independent.
 A Fadecandy's eight channels can feed runs on two different supplies, as long as each of those runs has its ground bonded back to that board.
 
 Second, living room and kitchen/hall share one supply, which only respects the clustering rule in §5.3 if those two areas are adjacent enough for the distribution block to sit within a metre or two of both.
+Size each zone's own bus bars from its own run count by the rule in §6.1 - 8 AWG for the eight-run living room, 12 AWG for the four-run kitchen/hall - and note that whatever conductor leaves the S-300-5 to feed both blocks carries all 46.1 A, so it needs 8 AWG and a 40 A main fuse of its own.
 If they are not, that shared supply is exactly the long-power-run mistake §5.1 warns about.
 
 Both supplies at 77 % is workable but not generous, and the shared-supply compromise above exists only because you have two supplies for three zones.
@@ -577,6 +587,7 @@ You need a multimeter.
 14. Drive that run at full white.
     Re-measure at the strip end.
     The difference from the supply terminals is your actual voltage drop in that branch.
+    A 16 AWG branch under 2 m should read about 0.20 V.
     If it exceeds about 0.25 V, the branch wire is too thin or too long - fix that before adding more runs.
 15. Look along the run.
     Even brightness end to end means no injection needed (§6.3).
