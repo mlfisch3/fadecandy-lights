@@ -2,10 +2,8 @@ package com.fclights
 
 import com.fclights.model.Hsv
 import com.fclights.model.HsvColor
-import com.fclights.model.HsvEdit
-import com.fclights.ui.HsvEditor
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertSame
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class HsvTest {
@@ -75,115 +73,95 @@ class HsvTest {
 }
 
 /**
- * The colour control's slider positions across a drag.
+ * The colour control's slider positions across the gestures a user makes.
  *
- * Each of these is a gesture the user can make with one finger: the colour goes
- * out to the controller and comes straight back, and what must survive is the
- * axes the user is not touching.
+ * Each test walks what the control does with one finger: [Hsv.axesFor] gives
+ * the positions drawn and sent, a drag replaces the remembered axes, and the
+ * colour goes out to the controller and comes straight back. What must survive
+ * is the axes the user is not touching; what must not survive is an edit the
+ * user has stopped making once the colour changes somewhere else.
  */
-class HsvEditTest {
+class ColourAxesTest {
+
+    private fun emitted(axes: HsvColor) = Hsv.toRgb255(axes.hue, axes.saturation, axes.value)
 
     @Test
     fun `hue survives a drag through zero saturation`() {
-        var edit = HsvEdit.of(Hsv.toRgb255(200.0, 1.0))
-        edit = edit.move(saturation = 0.0)
-        assertEquals(listOf(255, 255, 255), edit.rgb)
+        val blue = Hsv.toRgb255(200.0, 1.0)
+        var remembered = Hsv.axesFor(blue, Hsv.fromRgb255(blue))
+
+        remembered = remembered.copy(saturation = 0.0)
+        val white = emitted(remembered)
+        assertEquals(listOf(255, 255, 255), white)
 
         // The controller echoes back the white it was sent.
-        edit = edit.sync(edit.rgb)
-        assertEquals(200.0, edit.hsv.hue, 0.5)
+        val shown = Hsv.axesFor(white, remembered)
+        assertEquals(200.0, shown.hue, 0.5)
+        assertEquals(0.0, shown.saturation, 1e-9)
 
-        edit = edit.move(saturation = 1.0)
-        assertEquals(Hsv.toRgb255(200.0, 1.0), edit.rgb)
+        assertEquals(blue, emitted(shown.copy(saturation = 1.0)))
     }
 
     @Test
     fun `hue and saturation survive a drag through zero shade`() {
-        var edit = HsvEdit.of(Hsv.toRgb255(120.0, 0.6))
-        edit = edit.move(value = 0.0)
-        assertEquals(listOf(0, 0, 0), edit.rgb)
+        val green = Hsv.toRgb255(120.0, 0.6)
+        var remembered = Hsv.axesFor(green, Hsv.fromRgb255(green))
 
-        edit = edit.sync(edit.rgb)
-        assertEquals(120.0, edit.hsv.hue, 0.5)
-        assertEquals(0.6, edit.hsv.saturation, 0.01)
+        remembered = remembered.copy(value = 0.0)
+        val black = emitted(remembered)
+        assertEquals(listOf(0, 0, 0), black)
 
-        edit = edit.move(value = 1.0)
-        assertEquals(Hsv.toRgb255(120.0, 0.6), edit.rgb)
+        val shown = Hsv.axesFor(black, remembered)
+        assertEquals(120.0, shown.hue, 0.5)
+        assertEquals(0.6, shown.saturation, 0.01)
+
+        assertEquals(green, emitted(shown.copy(value = 1.0)))
     }
 
     @Test
-    fun `a colour changed elsewhere is adopted`() {
-        val edit = HsvEdit.of(Hsv.toRgb255(200.0, 1.0)).move(saturation = 0.0)
-        val elsewhere = edit.sync(listOf(255, 0, 0))
-        assertEquals(0.0, elsewhere.hsv.hue, 0.5)
-        assertEquals(1.0, elsewhere.hsv.saturation, 0.01)
+    fun `a colour changed elsewhere wins over the axes a drag left behind`() {
+        // The user dragged to blue; a scene recall then sets the parameter red.
+        val remembered = HsvColor(200.0, 1.0, 1.0)
+        val shown = Hsv.axesFor(Hsv.toRgb255(0.0, 1.0), remembered)
+
+        assertEquals(0.0, shown.hue, 0.5)
+        assertEquals(1.0, shown.saturation, 0.01)
+        assertEquals(1.0, shown.value, 1e-9)
     }
 
     @Test
-    fun `the edit is left alone when the colour is the one it just produced`() {
-        val edit = HsvEdit.of(listOf(6, 4, 12)).move(hue = 250.0)
-        assertSame(edit, edit.sync(edit.rgb))
-    }
-}
+    fun `an external black is shown and sent as black, not as the colour it replaced`() {
+        // Round-2's failure: the sliders showed the new colour and a release
+        // committed the old one. What is drawn and what is sent are now one
+        // value, so a release that moves nothing cannot resurrect the red.
+        val remembered = HsvColor(0.0, 1.0, 1.0)
+        val shown = Hsv.axesFor(listOf(0, 0, 0), remembered)
 
-/**
- * The colour control's own state, across the gestures a user actually makes.
- *
- * The sliders draw from this and a release sends from this, so the invariant
- * under test is that both see one value: showing one colour while holding
- * another means a release commits a colour nobody asked for.
- */
-class HsvEditorTest {
-
-    @Test
-    fun `a colour changed elsewhere is what the next release sends`() {
-        // Drag the background to red, then recall a scene that sets it black.
-        val editor = HsvEditor(listOf(255, 255, 255))
-        editor.move(hue = 0.0, saturation = 1.0, value = 1.0)
-        assertEquals(listOf(255, 0, 0), editor.edit.rgb)
-
-        editor.show(listOf(0, 0, 0))
-
-        // Material3 skips onValueChange for a tap that moves nothing, but still
-        // fires onValueChangeFinished - which sends whatever this holds.
-        assertEquals(listOf(0, 0, 0), editor.edit.rgb)
+        assertEquals(0.0, shown.value, 1e-9)
+        assertEquals(listOf(0, 0, 0), emitted(shown))
     }
 
     @Test
-    fun `hue survives a drag through zero saturation`() {
-        val editor = HsvEditor(Hsv.toRgb255(200.0, 1.0))
-        editor.move(saturation = 0.0)
-        assertEquals(listOf(255, 255, 255), editor.edit.rgb)
-
-        // The controller echoes back the white it was sent.
-        editor.show(editor.edit.rgb)
-        assertEquals(200.0, editor.edit.hsv.hue, 0.5)
-
-        editor.move(saturation = 1.0)
-        assertEquals(Hsv.toRgb255(200.0, 1.0), editor.edit.rgb)
+    fun `what is drawn is the colour on the wire, whatever the axes remember`() {
+        listOf(
+            listOf(0, 0, 0),
+            listOf(6, 4, 12),
+            listOf(255, 255, 255),
+            listOf(128, 128, 128),
+            listOf(255, 170, 80),
+        ).forEach { rgb ->
+            listOf(HsvColor(0.0, 0.0, 0.0), HsvColor(200.0, 1.0, 1.0), HsvColor(35.0, 0.4, 0.2))
+                .forEach { remembered ->
+                    assertEquals("$rgb from $remembered", rgb, emitted(Hsv.axesFor(rgb, remembered)))
+                }
+        }
     }
 
     @Test
-    fun `hue and saturation survive a drag through zero shade`() {
-        val editor = HsvEditor(Hsv.toRgb255(120.0, 0.6))
-        editor.move(value = 0.0)
-        assertEquals(listOf(0, 0, 0), editor.edit.rgb)
-
-        editor.show(editor.edit.rgb)
-        assertEquals(120.0, editor.edit.hsv.hue, 0.5)
-        assertEquals(0.6, editor.edit.hsv.saturation, 0.01)
-
-        editor.move(value = 1.0)
-        assertEquals(Hsv.toRgb255(120.0, 0.6), editor.edit.rgb)
-    }
-
-    @Test
-    fun `a drag resumes from the colour that arrived, not the one it replaced`() {
-        val editor = HsvEditor(Hsv.toRgb255(200.0, 1.0))
-        editor.move(saturation = 0.0)
-        editor.show(Hsv.toRgb255(0.0, 1.0))
-
-        editor.move(value = 0.5)
-        assertEquals(Hsv.toRgb255(0.0, 1.0, 0.5), editor.edit.rgb)
+    fun `a remembered hue is only ever a resume point for an axis the colour lost`() {
+        val remembered = HsvColor(200.0, 1.0, 1.0)
+        val grey = Hsv.axesFor(listOf(128, 128, 128), remembered)
+        assertEquals(200.0, grey.hue, 0.5)
+        assertTrue("a grey has no saturation to resume", grey.saturation < 1e-9)
     }
 }

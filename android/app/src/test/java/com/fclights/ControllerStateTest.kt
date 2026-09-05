@@ -9,6 +9,9 @@ import com.fclights.model.WsMessage
 import com.fclights.model.applyState
 import com.fclights.model.decodeWsMessage
 import com.fclights.model.reduce
+import com.fclights.model.retirePending
+import com.fclights.model.retirePendingBrightness
+import kotlinx.serialization.json.JsonPrimitive
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertSame
@@ -115,5 +118,54 @@ class ControllerStateTest {
             effects = listOf(EffectSpec(name = "solid")),
         )
         assertEquals(null, start.activeEffect)
+    }
+}
+
+/**
+ * Which local overrides a finished send is entitled to drop.
+ *
+ * A control's value is held locally while it is being dragged, so a state push
+ * that is behind the finger does not yank it back. The send that confirms a
+ * value earns the right to drop it - and nothing more: a finger that moved on
+ * while the request was in flight has already put a newer value under that key.
+ */
+class RetirePendingTest {
+
+    private fun params(vararg pairs: Pair<String, Double>) =
+        pairs.associate { (name, value) -> name to JsonPrimitive(value) }
+
+    @Test
+    fun `a confirmed value is dropped`() {
+        assertEquals(
+            emptyMap<String, Any>(),
+            retirePending(params("color" to 1.0), params("color" to 1.0)),
+        )
+    }
+
+    @Test
+    fun `a value the finger moved on to outlives the reply to the older send`() {
+        // Release at A, then re-grab and drag towards B before A's reply lands.
+        val newer = params("color" to 2.0)
+        assertEquals(newer, retirePending(newer, params("color" to 1.0)))
+    }
+
+    @Test
+    fun `a failed send does not discard a drag that has moved on`() {
+        // Same subtraction runs on the error path, so the same rule has to hold.
+        val newer = params("speed" to 0.4)
+        assertEquals(newer, retirePending(newer, params("speed" to 0.2)))
+    }
+
+    @Test
+    fun `only the keys that were sent are considered`() {
+        val pending = params("color" to 1.0, "speed" to 0.2)
+        assertEquals(params("speed" to 0.2), retirePending(pending, params("color" to 1.0)))
+    }
+
+    @Test
+    fun `brightness follows the same rule`() {
+        assertEquals(null, retirePendingBrightness(0.4, 0.4))
+        assertEquals(0.7, retirePendingBrightness(0.7, 0.4))
+        assertEquals(null, retirePendingBrightness(null, 0.4))
     }
 }

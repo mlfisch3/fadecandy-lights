@@ -18,6 +18,8 @@ import com.fclights.model.LightState
 import com.fclights.model.Params
 import com.fclights.model.applyState
 import com.fclights.model.reduce
+import com.fclights.model.retirePending
+import com.fclights.model.retirePendingBrightness
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
@@ -235,20 +237,20 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         try {
             val state = api.patchParams(pending)
             adopt(state)
-            if (final) {
-                // Only drop the override once the controller has confirmed the
-                // value; dropping it earlier makes the control jump back to a
-                // state message that is still in flight.
-                _ui.value = _ui.value.copy(
-                    pendingParams = _ui.value.pendingParams - pending.keys
-                )
-            }
+            // Only drop the override once the controller has confirmed the
+            // value; dropping it earlier makes the control jump back to a
+            // state message that is still in flight.
+            if (final) retire(pending)
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            if (final) _ui.value = _ui.value.copy(pendingParams = emptyMap())
+            if (final) retire(pending)
             report(e)
         }
+    }
+
+    private fun retire(sent: Map<String, JsonElement>) {
+        _ui.value = _ui.value.copy(pendingParams = retirePending(_ui.value.pendingParams, sent))
     }
 
     private suspend fun sendBrightness(final: Boolean) {
@@ -256,13 +258,19 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         val value = _ui.value.pendingBrightness ?: return
         try {
             adopt(api.setBrightness(value))
-            if (final) _ui.value = _ui.value.copy(pendingBrightness = null)
+            if (final) retireBrightness(value)
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            if (final) _ui.value = _ui.value.copy(pendingBrightness = null)
+            if (final) retireBrightness(value)
             report(e)
         }
+    }
+
+    private fun retireBrightness(sent: Double) {
+        _ui.value = _ui.value.copy(
+            pendingBrightness = retirePendingBrightness(_ui.value.pendingBrightness, sent)
+        )
     }
 
     // -- plumbing -----------------------------------------------------------

@@ -1,5 +1,7 @@
 package com.fclights.model
 
+import kotlinx.serialization.json.JsonElement
+
 /**
  * Everything the app knows about the controller, and the pure reduction that
  * keeps it in step.
@@ -62,3 +64,24 @@ fun applyState(current: ControllerState, incoming: LightState): ControllerState 
     if (existing != null && incoming.revision < existing.revision) return current
     return current.copy(state = incoming)
 }
+
+/**
+ * Retire the overrides a finished send accounted for.
+ *
+ * While a control is being dragged its value is held locally, because a state
+ * push a few hundred milliseconds behind the finger would otherwise yank the
+ * slider back. The override is dropped when the controller confirms it - but
+ * only if it is still the value that was sent: a finger that has moved on while
+ * the request was in flight leaves a newer value under the same key, and
+ * dropping that one shows the controller's now-stale answer under the user's
+ * finger. Whether the send succeeded or failed makes no difference to which
+ * entries are its to retire.
+ */
+fun retirePending(
+    pending: Map<String, JsonElement>,
+    sent: Map<String, JsonElement>,
+): Map<String, JsonElement> = pending.filterNot { (name, value) -> sent[name] == value }
+
+/** [retirePending] for the single value behind the brightness slider. */
+fun retirePendingBrightness(pending: Double?, sent: Double): Double? =
+    if (pending == sent) null else pending

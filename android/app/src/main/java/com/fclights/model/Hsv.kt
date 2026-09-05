@@ -58,35 +58,26 @@ object Hsv {
         }
         return HsvColor((((hue % 360.0) + 360.0) % 360.0), delta / max, max)
     }
-}
 
-/**
- * What the colour sliders are showing, and the RGB it corresponds to.
- *
- * The projection to RGB is lossy at the edges: every hue collapses to the same
- * grey at zero saturation, and hue and saturation both vanish at zero value. So
- * the control cannot re-derive its slider positions from the round-tripped
- * colour on every frame - drag saturation to zero and the hue slider would snap
- * to red, taking the user's blue with it. This holds the axes the user is
- * actually manipulating and only re-reads them when the colour changed
- * somewhere else: another phone, a scene recall, a different effect.
- */
-data class HsvEdit(val hsv: HsvColor, val rgb: List<Int>) {
-
-    /** Adopt [incoming] unless it is the colour this edit itself produced. */
-    fun sync(incoming: List<Int>): HsvEdit = if (incoming == rgb) this else of(incoming)
-
-    /** Move one axis, keeping the others exactly where the user left them. */
-    fun move(
-        hue: Double = hsv.hue,
-        saturation: Double = hsv.saturation,
-        value: Double = hsv.value,
-    ): HsvEdit {
-        val next = HsvColor(hue, saturation, value)
-        return HsvEdit(next, Hsv.toRgb255(next.hue, next.saturation, next.value))
-    }
-
-    companion object {
-        fun of(rgb: List<Int>): HsvEdit = HsvEdit(Hsv.fromRgb255(rgb), rgb)
+    /**
+     * The slider positions for [rgb], recovering from [remembered] the axes RGB
+     * cannot carry.
+     *
+     * The projection is lossy at the edges: every hue collapses to the same grey
+     * at zero saturation, and hue and saturation both vanish at black. Reading
+     * the sliders straight back from the colour would therefore snap the hue to
+     * red the moment a drag reached either edge, taking the blue the user was
+     * choosing with it. So an axis the colour cannot express falls back to the
+     * one the user last set, while every axis the colour *can* express comes
+     * from the colour - which is what lets a scene recall or another phone win
+     * over an edit this control is no longer making.
+     */
+    fun axesFor(rgb: List<Int>, remembered: HsvColor): HsvColor {
+        val shown = fromRgb255(rgb)
+        return HsvColor(
+            hue = if (shown.value > 0.0 && shown.saturation > 0.0) shown.hue else remembered.hue,
+            saturation = if (shown.value > 0.0) shown.saturation else remembered.saturation,
+            value = shown.value,
+        )
     }
 }

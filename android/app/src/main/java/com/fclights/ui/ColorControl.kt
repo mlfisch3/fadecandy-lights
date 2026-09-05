@@ -34,7 +34,8 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import com.fclights.model.Blackbody
 import com.fclights.model.ColorValue
-import com.fclights.model.HsvEdit
+import com.fclights.model.Hsv
+import com.fclights.model.HsvColor
 import com.fclights.model.ParamSpec
 import com.fclights.model.Params
 import kotlin.math.roundToInt
@@ -169,53 +170,27 @@ private fun KelvinSlider(spec: ParamSpec, kelvin: Double, onChange: (ColorValue,
 }
 
 /**
- * The state behind the hue, saturation and shade sliders.
- *
- * One [HsvEdit], read both to draw the sliders and to send on release, so the
- * two cannot disagree. They can: the projection to RGB is lossy at the edges,
- * which is why the control keeps its own axes rather than re-deriving them, but
- * a colour can also arrive from outside it - a scene recall, another phone, a
- * different effect - and a control holding a rendering copy and a sending copy
- * will then show one colour and commit the other.
- *
- * [show] is how an outside colour is adopted, [move] is a drag. Both go through
- * the same value, so what is on screen is always what a release sends.
- */
-internal class HsvEditor(initial: List<Int>) {
-
-    var edit: HsvEdit by mutableStateOf(HsvEdit.of(initial))
-        private set
-
-    fun show(incoming: List<Int>): HsvEdit {
-        edit = edit.sync(incoming)
-        return edit
-    }
-
-    fun move(
-        hue: Double = edit.hsv.hue,
-        saturation: Double = edit.hsv.saturation,
-        value: Double = edit.hsv.value,
-    ): HsvEdit {
-        edit = edit.move(hue, saturation, value)
-        return edit
-    }
-}
-
-/**
  * Hue, saturation and shade.
  *
- * The sliders read from an [HsvEditor] rather than from the colour itself: the
- * round trip through RGB loses the hue of any grey and both axes of black, so
- * a control that re-derived its positions would throw away the colour the user
- * was in the middle of choosing the moment they dragged either axis to zero.
+ * The sliders are drawn from [Hsv.axesFor], which reads the colour itself and
+ * falls back to the axes the user last dragged only where RGB cannot carry them
+ * - at zero saturation, and at black. So composition only reads: the colour on
+ * the wire stays the one source of truth, a change from anywhere else wins
+ * immediately, and a release sends exactly what the three tracks are showing.
  */
 @Composable
 private fun ColourSliders(value: ColorValue, onChange: (ColorValue, Boolean) -> Unit) {
-    val editor = remember { HsvEditor(value.rgb) }
-    val hsv = editor.show(value.rgb).hsv
+    var remembered by remember { mutableStateOf(Hsv.fromRgb255(value.rgb)) }
+    val hsv = Hsv.axesFor(value.rgb, remembered)
 
-    fun send(next: HsvEdit, committed: Boolean) {
-        onChange(ColorValue.ofRgb(next.rgb[0], next.rgb[1], next.rgb[2]), committed)
+    fun send(axes: HsvColor, committed: Boolean) {
+        val rgb = Hsv.toRgb255(axes.hue, axes.saturation, axes.value)
+        onChange(ColorValue.ofRgb(rgb[0], rgb[1], rgb[2]), committed)
+    }
+
+    fun drag(axes: HsvColor) {
+        remembered = axes
+        send(axes, false)
     }
 
     val hueTrack = remember {
@@ -233,24 +208,24 @@ private fun ColourSliders(value: ColorValue, onChange: (ColorValue, Boolean) -> 
         GradientSlider(
             colors = hueTrack,
             value = (hsv.hue / 360.0).toFloat(),
-            onValueChange = { send(editor.move(hue = it.toDouble() * 360.0), false) },
-            onValueChangeFinished = { send(editor.edit, true) },
+            onValueChange = { drag(hsv.copy(hue = it.toDouble() * 360.0)) },
+            onValueChangeFinished = { send(hsv, true) },
         )
         Spacer(Modifier.height(4.dp))
         TrackLabel("Saturation")
         GradientSlider(
             colors = saturationTrack,
             value = hsv.saturation.toFloat(),
-            onValueChange = { send(editor.move(saturation = it.toDouble()), false) },
-            onValueChangeFinished = { send(editor.edit, true) },
+            onValueChange = { drag(hsv.copy(saturation = it.toDouble())) },
+            onValueChangeFinished = { send(hsv, true) },
         )
         Spacer(Modifier.height(4.dp))
         TrackLabel("Shade - how dark this colour is")
         GradientSlider(
             colors = shadeTrack,
             value = hsv.value.toFloat(),
-            onValueChange = { send(editor.move(value = it.toDouble()), false) },
-            onValueChangeFinished = { send(editor.edit, true) },
+            onValueChange = { drag(hsv.copy(value = it.toDouble())) },
+            onValueChangeFinished = { send(hsv, true) },
         )
     }
 }
