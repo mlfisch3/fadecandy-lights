@@ -357,6 +357,33 @@ Send commands over REST; the resulting `state` message arrives on the socket, in
 Send the text `ping` to keep an idle connection alive.
 Reconnect with backoff on disconnect, and treat the `hello` as a full resync rather than trying to reconcile what was missed.
 
+### Falling behind
+
+Every client has its own outbound queue of 64 messages on the server.
+A client that is slow to read is not dropped for being slow: it is dropped only once that queue overflows, which means it has stopped reading altogether.
+The tolerance is therefore measured in messages, not seconds.
+Telemetry alone ticks every 2 seconds, so an idle client can stall for roughly two minutes and still catch up; a burst of state changes spends the budget faster.
+
+This is deliberate.
+A phone on domestic WiFi, or one the OS has just thawed from the background, routinely takes seconds to acknowledge a frame and then catches up fine, and the whole point of the socket is that several phones stay in sync.
+Dropping such a client on one slow write would defeat that.
+
+When a client is dropped the connection is **always ended**, never silently unsubscribed:
+
+| Close code | Meaning |
+| --- | --- |
+| `1013` (Try Again Later) | The client fell more than 64 messages behind. Reconnect with backoff. |
+
+If the client is still reading, it gets that `1013` frame.
+If it has stopped reading entirely, nothing can be written to it - a close frame included - so after 10 seconds the server forces the TCP connection down instead, and the client sees the socket die rather than a close frame.
+Either way it learns it is gone, which is the point; handle an abrupt disconnect the same as a `1013`.
+
+Treat any close as a full resync: reconnect and use the new `hello`.
+Nothing is lost by falling behind - `state` and `telemetry` are both whole snapshots, so a backlog is lag, never missing information.
+
+**An open socket that has gone quiet means nothing has changed.**
+The server will not leave a client subscribed to silence, so a client never has to guess whether it is still connected.
+
 ## Effect parameter schemas
 
 A parameter schema entry:

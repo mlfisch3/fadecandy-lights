@@ -374,7 +374,9 @@ def create_app(controller: Controller) -> FastAPI:
     async def websocket_endpoint(websocket: WebSocket) -> None:
         ctrl: Controller = websocket.app.state.controller
         await websocket.accept()
-        await ctrl.broadcaster.add(websocket)
+        # The hub cancels this task if it ever has to drop us and cannot get a
+        # close frame out; that is what unwinds a socket whose peer stopped reading.
+        await ctrl.broadcaster.add(websocket, owner=asyncio.current_task())
         try:
             # Send the full picture on connect so a phone that just woke up is
             # immediately in sync without a separate REST round trip.
@@ -396,6 +398,12 @@ def create_app(controller: Controller) -> FastAPI:
                     await websocket.send_json({"type": "pong"})
         except WebSocketDisconnect:
             pass
+        except asyncio.CancelledError:
+            # Either the hub gave up on this client (see Broadcaster._eject) or
+            # the server is shutting down. Both want this coroutine to return:
+            # uvicorn drops the connection once the ASGI app is done, and that
+            # is the only way to release a peer that has stopped reading.
+            log.debug("websocket serving task cancelled; releasing the connection")
         except Exception:
             log.debug("websocket closed unexpectedly", exc_info=True)
         finally:
