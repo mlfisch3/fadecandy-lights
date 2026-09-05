@@ -56,6 +56,20 @@ android {
     }
 }
 
+/**
+ * `FCLIGHTS_TEST_HOST` decides whether the live pass runs or is skipped, so it
+ * has to be part of the test task's cache key. Without this, Gradle happily
+ * replays a cached run that talked to a real controller as though it were an
+ * offline one, and the results say every live test passed on a machine that
+ * never opened a socket.
+ */
+tasks.withType<Test>().configureEach {
+    inputs.property(
+        "fclightsTestHost",
+        providers.environmentVariable("FCLIGHTS_TEST_HOST").orElse(""),
+    )
+}
+
 dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)

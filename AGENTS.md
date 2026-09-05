@@ -27,7 +27,7 @@ FCLIGHTS_TEST_HOST=localhost:7891 ./gradlew testDebugUnitTest  # opt-in, against
 
 ## Sharp edges
 
-**Nothing here has been verified on hardware.** No Fadecandy, Pi or strip has ever been attached. Do not claim otherwise, in commits, docs or CI. `docs/bring-up.md` exists because of that gap.
+**The rig exists now; be exact about what that has and has not proved.** The service runs on the Pi (hostname `fadecandy`, DHCP - do not hardcode the address) with a genuine Fadecandy attached: `/api/health` reports `simulated: false` and `opc_connected: true`, and `/api/status` shows a steady 60 fps with no dropped frames. That covers the render loop, the OPC link and the whole control API, and the Android client has been run against it. It does not cover how any effect actually looks on a strip, and the Android UI has never run on a phone. Claim the first, not the second, and keep working through `docs/bring-up.md` for the rest.
 
 **Gamma lives in fcserver, not here.** Engine values are 0..1 *display* space, not linear light. Applying gamma in an effect or in the encoder would double-correct. `config/fcserver.json` `color` block is the one place it belongs.
 

@@ -4,8 +4,11 @@ The phone app for the controller in this repository.
 It talks to the Pi over the contract in [docs/api.md](../docs/api.md): REST for commands, a WebSocket for live state, mDNS for discovery, and no authentication of any kind.
 
 **This app has never run on a phone.**
-It compiles, it lints clean, and its client is tested against a controller that is actually running - but no APK has been installed on a device and no screen in it has ever been looked at.
+No APK has been installed on a device and no screen in it has ever been looked at.
 Treat the first install as bring-up, not as a release.
+
+What *has* been verified is everything below the UI: the client, the socket and the state handling were run against the real Pi with a genuine Fadecandy attached, not only against a simulator.
+See [Tests](#tests).
 
 ## Build an APK
 
@@ -102,8 +105,17 @@ There is also an opt-in pass against a controller that is really running, skippe
 FCLIGHTS_TEST_HOST=192.168.1.164 ./gradlew testDebugUnitTest
 ```
 
-That one selects every effect the controller publishes, sends each one's declared defaults back, and restores what was showing when it finishes.
-It is the closest thing to end-to-end verification available without a phone.
+It is the closest thing to end-to-end verification available without a phone, and it checks the things a fixture cannot:
+
+- A cold start renders from the WebSocket `hello` alone, with a schema for the effect the controller is actually running.
+- Every effect the controller publishes can be selected, reports a complete parameter set, and takes its own declared defaults back.
+- A colour temperature survives the round trip as a temperature, and the swatch this app would draw matches the `rgb` the controller reports - which is the port of `fclights.color.kelvin_to_rgb` checked against the implementation lighting the strip, rather than against numbers copied out of it.
+- The socket resyncs on its own after the connection is really dropped mid-stream.
+
+It restores exactly what was showing when it finishes, including a scene that was recalled, because the thing it points at is somebody's lighting.
+
+This pass has been run against the real installation: a Raspberry Pi 3 B+ driving a genuine Fadecandy over USB, `simulated: false`, 60 fps with the OPC link up.
+Every check above passed there, and the error handling was confirmed against it too - an unknown effect is a 404, an out-of-range colour temperature and an unknown parameter name are 400s, an unknown request field is a 422, and none of the four changed the controller's state.
 
 ## Layout
 

@@ -104,7 +104,8 @@ Do that before scaling up to the full run; it is written as a checklist that loc
 [android/](android/) holds the native Kotlin app that controls this service.
 It builds to a sideloadable APK with `cd android && ./gradlew assembleDebug`; [android/README.md](android/README.md) covers the toolchain, installing it on a phone, and what is in it.
 
-Like everything else here, it has never run on real hardware - in its case, never on a phone.
+It has never run on a phone.
+Its client, socket and state handling have been exercised against a real Pi with a Fadecandy attached; the UI has not been looked at on a device.
 
 ## Development without hardware
 
