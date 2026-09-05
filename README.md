@@ -99,6 +99,13 @@ sudo ./deploy/setup.sh
 Then work through [docs/bring-up.md](docs/bring-up.md) with the hardware connected.
 Do that before scaling up to the full run; it is written as a checklist that localises failures rather than leaving you guessing.
 
+## The Android app
+
+[android/](android/) holds the native Kotlin app that controls this service.
+It builds to a sideloadable APK with `cd android && ./gradlew assembleDebug`; [android/README.md](android/README.md) covers the toolchain, installing it on a phone, and what is in it.
+
+Like everything else here, it has never run on real hardware - in its case, never on a phone.
+
 ## Development without hardware
 
 ```bash
@@ -389,6 +396,7 @@ The `serial` field is in the layout schema for that; it is not yet matched again
 | `docs/bring-up.md` | Hardware bring-up checklist. |
 | `tests/opc_sink.py` | Test-double OPC receiver, used in place of fcserver. |
 | `tools/` | Development checks that are not part of the service. |
+| `android/` | The Android app. Builds independently of the Python service. |
 
 ## Testing
 
