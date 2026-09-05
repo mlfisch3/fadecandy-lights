@@ -4,7 +4,7 @@ This file is the project's committed home for project-intrinsic agent knowledge:
 
 ## What this is
 
-A Fadecandy-driven WS2812B controller for a Raspberry Pi 3 B+, serving a REST and WebSocket API to a native Android app (a separate project).
+A Fadecandy-driven WS2812B controller for a Raspberry Pi 3 B+, serving a REST and WebSocket API to the native Android app in `android/`.
 `docs/wiring.md` is the authoritative wiring, power and topology record, `README.md` summarises wiring and power sizing, `docs/api.md` is the API contract, `docs/bring-up.md` is the hardware checklist.
 
 ## Working here

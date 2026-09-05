@@ -56,6 +56,7 @@ Port 7891 is assumed unless you add one.
 
 The address is remembered, so this is a one-time step per phone.
 Discovery runs alongside it and lists anything advertising `_fclights._tcp`, but it is a shortcut rather than the way in: plenty of home routers drop multicast and Android's battery saver suppresses it, which is why the typed address is the first-class path.
+A scan is bounded rather than a subscription - it looks for a few seconds and stops, and the sheet's **Search** button runs another one - so finding nothing leaves the sheet usable instead of spinning.
 
 ## What is in it
 
@@ -65,7 +66,7 @@ Discovery runs alongside it and lists anything advertising `_fclights._tcp`, but
 | Colour temperature | A warm-to-cool slider along the blackbody locus, with the track painted in the colours it selects. |
 | Effects | Listed from the controller, with controls built from the parameter schemas it publishes. |
 | Scenes | Save what is showing, recall, delete. |
-| Live state | A change made on one phone appears on another; the socket reconnects on its own. |
+| Live state | A change made on one phone appears on another; the socket reconnects on its own, and is dropped while the app is off screen and reopened when you come back. |
 
 Deliberately absent, for now: zones or room grouping, scheduling, widgets, and any settings beyond the controller address.
 

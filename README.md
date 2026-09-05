@@ -4,8 +4,7 @@ Controller for a Fadecandy-driven WS2812B installation, running headless on a Ra
 
 It is built for everyday apartment lighting that approximates natural light - tunable white from candlelight to daylight, and fades slow enough to be measured in minutes - rather than for a display piece.
 
-This repository is the Pi side: the animation engine, the power governor, and the control API.
-The Android app is a separate piece of work built against [docs/api.md](docs/api.md).
+This repository holds both sides: the Pi service - the animation engine, the power governor, and the control API - and the [Android app](android/) that drives it over the contract in [docs/api.md](docs/api.md).
 Wiring, power distribution and safety are covered in full, with diagrams, in [docs/wiring.md](docs/wiring.md).
 
 ## What it is
@@ -116,7 +115,7 @@ python3 -m venv .venv && .venv/bin/pip install -e '.[dev]'
 ```
 
 `--simulate` runs the whole service - engine, governor, API, persistence - with no Fadecandy and no fcserver attached.
-The API behaves identically, which is how the Android app gets built before the rig exists.
+The API behaves identically, so the Android app can be built and exercised against it without the rig.
 
 ---
 
