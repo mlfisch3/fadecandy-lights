@@ -33,13 +33,22 @@ cd fadecandy-lights
 sudo ./deploy/setup.sh
 ```
 
-**Verify:** the script ends with a "Done" block listing the API URL, config paths and the power ceiling.
+Partway through it will show you a plan for installing `fcserver` and ask before doing it; say yes.
+`fcserver` is not part of this repository, so this step fetches it - from an unmaintained third-party mirror, because the original upstream repository is gone from GitHub.
+Read [fcserver.md](fcserver.md) before you answer if you want to know exactly what is being fetched and from where.
 
-**If it stops at "fcserver is missing":** that is expected on a first run and everything else was installed.
-Follow the printed instructions to install the upstream `fcserver` binary, then rerun the script.
+**Verify:** the script ends with a "Done" block listing the API URL, config paths and the power ceiling, and the fcserver step ended with "fcserver is installed" after printing a version line like `fcserver-1.04-25-gf911031`.
+
+**If the fcserver step warned instead of finishing:** everything else was installed, so fix just that and rerun `sudo ./deploy/install-fcserver.sh` on its own rather than the whole script.
+
+- *"unsupported architecture"* - you are not on ARM. There is no prebuilt `fcserver` for `amd64`; use a Raspberry Pi OS image.
+- *"sha256 mismatch"* - the mirror served bytes we did not expect. Do not work around this by hand; see [fcserver.md](fcserver.md).
+- *"download failed"* - network, or the mirror has gone the way of the original. [fcserver.md](fcserver.md) has the manual steps.
+- *"did not run"* with `required file not found` - the `armhf` runtime is missing on a 64-bit image. This is the failure the script exists to prevent; rerun it with `sudo`.
 
 **If a pip install fails with "no prebuilt wheel":** you are on an architecture or a Python version without wheels for one of numpy, pydantic-core or uvicorn.
 Check `dpkg --print-architecture` (expect `arm64`, or `armhf` on a 32-bit image) and `python3 --version` (needs 3.10 or newer).
+On `arm64` you will also see `armhf` in `dpkg --print-foreign-architectures` once `fcserver` is installed; that is deliberate and only affects `fcserver`, never the Python side.
 This is the one failure worth stopping on rather than working around; compiling numpy on a Pi 3 takes the better part of an hour and can run the board out of memory.
 
 ---
@@ -98,6 +107,8 @@ curl -s http://localhost:7891/api/health
 **Verify:** `lsusb` shows `1d50:607a`, the fcserver journal reports a connected Fadecandy device with its serial number, and `/api/health` now reports `"opc_connected":true`.
 
 **If `lsusb` shows nothing:** cable or board. Try another USB cable first; charge-only cables are a common waste of an afternoon.
+
+**If the fcserver unit fails instantly with status 203 or `cannot execute: required file not found`:** the binary is a 32-bit `armhf` executable and this is a 64-bit image without the `armhf` runtime. `sudo ./deploy/install-fcserver.sh` fixes it; [fcserver.md](fcserver.md) explains it.
 
 **If fcserver logs a permissions error opening the device:** the udev rule did not take. Check `/etc/udev/rules.d/99-fadecandy.rules` exists, confirm `fclights` is in `plugdev` (`id fclights`), then unplug and replug the board.
 

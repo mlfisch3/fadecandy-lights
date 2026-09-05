@@ -1,0 +1,143 @@
+# fcserver: where it comes from, and why it is not built from source
+
+`fcserver` is the stock Fadecandy Open Pixel Control server.
+It owns the USB link to the Fadecandy board; `fclights` talks to it over OPC on localhost and never touches USB itself.
+It is not part of this repository, and installing it is the one step of the bring-up that is not simply "run our code".
+
+This document records what that install actually involves, because two things about it are surprising and both of them broke a real run of `deploy/setup.sh` on 2026-09-05.
+
+## Upstream is gone
+
+`https://github.com/scanlime/fadecandy`, Micah Scott's original repository and the address printed in every Fadecandy tutorial on the internet, **returns 404**.
+So do `scanlime/libusbx`, `scanlime/libwebsockets` and `scanlime/rapidjson`, the three git submodules the server's build depends on.
+The account's repositories are no longer published.
+
+What survives is a complete third-party mirror at **`https://github.com/PimentNoir/fadecandy`**, branch `master`, last pushed 2020-03-14.
+It carries the full source tree and the `bin/` directory of prebuilt binaries.
+
+**This mirror is not official and is not maintained.**
+Nobody is issuing fixes for it.
+We use it because there is no longer an upstream to use, not because it is blessed.
+`deploy/install-fcserver.sh` therefore pins a specific commit rather than a branch, and refuses to install a binary whose SHA-256 does not match the one recorded next to that pin.
+
+## The prebuilt binary is 32-bit, and our target OS is 64-bit
+
+`bin/fcserver-rpi` is the only prebuilt Linux/ARM binary anyone ships:
+
+```
+ELF 32-bit LSB executable, ARM, EABI5 version 1 (SYSV), dynamically linked,
+interpreter /lib/ld-linux-armhf.so.3, for GNU/Linux 2.6.26, stripped
+sha256: a3efacd668f8aea042f4948e25753d3cba603c78451409ca04dbb2da4d7a6fb7
+```
+
+`README.md` targets 64-bit Raspberry Pi OS (`arm64`), where that binary fails with
+
+```
+cannot execute: required file not found
+```
+
+which is the shell's unhelpful way of saying the ELF interpreter `/lib/ld-linux-armhf.so.3` does not exist.
+The kernel and the CPU are both fine: a Cortex-A53 executes the 32-bit ARM instruction set natively.
+What is missing is the 32-bit *userland*, so the fix is a runtime, not emulation - no `qemu`, no `box86`, no measurable overhead:
+
+```bash
+sudo dpkg --add-architecture armhf
+sudo apt-get update
+sudo apt-get install -y libc6:armhf libstdc++6:armhf
+```
+
+Verified on the captain's Pi 3 B+ running 64-bit Raspberry Pi OS.
+After it, `fcserver` reports `fcserver-1.04-25-gf911031` and `USB device Fadecandy (Serial# XZFODJGECCZMCMZZ, Version 1.07) attached`.
+
+`deploy/install-fcserver.sh` does all of this for you and asks first.
+
+## Building `server/` from source for arm64: assessed, not viable
+
+Compiling for `arm64` would remove the multiarch dependency entirely, which is the cleaner long-term shape.
+It does not work today, and the blocker is not a compiler warning that could be patched away.
+
+**All three of the server's vendored dependencies are git submodules pointing at repositories that no longer exist.**
+
+| Submodule | URL in `.gitmodules` | GitHub |
+| --- | --- | --- |
+| `server/libusbx` | `https://github.com/scanlime/libusbx.git` | 404 |
+| `server/libwebsockets` | `https://github.com/scanlime/libwebsockets.git` | 404 |
+| `server/rapidjson` | `https://github.com/scanlime/rapidjson.git` | 404 |
+
+The mirror mirrors the fadecandy repository, not the submodules; `PimentNoir/libusbx`, `PimentNoir/libwebsockets` and `PimentNoir/rapidjson` are all 404 as well, and the three directories in the tarball are empty.
+Both documented build paths - `make submodules && make`, and the CMake path - begin with `make submodules`, which is `git submodule update --init` against those dead URLs:
+
+```
+$ git clone --depth 1 https://github.com/scanlime/libusbx.git
+remote: Repository not found.
+fatal: repository 'https://github.com/scanlime/libusbx.git/' not found
+
+$ cd fadecandy-master/server && make
+src/main.cpp:24:10: fatal error: rapidjson/document.h: No such file or directory
+```
+
+The CMake project does expose `USE_BUILTIN_WS` and `USE_BUILTIN_LIBUSB`, but they are annotated `TODO: Make these work to turn OFF` and are not wired to a system-library path.
+Substituting maintained replacements is not a swap:
+
+- **rapidjson** is easy - `Tencent/rapidjson` is alive and the API the server uses is stable.
+- **libusbx** was folded back into `libusb` a decade ago; `libusb-1.0-0-dev` would probably do, though the tree compiles six `libusb` source files directly rather than linking a library.
+- **libwebsockets** is the wall. The server compiles eight named `.c` files out of a 2013 fork and reaches into internals (`-DLWS_NO_WSAPOLL`, `-DLWS_LIBRARY_VERSION=`). Modern libwebsockets has a completely different API, so `src/tcpnetserver.cpp` would have to be rewritten, not adjusted.
+
+Add to that a 2013 C++ tree built with `-std=gnu++0x`, `-fno-exceptions -fno-rtti`, and an `httpdocs.cpp` generated by a `python` (Python 2) script that Raspberry Pi OS Bookworm no longer ships an interpreter for.
+
+**Recommendation: install the mirror's armhf binary and the armhf runtime. Do not build from source.**
+The multiarch dependency is two packages, installed once, on a platform that runs the code natively.
+The source route is a port of a dead 2013 codebase onto three replacement libraries, one of which needs its networking layer rewritten, in exchange for removing those two packages.
+That is the wrong trade for this project, and it would be the wrong trade even with a lot more time.
+
+If someone does want to revisit it, the honest first step is vendoring a working `libwebsockets` snapshot into a fork we control - not patching `.gitmodules`.
+
+## What `deploy/install-fcserver.sh` does
+
+`deploy/setup.sh` calls it; you can also run it on its own, and rerunning it is safe.
+
+```bash
+sudo ./deploy/install-fcserver.sh              # ask before changing anything
+sudo ./deploy/install-fcserver.sh --yes        # no prompt
+     ./deploy/install-fcserver.sh --dry-run    # print the plan, change nothing
+```
+
+It detects the architecture and prints a plan for *this* machine before touching it:
+
+- `arm64` / `aarch64` - enable the `armhf` foreign architecture, install `libc6:armhf` and `libstdc++6:armhf`, then install the binary.
+- `armhf` / `armv7l` / `armv6l` - install the binary; the runtime is already there.
+- anything else - stop with exit code 3 and say so. There is no prebuilt fcserver for `amd64`; the mirror's `bin/fcserver-galileo` is i386 and is not automated here.
+
+It then fetches the commit-pinned URL, **refuses to install on a SHA-256 mismatch**, and finally runs `fcserver --help`, which prints a usage banner and exits without opening a socket.
+That last step is the point: it is the check that would have caught the arm64 failure, and its error message names the missing runtime rather than repeating the shell's "required file not found".
+
+Exit codes: `0` installed or already present, `1` failed, `2` declined by the operator, `3` no binary exists for this architecture.
+
+## Doing it by hand
+
+If you would rather not run the script, this is exactly what it does.
+On a 32-bit image, skip the first block.
+
+```bash
+# 64-bit images only: the 32-bit runtime the binary needs.
+sudo dpkg --add-architecture armhf
+sudo apt-get update
+sudo apt-get install -y libc6:armhf libstdc++6:armhf
+
+# The binary, pinned to a commit rather than a moving branch.
+commit=36f616158f195a327f8486474af2956dad52881d
+curl -fsSLO "https://github.com/PimentNoir/fadecandy/raw/${commit}/bin/fcserver-rpi"
+echo "a3efacd668f8aea042f4948e25753d3cba603c78451409ca04dbb2da4d7a6fb7  fcserver-rpi" | sha256sum -c
+sudo install -m 0755 fcserver-rpi /usr/local/bin/fcserver
+
+# Prove it runs. This prints a usage banner and exits without opening a socket.
+/usr/local/bin/fcserver --help
+```
+
+If that last command says `cannot execute: required file not found`, the armhf runtime is not in place; the first block is the fix.
+Check the digest before installing, always - it is a stranger's binary that will run as a service on your network.
+
+## Environment overrides
+
+`FCSERVER_ARCH` overrides the detected architecture so the plan can be exercised for a machine you are not on; `tests/test_install_fcserver.py` uses it.
+`FCSERVER_BIN`, `FCSERVER_URL` and `FCSERVER_SHA256` override the target, source and expected digest.

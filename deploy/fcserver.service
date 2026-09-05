@@ -4,9 +4,12 @@
 # This is upstream's binary, unmodified. Its temporal dithering and
 # interpolation are the reason this rig uses a Fadecandy at all, so the
 # controller talks to it over OPC rather than driving the strip itself.
+#
+# Upstream's own repository, scanlime/fadecandy, is gone from GitHub. The
+# binary comes from an unmaintained third-party mirror; see docs/fcserver.md.
 [Unit]
 Description=Fadecandy server (USB to LED, OPC on localhost)
-Documentation=https://github.com/scanlime/fadecandy
+Documentation=https://github.com/PimentNoir/fadecandy
 After=network.target
 
 [Service]
