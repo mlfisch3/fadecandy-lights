@@ -1,11 +1,12 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1180 1244" width="1180" height="1244"
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1180 1330" width="1180" height="1330"
      role="img" aria-labelledby="t4 d4">
   <title id="t4">Power distribution and injection: fanning one 5 V supply out to several runs</title>
   <desc id="d4">One 5 V supply feeds a main fuse, then a pair of distribution bus bars. Each run takes
-  a fused red branch from the plus bus and returns on a black branch to the minus bus; data and its
-  ground arrive separately from the Fadecandy. Alongside: current per run, supply headroom,
-  conductor ampacity and fuse sizing, running cost, and when power injection into the far end of a
-  run is actually needed.</desc>
+  one fused red branch off the plus bus, and that single fuse feeds two red legs: one to the run's DI
+  end and one to its far end. Each run likewise returns on two black legs, one from each end, to the
+  minus bus. Data and its ground arrive separately from the Fadecandy, at the DI end only. Alongside:
+  current per run, supply headroom, conductor ampacity and fuse sizing, running cost, and the choice
+  between feeding both ends at full brightness and feeding the DI end alone under a brightness cap.</desc>
 
   <style>
     .bg     { fill:#F7F6F1; stroke:#C7C3B8; stroke-width:2; }
@@ -37,13 +38,14 @@
     .warnt  { font:700 12.5px ui-sans-serif,system-ui,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; fill:#7A140C; }
   </style>
 
-  <rect class="bg" x="1" y="1" width="1178" height="1242" rx="6"/>
+  <rect class="bg" x="1" y="1" width="1178" height="1328" rx="6"/>
   <text class="ttl" x="40" y="46">Diagram 4 - Power distribution, conductor sizing, fusing and injection</text>
   <text class="sub" x="40" y="72">Every number is worked from stated assumptions, so you can redo it for whatever layout you actually build.</text>
 
-  <rect class="pan" x="40" y="96" width="562" height="704" rx="6"/>
-  <text class="panttl" x="60" y="126">Fanning one supply out to four runs</text>
-  <text class="lbls" x="60" y="145">Scales to any run count. Each run needs TWO +5 V / GND pairs, one per end - &#167; 6.3.</text>
+  <rect class="pan" x="40" y="96" width="562" height="790" rx="6"/>
+  <text class="panttl" x="60" y="126">Fanning one supply out to three runs</text>
+  <text class="lbls" x="60" y="145">Three runs drawn; the pattern is identical up to the 8-run limit on one bus.</text>
+
   <rect class="psu" x="60" y="170" width="160" height="104" rx="4"/>
   <text class="wlbl" x="140" y="196" text-anchor="middle">5 V supply</text>
   <text class="tiny" x="140" y="214" text-anchor="middle">set to 5.00 V</text>
@@ -54,96 +56,128 @@
   <text class="mono" x="212" y="208" text-anchor="end">V+</text>
   <rect x="216" y="242" width="14" height="12" fill="#FFFFFF" stroke="#111111" stroke-width="1.6"/>
   <text class="mono" x="212" y="252" text-anchor="end">V&#8722;</text>
+
   <path class="pwrm" d="M 230 204 H 262"/>
   <rect class="fuse" x="262" y="192" width="34" height="24" rx="3"/>
   <path class="pwrm" d="M 296 204 H 578"/>
   <text class="tiny" x="279" y="187" text-anchor="middle">MAIN</text>
   <text class="tiny" x="279" y="209" text-anchor="middle">FUSE</text>
-  <text class="tiny" x="279" y="231" text-anchor="middle">20 A</text>
+  <text class="tiny" x="279" y="231" text-anchor="middle">15 A</text>
   <text class="wlbl" x="310" y="164">+5 V bus bar</text>
-  <text class="tiny" x="310" y="180">Bus bar 20 A+, 10 AWG feeder to 0.59 m - 4 runs, 15.4 A</text>
-  <path class="gndm" d="M 230 248 H 244 V 508 H 578"/>
-  <text class="wlbl" x="310" y="530">GND bus bar - a bar, like the +5 V bus</text>
-  <circle class="dotr" cx="372" cy="204" r="4.4"/>
-  <path class="pwr" d="M 372 204 V 256"/>
-  <rect class="fuse" x="359" y="256" width="26" height="22" rx="3"/>
-  <path class="pwr" d="M 372 278 V 388"/>
-  <rect class="run" x="346" y="388" width="52" height="66" rx="4"/>
-  <text class="tiny" x="372" y="412" text-anchor="middle">Run 1</text>
-  <text class="tiny" x="372" y="428" text-anchor="middle">64 px</text>
-  <text class="tiny" x="372" y="444" text-anchor="middle">3.84 A</text>
-  <path class="gnd" d="M 372 454 V 508"/>
-  <circle class="dot" cx="372" cy="508" r="4.4"/>
-  <path class="datc" d="M 332 474 H 366 V 454"/>
-  <path class="dat"  d="M 332 474 H 366 V 454"/>
-  <circle class="dotr" cx="440" cy="204" r="4.4"/>
-  <path class="pwr" d="M 440 204 V 256"/>
-  <rect class="fuse" x="427" y="256" width="26" height="22" rx="3"/>
-  <path class="pwr" d="M 440 278 V 388"/>
-  <rect class="run" x="414" y="388" width="52" height="66" rx="4"/>
-  <text class="tiny" x="440" y="412" text-anchor="middle">Run 2</text>
-  <text class="tiny" x="440" y="428" text-anchor="middle">64 px</text>
-  <text class="tiny" x="440" y="444" text-anchor="middle">3.84 A</text>
-  <path class="gnd" d="M 440 454 V 508"/>
-  <circle class="dot" cx="440" cy="508" r="4.4"/>
-  <path class="datc" d="M 400 474 H 434 V 454"/>
-  <path class="dat"  d="M 400 474 H 434 V 454"/>
-  <circle class="dotr" cx="508" cy="204" r="4.4"/>
-  <path class="pwr" d="M 508 204 V 256"/>
-  <rect class="fuse" x="495" y="256" width="26" height="22" rx="3"/>
-  <path class="pwr" d="M 508 278 V 388"/>
-  <rect class="run" x="482" y="388" width="52" height="66" rx="4"/>
-  <text class="tiny" x="508" y="412" text-anchor="middle">Run 3</text>
-  <text class="tiny" x="508" y="428" text-anchor="middle">64 px</text>
-  <text class="tiny" x="508" y="444" text-anchor="middle">3.84 A</text>
-  <path class="gnd" d="M 508 454 V 508"/>
-  <circle class="dot" cx="508" cy="508" r="4.4"/>
-  <path class="datc" d="M 468 474 H 502 V 454"/>
-  <path class="dat"  d="M 468 474 H 502 V 454"/>
-  <circle class="dotr" cx="566" cy="204" r="4.4"/>
-  <path class="pwr" d="M 566 204 V 256"/>
-  <rect class="fuse" x="553" y="256" width="26" height="22" rx="3"/>
-  <path class="pwr" d="M 566 278 V 388"/>
-  <rect class="run" x="540" y="388" width="52" height="66" rx="4"/>
-  <text class="tiny" x="566" y="412" text-anchor="middle">Run 4</text>
-  <text class="tiny" x="566" y="428" text-anchor="middle">64 px</text>
-  <text class="tiny" x="566" y="444" text-anchor="middle">3.84 A</text>
-  <path class="gnd" d="M 566 454 V 508"/>
-  <circle class="dot" cx="566" cy="508" r="4.4"/>
-  <path class="datc" d="M 526 474 H 560 V 454"/>
-  <path class="dat"  d="M 526 474 H 560 V 454"/>
-  <text class="tiny" x="344" y="274" text-anchor="end">branch</text>
-  <text class="tiny" x="344" y="288" text-anchor="end">fuses</text>
-  <text class="tiny" x="332" y="464" text-anchor="end">DATA + GND</text>
-  <text class="tiny" x="332" y="478" text-anchor="end">from Fadecandy</text>
-  <text class="wlbl" x="60" y="566">Branch fuse: 6 A, one per run</text>
-  <text class="lbls" x="60" y="584">One run is 3.84 A, and 1.25 &#215; 3.84 is</text>
-  <text class="lbls" x="60" y="600">4.8 A. It feeds BOTH injection legs.</text>
-  <text class="wlbl" x="60" y="626">Branch wire: 14 AWG to 1.87 m</text>
-  <text class="lbls" x="60" y="644">per leg - 0.150 V at 3.84 A. Size each</text>
-  <text class="lbls" x="60" y="660">leg for the WHOLE 3.84 A, not half.</text>
-  <text class="wlbl" x="60" y="686">Fuses protect wire, not LEDs.</text>
-  <text class="lbls" x="60" y="704">A 60 A supply will happily push 60 A</text>
-  <text class="lbls" x="60" y="720">into a shorted 14 AWG branch. The fuse</text>
-  <text class="lbls" x="60" y="736">is what stops that becoming a fire.</text>
-  <text class="wlbl" x="60" y="756">Fuse = smallest standard &#8805; 1.25 &#215; load</text>
-  <text class="lbls" x="60" y="774">4 runs &#8594; 20 A, 6 runs &#8594; 30 A, 8 runs &#8594; 40 A.</text>
-  <text class="lbls" x="60" y="790">Then ampacity &#8805; the FUSE. One per feeder.</text>
-  <text class="wlbl" x="340" y="756">0.50 V total, terminals to dimmest LED:</text>
-  <text class="lbls" x="340" y="774">feeder .075 + bus .025 + branch .150,</text>
-  <text class="lbls" x="340" y="790">then .250 inside the strip itself.</text>
-  <text class="wlbl" x="340" y="566">Order of assembly, every time</text>
-  <text class="lbls" x="340" y="586">1. Supply off and unplugged.</text>
-  <text class="lbls" x="340" y="604">2. Bus bars and main fuse.</text>
-  <text class="lbls" x="340" y="622">3. Branch fuses.</text>
-  <text class="lbls" x="340" y="640">4. Ground first on every run,</text>
-  <text class="lbls" x="340" y="656">&#160;&#160;&#160; then +5 V, then data.</text>
-  <text class="lbls" x="340" y="674">5. Meter checks - see the</text>
-  <text class="lbls" x="340" y="690">&#160;&#160;&#160; pre-power-on checklist.</text>
-  <text class="lbls" x="340" y="708">6. Energise with ONE run</text>
-  <text class="lbls" x="340" y="724">&#160;&#160;&#160; connected, then add the</text>
-  <text class="lbls" x="340" y="740">&#160;&#160;&#160; rest one at a time.</text>
-  <rect class="pan" x="620" y="96" width="520" height="704" rx="6"/>
+  <text class="tiny" x="310" y="180">Bus bar 15 A+, 14 AWG feeder to 0.31 m - 3 runs, 11.5 A</text>
+
+  <path class="gndm" d="M 230 248 H 244 V 540 H 578"/>
+  <text class="wlbl" x="310" y="560">GND bus bar - a bar, like the +5 V bus</text>
+
+  <text class="wlbl" x="60" y="312">Each run: four power legs</text>
+  <text class="lbls" x="60" y="332">Option A, full brightness:</text>
+  <text class="lbls" x="60" y="348">+5 V and GND at the DI end,</text>
+  <text class="lbls" x="60" y="364">and again at the far end.</text>
+  <text class="lbls" x="60" y="380">Both reds off ONE 6 A fuse.</text>
+  <text class="lbls" x="60" y="404">Option B, DI end only, at a</text>
+  <text class="lbls" x="60" y="420">25 % cap: drop the far-end</text>
+  <text class="lbls" x="60" y="436">pair. Same gauges, same</text>
+  <text class="lbls" x="60" y="452">fuses, same everything else.</text>
+  <text class="lbls" x="60" y="476">Yellow: DATA + GND from the</text>
+  <text class="lbls" x="60" y="492">Fadecandy, into each DI end.</text>
+  <text class="lbls" x="60" y="516">&#167; 6.3 derives both options.</text>
+
+  <!-- run 1, cell base x = 306 -->
+  <circle class="dotr" cx="314" cy="204" r="4.4"/>
+  <path class="pwr" d="M 314 204 V 244"/>
+  <rect class="fuse" x="301" y="244" width="26" height="22" rx="3"/>
+  <path class="pwr" d="M 314 266 V 472"/>
+  <circle class="dotr" cx="314" cy="292" r="4.4"/>
+  <path class="pwr" d="M 314 292 H 334 V 320"/>
+  <path class="pwr" d="M 314 472 H 334 V 450"/>
+  <rect class="run" x="326" y="320" width="56" height="130" rx="4"/>
+  <text class="tiny" x="354" y="340" text-anchor="middle">far end</text>
+  <text class="tiny" x="354" y="372" text-anchor="middle">Run 1</text>
+  <text class="tiny" x="354" y="390" text-anchor="middle">64 px</text>
+  <text class="tiny" x="354" y="408" text-anchor="middle">3.84 A</text>
+  <text class="tiny" x="354" y="440" text-anchor="middle">DI end</text>
+  <path class="gnd" d="M 366 320 V 306 H 390 V 540"/>
+  <circle class="dot" cx="390" cy="540" r="4.4"/>
+  <path class="gnd" d="M 366 450 V 540"/>
+  <circle class="dot" cx="366" cy="540" r="4.4"/>
+  <path class="datc" d="M 350 450 V 490 H 322"/>
+  <path class="dat"  d="M 350 450 V 490 H 322"/>
+
+  <!-- run 2, cell base x = 398 -->
+  <circle class="dotr" cx="406" cy="204" r="4.4"/>
+  <path class="pwr" d="M 406 204 V 244"/>
+  <rect class="fuse" x="393" y="244" width="26" height="22" rx="3"/>
+  <path class="pwr" d="M 406 266 V 472"/>
+  <circle class="dotr" cx="406" cy="292" r="4.4"/>
+  <path class="pwr" d="M 406 292 H 426 V 320"/>
+  <path class="pwr" d="M 406 472 H 426 V 450"/>
+  <rect class="run" x="418" y="320" width="56" height="130" rx="4"/>
+  <text class="tiny" x="446" y="340" text-anchor="middle">far end</text>
+  <text class="tiny" x="446" y="372" text-anchor="middle">Run 2</text>
+  <text class="tiny" x="446" y="390" text-anchor="middle">64 px</text>
+  <text class="tiny" x="446" y="408" text-anchor="middle">3.84 A</text>
+  <text class="tiny" x="446" y="440" text-anchor="middle">DI end</text>
+  <path class="gnd" d="M 458 320 V 306 H 482 V 540"/>
+  <circle class="dot" cx="482" cy="540" r="4.4"/>
+  <path class="gnd" d="M 458 450 V 540"/>
+  <circle class="dot" cx="458" cy="540" r="4.4"/>
+  <path class="datc" d="M 442 450 V 490 H 414"/>
+  <path class="dat"  d="M 442 450 V 490 H 414"/>
+
+  <!-- run 3, cell base x = 490 -->
+  <circle class="dotr" cx="498" cy="204" r="4.4"/>
+  <path class="pwr" d="M 498 204 V 244"/>
+  <rect class="fuse" x="485" y="244" width="26" height="22" rx="3"/>
+  <path class="pwr" d="M 498 266 V 472"/>
+  <circle class="dotr" cx="498" cy="292" r="4.4"/>
+  <path class="pwr" d="M 498 292 H 518 V 320"/>
+  <path class="pwr" d="M 498 472 H 518 V 450"/>
+  <rect class="run" x="510" y="320" width="56" height="130" rx="4"/>
+  <text class="tiny" x="538" y="340" text-anchor="middle">far end</text>
+  <text class="tiny" x="538" y="372" text-anchor="middle">Run 3</text>
+  <text class="tiny" x="538" y="390" text-anchor="middle">64 px</text>
+  <text class="tiny" x="538" y="408" text-anchor="middle">3.84 A</text>
+  <text class="tiny" x="538" y="440" text-anchor="middle">DI end</text>
+  <path class="gnd" d="M 550 320 V 306 H 574 V 540"/>
+  <circle class="dot" cx="574" cy="540" r="4.4"/>
+  <path class="gnd" d="M 550 450 V 540"/>
+  <circle class="dot" cx="550" cy="540" r="4.4"/>
+  <path class="datc" d="M 534 450 V 490 H 506"/>
+  <path class="dat"  d="M 534 450 V 490 H 506"/>
+
+  <text class="wlbl" x="60" y="586">Branch fuse: 6 A, one per run</text>
+  <text class="lbls" x="60" y="604">1.25 &#215; 3.84 = 4.8 A, and 6 A is the</text>
+  <text class="lbls" x="60" y="620">smallest standard rating at or above it.</text>
+  <text class="lbls" x="60" y="636">ONE fuse feeds BOTH of that run's red legs.</text>
+  <text class="wlbl" x="60" y="662">Branch wire: 14 AWG to 1.87 m</text>
+  <text class="lbls" x="60" y="680">per leg - 0.150 V at 3.84 A. Size each</text>
+  <text class="lbls" x="60" y="696">leg for the WHOLE 3.84 A, not half.</text>
+  <text class="wlbl" x="60" y="722">Fuses protect wire, not LEDs.</text>
+  <text class="lbls" x="60" y="740">A 60 A supply will happily push 60 A</text>
+  <text class="lbls" x="60" y="756">into a shorted 14 AWG branch. The fuse</text>
+  <text class="lbls" x="60" y="772">is what stops that becoming a fire.</text>
+  <text class="wlbl" x="60" y="798">Fuse = smallest standard &#8805; 1.25 &#215; load</text>
+  <text class="lbls" x="60" y="816">3 runs &#8594; 15 A, 6 runs &#8594; 30 A, 8 runs &#8594; 40 A.</text>
+  <text class="lbls" x="60" y="832">Then ampacity &#8805; the FUSE. One per feeder.</text>
+
+  <text class="wlbl" x="340" y="586">Order of assembly, every time</text>
+  <text class="lbls" x="340" y="606">1. Supply off and unplugged.</text>
+  <text class="lbls" x="340" y="624">2. Bus bars and main fuse.</text>
+  <text class="lbls" x="340" y="642">3. Branch fuses.</text>
+  <text class="lbls" x="340" y="660">4. Option A: far-end legs</text>
+  <text class="lbls" x="340" y="676">&#160;&#160;&#160; soldered, sleeves resealed.</text>
+  <text class="lbls" x="340" y="694">5. Ground first on every run,</text>
+  <text class="lbls" x="340" y="710">&#160;&#160;&#160; then +5 V, then data.</text>
+  <text class="lbls" x="340" y="728">6. Meter checks - see the</text>
+  <text class="lbls" x="340" y="744">&#160;&#160;&#160; pre-power-on checklist.</text>
+  <text class="lbls" x="340" y="762">7. Energise with ONE run</text>
+  <text class="lbls" x="340" y="778">&#160;&#160;&#160; connected, then add the</text>
+  <text class="lbls" x="340" y="794">&#160;&#160;&#160; rest one at a time.</text>
+  <text class="wlbl" x="340" y="820">0.50 V total, terminals to dimmest LED:</text>
+  <text class="lbls" x="340" y="838">feeder .075 + bus .025 + branch .150,</text>
+  <text class="lbls" x="340" y="854">then .250 inside the strip itself.</text>
+
+  <rect class="pan" x="620" y="96" width="520" height="790" rx="6"/>
   <text class="panttl" x="640" y="126">Sizing it for your own layout</text>
   <text class="h3" x="640" y="156">1. Current per run - state the assumptions</text>
   <text class="mono" x="640" y="180" xml:space="preserve">64 px &#215; 3 channels &#215; 20 mA = 3.84 A   full white, worst case</text>
@@ -177,34 +211,44 @@
   <text class="mono" x="640" y="754" xml:space="preserve">18 runs, full white   69.1 A &#215; 5 V = 345 W   never happens</text>
   <text class="mono" x="640" y="772" xml:space="preserve">18 runs, ambient 25 %              &#8776;  86 W   realistic</text>
   <text class="mono" x="640" y="790" xml:space="preserve">86 W &#215; 5 h/day &#215; 30 days           &#8776;  13 kWh/month</text>
-  <text class="lbls" x="40" y="822">Every figure here is derived in &#167; 6.2 from NEC Table 310.16 (ampacity), Chapter 9 Table 8 (resistance), 240.6(A) (standard fuse ratings)</text>
-  <text class="lbls" x="40" y="840">and 210.19(A) Informational Note No. 4 (the 3 % branch / 5 % total drop guidance). Sizing is also a layout decision: putting the supply</text>
-  <text class="lbls" x="40" y="856">beside the block it feeds - 0.3 m rather than 1 m - takes the eight-run feeder from 4 AWG to 8 AWG, a quarter of the cross-section.</text>
-  <rect class="note" x="40" y="876" width="1100" height="344" rx="6"/>
-  <text class="notet" x="60" y="904">Does a 64-pixel run need injection at its far end?</text>
-  <text class="notep" x="60" y="930">Do not apply an "inject every 2 m" length rule here. That number is</text>
-  <text class="notep" x="60" y="947">written for 60 LEDs/m strips, and yours are 30 LEDs/m. Current sets</text>
-  <text class="notep" x="60" y="964">the drop, not length, and half the density is half the current.</text>
-  <text class="mono" x="60" y="992" xml:space="preserve">V = I_span &#215; r_rail &#215; L_span   r_rail = &#937;/m of ONE rail</text>
-  <text class="notep" x="60" y="1016">A run fed from one end carries everything at the feed and nothing</text>
-  <text class="notep" x="60" y="1033">at the tip, so the average is half - but both rails drop, and the</text>
-  <text class="notep" x="60" y="1050">two cancel. Compare in amp-metres, not metres:</text>
-  <text class="mono" x="60" y="1074" xml:space="preserve">2.0 m of 60 LEDs/m   120 px  7.20 A &#215; 2.00 m = 14.4 A&#183;m  the rule&#8217;s case</text>
-  <text class="mono" x="60" y="1092" xml:space="preserve">your run, 30 LEDs/m   64 px  3.84 A &#215; 2.11 m =  8.10 A&#183;m  56 % of it</text>
-  <text class="notep" x="60" y="1114">That kills the 2 m rule - but it does not license a one-end feed.</text>
-  <text class="notet" x="60" y="1138">The pads see 4.75 V, not 5.00 V: &#167; 6.2 spends 0.25 V</text>
-  <text class="notet" x="60" y="1155">getting there, so the strip&#8217;s own rails have 0.250 V.</text>
-  <text class="notet" x="60" y="1172">Working from 5.00 V doubles every threshold below.</text>
-  <text class="notet" x="620" y="930">1. How many points you feed the run at</text>
-  <text class="mono" x="620" y="956" xml:space="preserve">points  spans          drop      r_rail for 0.250 V</text>
-  <text class="mono" x="620" y="974" xml:space="preserve">one end 1 x 2.11 m &#215; 3.84 A  8.10 &#215; r  &#8804; 0.031 &#937;/m</text>
-  <text class="mono" x="620" y="992" xml:space="preserve">BOTH    2 x 1.055 m &#215; 1.92 A 2.03 &#215; r  &#8804; 0.123 &#937;/m</text>
-  <text class="mono" x="620" y="1010" xml:space="preserve">+ mid   4 x 0.527 m &#215; 0.96 A 0.51 &#215; r  &#8804; 0.494 &#937;/m</text>
-  <text class="mono" x="620" y="1028" xml:space="preserve">No FPC strip reaches 0.031, so feed BOTH ends.</text>
-  <text class="warnt" x="620" y="1054">Unverified: r_rail for your silicone-sleeved strips is not known</text>
-  <text class="warnt" x="620" y="1071">and was not established here. Do not substitute a generic figure.</text>
-  <text class="notet" x="620" y="1098">2. Then settle it with a meter, not by eye.</text>
-  <text class="notep" x="620" y="1122">Drive one run at full white, both legs fitted, and meter at the</text>
-  <text class="notep" x="620" y="1139">MIDPOINT of the strip. It must read 4.50 V or better. If not:</text>
-  <text class="notep" x="620" y="1156">cap the brightness, or add a third injection point at that midpoint.</text>
+  <text class="h3" x="640" y="818">5. What the injection choice does not change</text>
+  <text class="lbls" x="640" y="840">Nothing here. Every gauge and fuse rating is sized for full</text>
+  <text class="lbls" x="640" y="856">white, because a fuse has to hold when the software is wrong.</text>
+  <text class="lbls" x="640" y="872">Option A and Option B differ only in the number of leads.</text>
+
+  <text class="lbls" x="40" y="910">Every figure here is derived in &#167; 6.2 from NEC Table 310.16 (ampacity), Chapter 9 Table 8 (resistance), 240.6(A) (standard fuse ratings)</text>
+  <text class="lbls" x="40" y="928">and 210.19(A) Informational Note No. 4 (the 3 % branch / 5 % total drop guidance). Sizing is also a layout decision: putting the supply</text>
+  <text class="lbls" x="40" y="944">beside the block it feeds - 0.3 m rather than 1 m - takes the eight-run feeder from 4 AWG to 8 AWG, about 40 % of the cross-section.</text>
+
+  <rect class="note" x="40" y="964" width="1100" height="344" rx="6"/>
+  <text class="notet" x="60" y="992">Does a 64-pixel run need injection at its far end?</text>
+  <text class="notep" x="60" y="1018">Do not apply an "inject every 2 m" length rule here. That number is</text>
+  <text class="notep" x="60" y="1035">written for 60 LEDs/m strips, and yours are 30 LEDs/m. Current sets</text>
+  <text class="notep" x="60" y="1052">the drop, not length, and half the density is half the current.</text>
+  <text class="mono" x="60" y="1080" xml:space="preserve">V = I_span &#215; r_rail &#215; L_span   r_rail = &#937;/m of ONE rail</text>
+  <text class="notep" x="60" y="1104">A run fed from one end carries everything at the feed and nothing</text>
+  <text class="notep" x="60" y="1121">at the tip, so the average is half - but both rails drop, and the</text>
+  <text class="notep" x="60" y="1138">two cancel. Compare in amp-metres, not metres:</text>
+  <text class="mono" x="60" y="1162" xml:space="preserve">2.0 m of 60 LEDs/m   120 px  7.20 A &#215; 2.00 m = 14.4 A&#183;m  the rule&#8217;s case</text>
+  <text class="mono" x="60" y="1180" xml:space="preserve">your run, 30 LEDs/m   64 px  3.84 A &#215; 2.11 m =  8.10 A&#183;m  56 % of it</text>
+  <text class="notep" x="60" y="1202">That kills the 2 m rule - but it does not license a one-end feed</text>
+  <text class="notep" x="60" y="1219">at full white.</text>
+  <text class="notet" x="60" y="1243">The pads see 4.75 V, not 5.00 V: &#167; 6.2 spends 0.25 V</text>
+  <text class="notet" x="60" y="1260">getting there, so the strip&#8217;s own rails have 0.250 V.</text>
+  <text class="notet" x="60" y="1277">Working from 5.00 V doubles every threshold at right.</text>
+  <text class="notet" x="620" y="1018">1. How many points you feed the run at</text>
+  <text class="mono" x="620" y="1044" xml:space="preserve">points  spans          drop      r_rail for 0.250 V</text>
+  <text class="mono" x="620" y="1062" xml:space="preserve">one end 1 x 2.11 m &#215; 3.84 A  8.10 &#215; r  &#8804; 0.031 &#937;/m</text>
+  <text class="mono" x="620" y="1080" xml:space="preserve">BOTH    2 x 1.055 m &#215; 1.92 A 2.03 &#215; r  &#8804; 0.123 &#937;/m</text>
+  <text class="mono" x="620" y="1098" xml:space="preserve">+ mid   4 x 0.527 m &#215; 0.96 A 0.51 &#215; r  &#8804; 0.494 &#937;/m</text>
+  <text class="notet" x="620" y="1120">No flexible PCB strip reaches 0.031 &#937;/m.</text>
+  <text class="notep" x="620" y="1137">At full white a run is fed at BOTH ends. Fed from the DI end</text>
+  <text class="notep" x="620" y="1154">alone, a 25 % cap needs 0.123 &#937;/m - the very same strip.</text>
+  <text class="warnt" x="620" y="1178">Unverified: r_rail for your silicone-sleeved strips is not known</text>
+  <text class="warnt" x="620" y="1195">and was not established here. Do not substitute a generic figure.</text>
+  <text class="notet" x="620" y="1220">2. Then settle it with a meter, not by eye.</text>
+  <text class="notep" x="620" y="1244">Meter the strip&#8217;s solder pads, then its dimmest point - the</text>
+  <text class="notep" x="620" y="1261">MIDPOINT under Option A, the FAR TIP under Option B. Pads minus</text>
+  <text class="notep" x="620" y="1278">that reading must be 0.250 V or less; an absolute 4.50 V would</text>
+  <text class="notep" x="620" y="1295">pass a strip that fails later, once the whole zone is lit.</text>
 </svg>

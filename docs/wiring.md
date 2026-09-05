@@ -15,7 +15,9 @@ Every conductor is also labelled in text, so the diagrams still work printed in 
 >
 > The old thresholds were worked from 5.00 V arriving at the strip, when the distribution wiring spends 0.25 V getting there. Every one of them was therefore twice as generous as it should have been. Corrected, feeding a 2.11 m run from one end needs a strip rail resistance no flexible PCB achieves.
 >
-> **Every 64-pixel run is fed at both ends: two +5 V leads and two GND leads per run, both off that run's own branch fuse.** It is the design, not a contingency for bad strips.
+> **At full white, every 64-pixel run is fed at both ends: two +5 V leads and two GND leads per run, both off that run's own branch fuse.** It is the design, not a contingency for bad strips.
+>
+> Your far ends are unterminated inside sealed sleeves, so that means opening and resealing about 18 of them. §6.3 now states that work up front and gives you the one lever that avoids it: fed from the DI end alone, a 25 % brightness cap asks exactly the same of the strip that full white fed from both ends does. Neither choice changes a gauge or a fuse rating.
 >
 > Two other numbers moved enough to matter if you were about to buy from the old text. Branch wire is **14 AWG to 1.87 m per leg**, not 18 or 16 AWG, and not a round 2 m. The branch fuse is **6 A**, not 5 A. §6.2 is the authoritative table and every figure in it is derived there from a cited standard.
 
@@ -159,13 +161,27 @@ Do not try to run the Pi from the LED supply, and do not try to run LEDs from th
 
 ![One Fadecandy channel wired to one 64-pixel run, showing the DI pigtail, the supply connections and the point where ground is made common](diagrams/02-one-channel.svg)
 
-Per channel you make exactly three connections at the run end and two at the board end:
+Per channel you make six connections: two at the board, and four at the run - two at each of its two ends.
+
+At the board, and at the run's DI end:
 
 1. Fadecandy channel *n* `+` pad → the run's yellow DATA lead.
 2. Fadecandy channel *n* `−` pad → the run's black GND lead.
-    Twist this with the data wire.
-3. The run's black GND lead → the supply's V−.
-4. The run's red +5 V lead → the supply's V+, through that run's branch fuse.
+    Twist this with the data wire; the pair travels together the whole way.
+
+At the run's DI end, where the pigtail already is:
+
+3. The run's black GND lead → the GND bus.
+4. The run's red +5 V lead → the +5 V bus, through that run's 6 A branch fuse.
+
+At the run's far end, where you have to make the joint yourself:
+
+5. A second black GND leg, soldered to the strip's GND rail → the same GND bus.
+6. A second red +5 V leg, soldered to the strip's +5 V rail → the output of that **same** 6 A branch fuse, not a second fuse.
+
+Connections 5 and 6 are Option A in §6.3, which is what this document sizes and what the diagrams draw.
+Under Option B there you feed the DI end only, at a stated brightness cap, and connections 5 and 6 do not exist.
+Read §6.3 before you cut the far end of a sleeve open, because that is the decision it settles.
 
 Connections 2 and 3 meet at a junction, and that junction is where ground becomes common.
 Physically the neatest place for it is the ground terminal of the fused distribution block that serves that run, so the run's ground, the Fadecandy's ground wire, and the supply's V− all land on the same bar.
@@ -296,7 +312,8 @@ Those ties are 24-26 AWG signal returns: they are the reference for the data lin
 The heavy bond exists so that they are not.
 
 Fitted, the bond sits in *parallel* with that board-and-USB path between the two V− nodes, and current divides by resistance.
-Two metres of 8 AWG is about 0.005 Ω (§5.1, loop, at 75 °C).
+Two metres of 8 AWG is about 0.005 Ω, one-way at 75 °C.
+That is half of §5.1's 0.0052 Ω/m, because that column is the loop and a bond is a single conductor, not a pair.
 Several metres of 26 AWG plus the USB cabling and the hub is on the order of 0.7 Ω.
 That is a ratio near 135 : 1, so over 99 % of any circulating or equalising current between zones flows in the bond and next to none of it in the signal grounds.
 That is the whole reason to fit it.
@@ -315,9 +332,12 @@ The defences against that failure are mechanical and procedural rather than elec
 
 ### 6.1 The fan-out pattern
 
-Supply V+ → that feeder's main fuse → its +5 V bus bar → one branch fuse per run → that run's two red leads, one to each end of it.
-Supply V− → that feeder's GND bus bar → that run's two black leads.
+Supply V+ → that feeder's main fuse → its +5 V bus bar → one branch fuse per run → that run's red leads.
+Supply V− → that feeder's GND bus bar → that run's black leads.
 Data and its ground arrive separately, from the Fadecandy.
+
+How many red and black leads a run has is the Option A / Option B choice in §6.3: two of each, one pair to each end of the run, for full brightness, or one of each on the DI-end pigtail under a stated brightness cap.
+Everything else on this page is identical either way, including every gauge and every fuse rating.
 
 One supply can feed more than one distribution block, and §9.2 does exactly that.
 Each block is its own feeder: its own pair of conductors off the supply terminals, its own main fuse, its own bus bars.
@@ -338,7 +358,7 @@ All the current that goes out comes back.
 > **Where these numbers come from.**
 > Every gauge, fuse rating and length in this section is derived here from four published inputs and nothing else: the conductor table in §5.1, the standard fuse ratings of NEC 240.6(A), the continuous-load rule of NEC 210.19(A)(1)(a) and 210.20(A), and the voltage-drop guidance of NEC 210.19(A) Informational Note No. 4.
 > The arithmetic is shown at every step, so you can repeat it for a layout this document does not cover instead of interpolating.
-> One input is still unmeasured, and it is not a conductor: the rail resistance inside your particular strips. §6.3 is where that is settled, and it changes only whether a run needs a third injection point. It changes nothing about what cable or fuses to buy.
+> One input is still unmeasured, and it is not a conductor: the rail resistance inside your particular strips. §6.3 is where that is settled, and it changes only how many points a run is fed at and at what brightness. It changes nothing about what cable or fuses to buy.
 
 A fuse protects the **conductor downstream of it**, not the LEDs.
 A 60 A supply will happily push 60 A into a shorted 16 AWG branch, and 16 AWG will not survive that.
@@ -362,7 +382,7 @@ supply terminals, set to 5.00 V under load                    5.000 V
 branch tap on the bus                                         4.900 V
     branch        3.0 %    0.150 V     one run, 3.84 A
 strip solder pads                                             4.750 V
-    strip's own rails      0.250 V     §6.3, both-ends fed
+    strip's own rails      0.250 V     §6.3, at that option's design point
 dimmest LED on the run                                        4.500 V
 ```
 
@@ -429,16 +449,22 @@ The table stops at 8 runs because that is the largest zone in this document and 
 
 The bus is the one place where the cheapest correct answer is also the simplest, so this document specifies hardware rather than a gauge.
 
-**Use a copper or brass bar, or a listed power distribution block, with a continuous rating at or above the main fuse for your run count.
+**Use a copper bar, or a listed power distribution block, with a continuous rating at or above the main fuse for your run count.
 One for +5 V and one for GND.
 Land the feeder at the bar's centre, not at one end, and take the branch taps off either side of it.**
 
 That single rule is worth more than a gauge column, and here is the arithmetic that says so.
+**The arithmetic below assumes copper**, which is what the rule specifies; brass is treated separately at the end of it.
 The bus allowance is 0.025 V at up to 30.72 A.
-A modest bar of 20 mm² section, about 2 × 10 mm and smaller than any marine busbar you can actually buy, has a resistance of 0.86 mΩ per metre.
+A modest bar of 20 mm² section, about 2 × 10 mm and smaller than any marine busbar you can actually buy, has a resistance of 0.86 mΩ per metre in copper.
 Centre-fed with the taps spread along it, each half carries at most half the zone current and tapers to nothing at the end, so a 1 m bar drops `30.72 × 0.00172 × 1 ÷ 8` = 6.6 mV across both bars together.
 Allow another 9 mV for three lug joints at 0.1 mΩ in the worst path and the bus has spent 16 mV of its 25 mV.
 Feeding the same bar from one end instead of the centre quadruples that to 26 mV and blows the allowance on its own, which is why the centre feed is in the rule.
+
+**Brass is about four times as resistive as copper, so it does not inherit any of that.**
+The same 20 mm² bar in brass is roughly 3.4 mΩ/m, and at 1 m centre-fed it spends about 26 mV across both bars - the entire 25 mV allowance on its own, before a single lug joint, and the same figure the end-fed copper case is rejected for.
+Brass only fits if the bar is short: at 0.2 m it spends about 5 mV, which leaves room for the joints.
+Buy copper and the length stops being a question you have to ask.
 
 The reason not to use wire is not that the arithmetic is harder.
 It is that a "bus bar" made of wire has to be sized for the full zone current at the fuse's ampacity, which at eight runs means a piece of 8 AWG a few hundred millimetres long with seven taps soldered or crimped onto it, and every one of those taps is an unsupported joint carrying up to 30 A.
@@ -448,8 +474,8 @@ A $10 busbar removes the joints, removes the drop, removes the ampacity question
 
 Every branch in this system carries the same current, so there is one row to remember rather than a table indexed by anything.
 
-- **Branch fuse: 6 A, one per run.** `1.25 × 3.84 = 4.80 A`, and 6 A is the smallest NEC 240.6(A) standard rating at or above it. A 5 A fuse also clears the 4.80 A design current and will work if that is what you can buy, but 6 A is the standard size and leaves more margin in a warm enclosure.
-- **One fuse per run, feeding both of that run's injection legs.** §6.3 requires a 64-pixel run to be fed at both ends. Both legs come off the same fuse, so the fuse still sees only that run's 3.84 A.
+- **Branch fuse: 6 A, one per run.** `1.25 × 3.84 = 4.80 A`, and 6 A is the smallest NEC 240.6(A) standard rating at or above it. That is the whole derivation, and 6 A is the answer; 5 A is not a standard rating in that list and is not an alternative here.
+- **One fuse per run, feeding both of that run's injection legs.** Under Option A in §6.3 a 64-pixel run is fed at both ends. Both legs come off the same fuse, so the fuse still sees only that run's 3.84 A.
 
 Each leg is sized as though it carried the **whole** 3.84 A, not half of it.
 The split between the two legs depends on their relative lengths, which differ for every run and which you are not going to calculate.
@@ -493,8 +519,8 @@ So treat the table above as the sizing consequence of a layout decision, and mak
 ### 6.3 Power injection: how many points a run needs
 
 > **This section reverses what an earlier version of it concluded.**
-> It used to say a single 64-pixel run does not need far-end injection. It does. The old thresholds assumed 5.00 V at the strip when §6.2 spends 0.25 V reaching it, so all of them were 2× too generous, and correcting them moves the answer from "probably not needed" to "not physically possible from one end".
-> **Every run is fed at both ends.** The rest of this section derives that rather than asserting it, because you should be able to check it.
+> It used to say a single 64-pixel run does not need far-end injection. At full white it does. The old thresholds assumed 5.00 V at the strip when §6.2 spends 0.25 V reaching it, so all of them were 2× too generous, and correcting them moves the answer from "probably not needed" to "not physically possible from one end".
+> **At full white, every run is fed at both ends.** The one thing that changes that is a brightness cap, and this section works out exactly what cap buys you what. The rest of it derives both answers rather than asserting them, because you should be able to check them.
 
 **Do not use an "inject every 2 m" length rule here.**
 That number is stated for 60 LEDs/m strips, and these are 30 LEDs/m.
@@ -534,56 +560,96 @@ A span of strip fed from one end and loaded uniformly drops `I_span × r_rail ×
 
 **So a 64-pixel run at full white must be fed at both ends.**
 That is not a judgement call about your strips.
-One-end feeding needs `r_rail` at or below 0.031 Ω/m, which is about 0.55 mm² of copper in each rail: 8 mm of 2 oz foil, or 16 mm of 1 oz.
-A 10 mm wide strip does not have that and is not built that way, so one-end feeding is simply off the table.
+One-end feeding at full white needs `r_rail` at or below 0.031 Ω/m, which is about 0.55 mm² of copper in each rail: 8 mm of 2 oz foil, or 16 mm of 1 oz.
+A 10 mm wide strip does not have that and is not built that way, so one-end feeding at full white is off the table for any strip you can buy.
 
 Feeding both ends relaxes the requirement four-fold, to 0.123 Ω/m.
-That is about 0.14 mm² per rail, which is a 2 mm rail in 2 oz copper: a real strip, and that is what makes both-ends injection the design rather than a contingency.
+That is about 0.14 mm² per rail, which is a 2 mm rail in 2 oz copper: a real strip, and that is what makes both-ends injection the design at full brightness rather than a contingency.
 But read it as the threshold it is and not as comfort, because **the same 2 mm rail in 1 oz copper is about 0.25 Ω/m and does not fit.**
 The difference between a strip that holds this budget and one that misses it by double is a foil weight you cannot see, which is the whole reason the next paragraphs are about measuring rather than assuming.
 (Those two figures are construction estimates from copper resistivity at room temperature, not measurements of your strips.)
 
+#### What feeding both ends costs you to build
+
+Say this plainly before going further, because it is an evening of work and it appears in none of the tables above.
+
+**Your runs have solder pads at the DI end only.**
+§1 records the pigtail as three leads all at that end, and the far end as unterminated inside a sealed silicone sleeve.
+The second pair of legs therefore does not exist yet.
+Creating it means opening the sleeve at the far end of **each of about 18 runs**, soldering a red lead to the strip's +5 V rail and a black lead to its GND rail, and resealing the sleeve around them.
+That is roughly 18 sleeve openings, 36 solder joints onto strip rails, and 36 more terminations at the distribution blocks.
+§9.1 lists the consumables it needs and §11 carries it as a build step.
+
+There is exactly one lever that removes all of that work, and the next subsection is it.
+
+#### The two ways to build this, and what each demands of the strip
+
+Both are definite, and the choice is yours.
+Make it before you buy leads.
+
+**Option A - full brightness, fed at both ends.**
+Two red legs and two black legs per run, both reds off that run's single 6 A branch fuse.
+The strip must have `r_rail` at or below **0.123 Ω/m**.
+Costs the ~18 sleeve openings above.
+
+**Option B - the DI end only, under a stated brightness cap.**
+One red leg and one black leg per run, on the pigtail that is already there.
+No sleeve work at all.
+Fed from one end the drop at the far tip is `V = 8.102 × cap × r_rail` against the same 0.250 V allowance, so the cap you set decides the strip you need:
+
+| Brightness cap | Drop at the far tip | `r_rail` that fits 0.250 V |
+|---|---|---|
+| 100 % | `8.102 × r_rail` | ≤ 0.031 Ω/m - no flexible PCB strip achieves this |
+| 50 % | `4.051 × r_rail` | ≤ 0.062 Ω/m |
+| 30 % | `2.431 × r_rail` | ≤ 0.103 Ω/m |
+| **25 %** | `2.026 × r_rail` | **≤ 0.123 Ω/m** |
+
+**A 25 % cap fed from one end asks exactly the same of the strip as full white fed from both ends: 0.123 Ω/m, the same number to three figures.**
+That is arithmetic rather than coincidence.
+Feeding both ends quarters the drop by halving the current and the length together; a 25 % cap quarters it by taking the current to a quarter on its own.
+§7 already puts realistic ambient light for this installation at about 25 %, so for the way you actually intend to use these lights, Option B asks no more of the strip than Option A does.
+
+**Option B is reversible and wastes nothing.**
+If you later decide you want full white, the far ends go dim and shift warm, you see it the moment you try it, and you do the sleeve work then.
+Every lead, fuse, block and metre of cable bought for Option B is still exactly the right part afterwards.
+
+**Neither option changes a single gauge or fuse rating in §6.2.**
+Everything there is sized for full white whether you ever run full white or not, because the cap is software and a fuse protects against the case where the software is wrong.
+The cap changes only the strip-internal drop, which is a question about how the light looks and not about what can overheat.
+
 **Which leaves exactly one thing to measure.**
-Substituting into the table above, against the 0.250 V the strip is allowed:
+Substituting into the tables above, against the 0.250 V the strip is allowed:
 
-| `r_rail` (Ω/m, one rail) | one end, full white | both ends, full white | both ends, 30 % cap |
-|---|---|---|---|
-| 0.05 | 0.41 V | 0.10 V | 0.03 V |
-| 0.10 | 0.81 V | 0.20 V | 0.06 V |
-| 0.15 | 1.22 V | 0.30 V | 0.09 V |
-| 0.20 | 1.62 V | 0.41 V | 0.12 V |
-| 0.30 | 2.43 V | 0.61 V | 0.18 V |
+| `r_rail` (Ω/m, one rail) | one end, full white | one end, 30 % cap | **A: both ends, full white, or B: one end at 25 %** | both ends, 30 % cap |
+|---|---|---|---|---|
+| 0.05 | 0.41 V | 0.12 V | **0.10 V** | 0.03 V |
+| 0.10 | 0.81 V | 0.24 V | **0.20 V** | 0.06 V |
+| 0.15 | 1.22 V | 0.36 V | **0.30 V** | 0.09 V |
+| 0.20 | 1.62 V | 0.49 V | **0.41 V** | 0.12 V |
+| 0.30 | 2.43 V | 0.73 V | **0.61 V** | 0.18 V |
 
-Read the middle column: fed at both ends, a strip up to about 0.12 Ω/m holds the budget at full white, and a worse strip than that does not.
-Read the right-hand column: fed at both ends and capped at 30 % brightness, every strip in the table holds it comfortably, including a bad one.
+Read the bold column: at either option's design point, a strip up to about 0.12 Ω/m holds the budget and a worse strip than that does not.
+Read the outer columns for what a further half-step of brightness buys you if it turns out you have a bad strip.
 
 > **Unverified:** `r_rail` for your specific silicone-sleeved strips is not known and was not established for this document.
 > It depends on how that particular strip was built, and these were cut and sleeved by a previous owner.
 > Do not substitute a generic figure. Measure it, or measure the drop directly, as below.
 
-Be clear about what the brightness cap is and is not allowed to do.
-It legitimately reduces voltage drop, because drop scales with current, and drop is a question about how the light *looks*.
-It is not allowed to reduce a gauge or a fuse rating anywhere in §6.2, because the cap is software and a fuse protects against the case where the software is wrong.
-Every conductor in this document is sized for full white whether you ever run full white or not.
-
 **Settle it by measurement, not by argument.**
 You do not need `r_rail` itself. You need the voltage at the dimmest LED, and that is directly meterable:
 
-1. Wire one run with both injection legs fitted, as §6.2 specifies.
-2. Drive that one run at full white. One run is 3.84 A, which is inside any sensible power-governor budget, so you do not have to defeat the clamp to do this.
-3. Meter DC volts at the strip's **solder pads**, and then between the +5 V and GND rails **at the midpoint of the run**, which is the dimmest point when a run is fed from both ends.
+1. Wire one run the way you have chosen to build all of them: Option A with both legs fitted, or Option B with the DI-end pigtail alone.
+2. Drive that one run at the brightness its option assumes - full white for Option A, your chosen cap for Option B. One run at full white is 3.84 A, which is inside any sensible power-governor budget, so you do not have to defeat the clamp to do this.
+3. Meter DC volts at the strip's **solder pads**. Then meter between the strip's own +5 V and GND rails at its dimmest point, which is **the midpoint of the run under Option A** and **the far tip under Option B**.
 4. **The difference between those two readings must be 0.250 V or less.** If it is, the strip fits its allowance and you are done.
 
-Take the difference, not the midpoint on its own. With a single run lit the feeder and the bus are barely loaded, so the whole strip floats about 0.09 V above where it will sit once the zone is full, and a midpoint that reads 4.50 V under those conditions will not still read 4.50 V with eight runs on. The difference is a property of the strip and does not move with load; the absolute floor is checked later, in §11 step 17, with the whole cluster lit.
+Take the difference, not the second reading on its own. With a single run lit the feeder and the bus are barely loaded, so the whole strip floats about 0.09 V above where it will sit once the zone is full, and a dimmest point that reads 4.50 V under those conditions will not still read 4.50 V with eight runs on. The difference is a property of the strip and does not move with load; the absolute floor is checked later, in §11 step 19, with the whole cluster lit.
 
-If the strip's own drop exceeds 0.250 V, it is worse than 0.123 Ω/m and you have three options, in order of what they cost you:
+If the strip's own drop exceeds 0.250 V under the option you chose, you have three answers, in order of what they cost you:
 
-- **Cap the brightness.** The right-hand column above says a 30 % cap holds the budget for any strip you are likely to have. This is ambient apartment lighting, and 30 % of 64 WS2812Bs is already a lot of light for a room.
-- **Add a third injection point at the midpoint**, which by the first table takes the requirement out to 0.494 Ω/m and settles the question for any strip at all.
-- **Accept it at full white only**, knowing the middle of the run will be slightly dim and slightly warm in colour when you drive it hard, and normal at everything below that.
-
-If you do add injection points, note the practical obstacle: your runs have pads at the DI end only and an unterminated far end, so reaching the rails means opening the silicone sleeve.
-That is a reason to try the cap first, not a reason to feed a run from one end.
+- **Lower the brightness cap.** Drop scales directly with current, so halving the cap halves the drop. This is ambient apartment lighting, and 25 % of 64 WS2812Bs is already a lot of light for a room.
+- **Feed more points.** From Option B that means moving to Option A, which is four times looser. From Option A it means a third injection point at the midpoint, which by the first table takes the requirement out to 0.494 Ω/m and settles the question for any strip at all. Each extra point is another sleeve opening.
+- **Accept it at full white only**, knowing the dimmest part of the run will be slightly dim and slightly warm in colour when you drive it hard, and normal at everything below that.
 
 ---
 
@@ -713,12 +779,26 @@ It is a complete, working system, and it is also the first cluster of the full b
 | Feeder | 8 AWG under 0.47 m, or 6 AWG under 0.76 m - 0.075 V at 30.7 A |
 | Main fuse | 40 A at the supply end of the feeder - the 8-run row of §6.2 |
 | Branch fuses | 6 A per run, 8 of them |
-| Branch wire | 14 AWG, two legs per run, each under 1.87 m - 0.150 V at 3.84 A |
+| Branch wire | 14 AWG, each leg under 1.87 m - 0.150 V at 3.84 A. **Option A: two legs per run. Option B: one.** See below |
+| Far-end termination | **Option A only.** 8 sleeve openings, 16 solder joints onto strip rails, and the consumables below |
 | Data | 8 × twisted DATA + GND pairs, 24-26 AWG, each under 5 m |
 | Host | Pi 3B+, its own 5 V 2.5 A supply, one USB cable to the board |
 
 Note the supply choice: the 30 A unit would be at 102 % of rating here.
 Use the 60 A unit for this cluster.
+
+**Decide Option A or Option B before you order, because it changes the lead count and nothing else.**
+§6.3 has the derivation; the short version is that full brightness needs both ends fed, and a 25 % brightness cap on the DI-end pigtail alone asks exactly the same of the strip.
+Option A doubles the branch wire and the block terminations for this cluster, and it adds real bench work:
+
+| Option A also needs | Why |
+|---|---|
+| A sharp blade and patience | Opening the silicone sleeve at the far end of each of the 8 runs without nicking the strip |
+| Flux and a fine-tip iron | 2 joints per run onto the strip's own +5 V and GND rails, 16 in all |
+| Adhesive-lined heatshrink, or clear RTV silicone | Resealing each sleeve around the two new leads. Do not leave a bare rail in a kitchen or a bathroom |
+| 8 more 14 AWG legs of each colour | The second pair per run, plus 16 more ferrules for the block |
+
+Option B needs none of that row and stays reversible: if you later want full white, you do the sleeve work then and nothing bought for Option B is wasted.
 
 ### 9.2 Expansion path: 18 runs, three boards, both supplies
 
@@ -798,7 +878,7 @@ Anchor the mains cable at the enclosure wall so any pull is taken by the gland, 
 **Separation.** Keep mains wiring physically separated from the 5 V and data wiring inside any shared enclosure - separate compartments or a barrier, different cable entries, and never in the same bundle.
 This is a safety requirement first; the reduced noise on the data lines is a bonus.
 
-**Bonding between supplies.** If the installation uses more than one supply, every supply's V− terminal is bonded to every other with a conductor sized like the largest zone's bus bar - 8 AWG in the §9.2 layout.
+**Bonding between supplies.** If the installation uses more than one supply, every supply's V− terminal is bonded to every other with a conductor sized like the largest zone's feeder - 8 AWG in the §9.2 layout.
 Fit those bonds before any supply is energised.
 The boards and the USB hub already tie the supply grounds together through 24-26 AWG signal wire; the bond is what keeps that thin path from being the only tie, so that circulating current between zones flows in copper rated for it.
 It does **not** protect against a GND feeder coming loose at its supply - see §5.3 for why, and for what does.
@@ -820,70 +900,86 @@ The mains side is the part that can kill someone, and it is a small job for some
 Do this with the supply **unplugged from the mains** unless a step says otherwise.
 You need a multimeter.
 
+**Before you make up a single run**
+
+1. **Decide Option A or Option B from §6.3, and write the answer down.**
+    Option A is full brightness with both ends of every run fed: two red legs and two black legs per run.
+    Option B is the DI-end pigtail alone under a stated brightness cap, and a 25 % cap asks exactly as much of the strip as Option A does at full white.
+    It changes no gauge and no fuse rating anywhere in this document.
+    It changes how many leads you cut, how many terminations the block needs, and whether you spend an evening opening sleeves.
+2. **Option A only: make up the far end of every run before anything is mounted.**
+    Your strips have pads at the DI end and nothing at the far end, so this joint does not exist yet, and it is far easier to make on a bench than up a wall.
+    Per run: open the silicone sleeve at the far end, tin the strip's own +5 V and GND rails, solder a red 14 AWG leg to +5 V and a black one to GND, then reseal with adhesive-lined heatshrink or clear RTV silicone so no rail is left bare.
+    That is 2 joints per run, and about 36 joints across a full 18-run build.
+    Tug-test each joint before you seal it, and check for a solder bridge between the two rails with the meter while you can still see them.
+    Skip this step entirely under Option B.
+
 **Before any power at all**
 
-1. Visually inspect every mains-side connection.
+3. Visually inspect every mains-side connection.
     No stray strands, no exposed copper past the terminal, no conductor that can move.
     Earth is landed on the earth terminal.
-2. Enclosure is closed.
+4. Enclosure is closed.
     Cable entries are strain-relieved.
-3. Set the meter to continuity.
+5. Set the meter to continuity.
     Confirm **no continuity between the +5 V bus and the GND bus** with everything connected.
     If it beeps, you have a short - find it now.
-4. Confirm continuity from the GND bus to every run's black lead, and to the Fadecandy's `−` pins for the channels in use.
+6. Confirm continuity from the GND bus to every run's black lead, and to the Fadecandy's `−` pins for the channels in use.
     This is the common ground; prove it exists.
     **A continuity beeper cannot do the next two checks.** Once the V−-to-V− bond is fitted and the boards are plugged into the hub, every ground in the installation is connected to every other one *somehow* - §5.3 puts the sneak path through the board grounds and USB at roughly 0.7 Ω, far inside any beeper's threshold - so it beeps whether or not the conductor you care about is actually there. Do these two with the bond off and the boards unplugged.
     First, with the V−-to-V− bond **disconnected** and **every board unplugged from USB**, confirm continuity from each block's GND bus to its own supply's V− terminal. That is the only state in which a beep proves that particular feeder exists.
     Then refit the bond and, still with the boards unplugged and every block's GND feeder lifted at its block, meter between the supplies' V− terminals to prove the bond itself.
     Reconnect everything. If you would rather check with it all connected, use the resistance range rather than the beeper and require milliohms: the direct conductor is a few thousandths of an ohm and the sneak path is about 0.7 Ω, so the reading tells them apart even though the beep does not.
     While you are at each GND feeder termination, check it is ferruled or lugged and properly tight; §5.3 explains why that termination is the one the bond cannot cover for you.
-5. Confirm continuity from the +5 V bus, through each branch fuse, to **both** of that run's red leads.
-    Do this per branch; it also confirms each fuse is actually seated, and that neither injection leg has been left off.
-6. Confirm **no continuity between the +5 V bus and mains earth**, and none between the GND bus and any mains conductor.
-7. Confirm the DATA wire for each channel is on the `+` pad and its ground on the `−` pad of the same channel, and that no data wire is touching a neighbouring pad.
+7. Confirm continuity from the +5 V bus, through each branch fuse, to every one of that run's red leads - **both** of them under Option A.
+    Do this per branch; it also confirms each fuse is actually seated, and, under Option A, that neither injection leg has been left off.
+8. Confirm **no continuity between the +5 V bus and mains earth**, and none between the GND bus and any mains conductor.
+9. Confirm the DATA wire for each channel is on the `+` pad and its ground on the `−` pad of the same channel, and that no data wire is touching a neighbouring pad.
     The pads are 2.54 mm apart and solder bridges there are easy to make and easy to miss.
 
 **Supply alone, no strips connected**
 
-8. Disconnect the +5 V bus from the supply's V+ terminal.
+10. Disconnect the +5 V bus from the supply's V+ terminal.
     Plug in and switch on.
-9. Meter on DC volts across the supply's V+ and V− terminals.
+11. Meter on DC volts across the supply's V+ and V− terminals.
     You should read close to 5 V, right polarity.
-10. Adjust the V-ADJ trimpot until it reads **5.00 V**.
+12. Adjust the V-ADJ trimpot until it reads **5.00 V**.
     Not 5.2, not 5.3, for the reason in §2.4.
     If your unit has no adjustment, confirm it reads between 4.90 and 5.10 V and carry on.
-11. Switch off and unplug.
+13. Switch off and unplug.
     Reconnect the +5 V bus.
 
 **First light, one run**
 
-12. Connect exactly **one** run: both red leads, both black leads, and its data pair.
+14. Connect exactly **one** run: its data pair, plus both red and both black leads under Option A, or the single red and black pigtail leads under Option B.
     Leave the other branch fuses out.
-13. Power on.
+15. Power on.
     Meter on DC volts at that run's red and black leads at the strip end.
     With the run dark you should read essentially the supply voltage.
-14. Drive that run at full white and meter at the strip pads again.
+16. Drive that run at full white and meter at the strip pads again.
     With one run lit the feeder and the bus are carrying 3.84 A rather than the zone total, so they contribute about 0.01 V and essentially all of the drop is the branch.
     **The pads should read 4.84 V or better.**
     Below that, the branch legs are too thin or too long: fix it before adding runs, because the feeder has not yet spent its share of the budget and there is nothing to borrow from later.
-15. Still at full white, meter at the **midpoint** of the run, between the strip's own +5 V and GND rails.
-    That is the dimmest LED on a run fed from both ends.
-    **Subtract that reading from the pad reading in step 14. The difference is the strip's own drop, and it must be 0.250 V or less.**
-    Take the difference rather than the absolute voltage here, and do not just check the midpoint against 4.50 V: with one run lit the feeder and the bus are barely loaded, so the whole strip is sitting about 0.09 V higher than it will once the zone is full, and an absolute reading would pass a strip that will fail later.
+17. Still at the brightness your option assumes - full white for Option A, your chosen cap for Option B - meter at the run's dimmest point, between the strip's own +5 V and GND rails.
+    Under Option A that is the **midpoint** of the run; under Option B it is the **far tip**.
+    **Subtract that reading from the pad reading in step 16. The difference is the strip's own drop, and it must be 0.250 V or less.**
+    Take the difference rather than the absolute voltage here, and do not just check that point against 4.50 V: with one run lit the feeder and the bus are barely loaded, so the whole strip is sitting about 0.09 V higher than it will once the zone is full, and an absolute reading would pass a strip that will fail later.
     This is the one measurement in this document that settles a number nothing else could establish, and §6.3 explains what to do if the strip is over its 0.250 V.
-    Look along the run too: a middle that is dimmer, or drifting pink or amber while both ends are still white, is the same finding by eye.
+    Look along the run too: a stretch that is dimmer, or drifting pink or amber while the fed end is still white, is the same finding by eye.
 
 **Adding the rest**
 
-16. Power off, add one more run, power on, check it, repeat.
+18. Power off, add one more run, power on, check it, repeat.
     Adding them one at a time means that when something is wrong you already know which connection you just made.
-17. With all runs on the cluster connected, drive everything white briefly and check the supply is not going into current limit and is not getting hot.
+19. With all runs on the cluster connected, drive everything white briefly and check the supply is not going into current limit and is not getting hot.
     This is also the only moment the feeder carries the current it was sized for, so meter the whole §6.2 ladder now, at full white, with every run on the cluster lit:
-    **supply terminals 5.00 V, bus bars 4.925 V or better, strip pads 4.75 V or better, run midpoints 4.50 V or better.**
-    If step 14 passed and the bus reading does not, the extra is the feeder: it is too long or too thin for the zone's current, not the branch.
+    **supply terminals 5.00 V, bus bars 4.925 V or better, strip pads 4.75 V or better.**
+    Those three are conductor readings and they hold at full white under either option.
+    Then take the last rung, **each run's dimmest point at 4.50 V or better**, at the brightness that option assumes: full white under Option A, your chosen cap under Option B.
+    If step 16 passed and the bus reading does not, the extra is the feeder: it is too long or too thin for the zone's current, not the branch.
     If the bus is fine and a pad is low, that run's branch legs are the problem.
     Each reading isolates one segment, which is the whole point of apportioning the budget rather than checking only the total.
-18. Leave it running a scene for an hour and come back and feel the supply, the bus bars, and the branch wires.
+20. Leave it running a scene for an hour and come back and feel the supply, the bus bars, and the branch wires.
     Nothing should be more than mildly warm.
     Anything hot is undersized.
 
@@ -919,7 +1015,7 @@ The mirror's `pcb/README.md` still links back to `scanlime/fadecandy` paths, and
 
 Explicitly **not** verified, and flagged where it appears:
 
-- The rail resistance of these specific silicone-sleeved strips (§6.3). This is the one input the §6.2 sizing chain does not close on its own. It changes nothing about what cable or fuses to buy; it decides only whether a run needs a third injection point, and step 15 of the §11 checklist settles it with a meter.
+- The rail resistance of these specific silicone-sleeved strips (§6.3). This is the one input the §6.2 sizing chain does not close on its own. It changes nothing about what cable or fuses to buy; it decides only how many points a run is fed at and at what brightness, and step 17 of the §11 checklist settles it with a meter.
 - The Pi 3B+ total USB port current limit of 1.2 A - widely cited in Raspberry Pi community sources, not confirmed against official documentation here (§8).
 - WS2812B per-pixel quiescent current, used only for the standby estimate in §7.
 The NEC is used here as a published, current ampacity and voltage-drop standard, because a 5 V lighting installation needs *some* citable basis and "typical chassis-wiring values" is not one.

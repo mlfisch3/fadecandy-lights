@@ -279,8 +279,9 @@ These strips measure **33 mm centre to centre**, so 30.3 LEDs/m and a full 64-pi
 > **Changed:** this section used to say 18 AWG injection wire, 16 AWG if the run is long. That is wrong at this current and length. It is **14 AWG**, and the branch fuse is **6 A**. See `docs/wiring.md` §6.2.
 
 
-- **Every 64-pixel run is fed at both ends.** That is not a contingency, it is the design. Fed from one end, a 2.11 m run would need a strip rail resistance no flexible PCB achieves; fed from both ends the requirement is four times looser and a decent strip meets it.
+- **At full white, every 64-pixel run is fed at both ends.** That is not a contingency, it is the design. Fed from one end, a 2.11 m run would need a strip rail resistance no flexible PCB achieves; fed from both ends the requirement is four times looser and a decent strip meets it.
 - **Feed 5 V and ground at each end**, both legs off that run's single branch fuse. The data line is **not** injected; it continues pixel to pixel as normal.
+- **There is one lever that avoids that work, and it is a brightness cap.** These strips have pads at the DI end only, so feeding both ends means opening and resealing about 18 sealed silicone sleeves. Fed from the DI end alone, a **25 % cap asks exactly the same of the strip that full white fed from both ends does** - 0.123 Ω/m either way - and §7 already puts realistic ambient light here at about 25 %. The choice is reversible and changes no gauge and no fuse rating; `docs/wiring.md` §6.3 states both options with the figures.
 - **Run injection wire back to the distribution block, not along the strip.** 14 AWG up to 1.87 m per leg is the default. Size each leg for the whole 3.84 A, not half of it.
 - Splitting the installation across the Fadecandy's eight outputs still helps: eight 2.11 m runs fed at both ends are a far easier wiring problem than one 512-pixel, 16.9 m chain.
 

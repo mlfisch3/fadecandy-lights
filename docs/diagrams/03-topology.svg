@@ -2,7 +2,7 @@
      role="img" aria-labelledby="t3 d3">
   <title id="t3">Topology for many zones: all runs home to one point, versus clustering</title>
   <desc id="d3">Three layouts compared. Option A brings all eighteen runs home to a single supply and
-  Fadecandy, so every run needs its own long pair of heavy 5 V conductors and the voltage drop makes
+  Fadecandy, so every run needs its own long pairs of heavy 5 V conductors and the voltage drop makes
   it fail. Option B keeps one supply and its fused distribution blocks local to a group of adjacent
   clusters, so only the thin data and ground wires travel far; its single central Fadecandy is only
   allowed while every run it drives comes off that one supply. Option C puts a supply and a Fadecandy
@@ -98,8 +98,8 @@
   <path class="datct" d="M 293 240 L 222 326"/>
   <path class="datt"  d="M 293 240 L 222 326"/>
   <path class="gndt" d="M 302 240 L 236 326"/>
-  <text class="warnt" x="56" y="418">36 heavy power conductors plus 36 signal</text>
-  <text class="warnt" x="56" y="435">conductors, all landing on one box.</text>
+  <text class="warnt" x="56" y="418">Up to 72 heavy power conductors plus 36</text>
+  <text class="warnt" x="56" y="435">signal conductors, all landing on one box.</text>
   <text class="lbls" x="56" y="460">A 6 m 18 AWG feed at 3.84 A loses 1.22 V.</text>
   <text class="lbls" x="56" y="477">That run then sees about 3.8 V - under the</text>
   <text class="lbls" x="56" y="494">4.5 V the WS2812B is characterised at. It</text>
@@ -252,7 +252,7 @@
   <text class="notep" x="60" y="1054">The last line is Option B. A short 14 AWG hop from a local supply beats</text>
   <text class="notep" x="60" y="1071">a long 12 AWG haul from a central one, which does not fit at any gauge.</text>
   <text class="notep" x="60" y="1096">The strip&#39;s own rails get a further 0.250 V (&#167; 6.3). Measure it:</text>
-  <text class="notep" x="60" y="1113">meter at the MIDPOINT of a lit run; it must read 4.50 V or better.</text>
+  <text class="notep" x="60" y="1113">meter the pads AND the dimmest point; the difference must be &#8804; 0.250 V.</text>
   <rect class="note" x="606" y="796" width="534" height="330" rx="6"/>
   <text class="notet" x="626" y="824">Why long data runs are cheap in current - but still bounded</text>
   <text class="notep" x="626" y="848">A WS2812B data input draws &#177;1 &#181;A and presents 15 pF. Gauge is almost</text>
