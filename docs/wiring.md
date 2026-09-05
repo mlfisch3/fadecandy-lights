@@ -962,7 +962,8 @@ You need a multimeter.
     Below that, the branch legs are too thin or too long: fix it before adding runs, because the feeder has not yet spent its share of the budget and there is nothing to borrow from later.
 17. Still at the brightness your option assumes - full white for Option A, your chosen cap for Option B - meter at the run's dimmest point, between the strip's own +5 V and GND rails.
     Under Option A that is the **midpoint** of the run; under Option B it is the **far tip**.
-    **Subtract that reading from the pad reading in step 16. The difference is the strip's own drop, and it must be 0.250 V or less.**
+    Under Option A the pad reading from step 16 was already at full white and can be reused; **under Option B, re-meter at the pads at the cap now**, because step 16's pad reading was taken at full white and the two readings that go into the subtraction must be at the same current or the difference is not the strip's drop.
+    **Subtract the dimmest-point reading from the pad reading taken at the same brightness. The difference is the strip's own drop, and it must be 0.250 V or less.**
     Take the difference rather than the absolute voltage here, and do not just check that point against 4.50 V: with one run lit the feeder and the bus are barely loaded, so the whole strip is sitting about 0.09 V higher than it will once the zone is full, and an absolute reading would pass a strip that will fail later.
     This is the one measurement in this document that settles a number nothing else could establish, and §6.3 explains what to do if the strip is over its 0.250 V.
     Look along the run too: a stretch that is dimmer, or drifting pink or amber while the fed end is still white, is the same finding by eye.
