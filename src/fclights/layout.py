@@ -288,6 +288,15 @@ def _output_from_dict(
     if not isinstance(name, str):
         raise LayoutError(f"device {device_id!r} output {index}: name must be a string")
 
+    reverse = raw.get("reverse", False)
+    if not isinstance(reverse, bool):
+        # bool("false") is True, so a coerced string would silently render the
+        # whole run backwards with nothing to show for it.
+        raise LayoutError(
+            f"device {device_id!r} output {index}: reverse must be true or false, "
+            f"got {reverse!r}"
+        )
+
     return Output(
         index=index,
         count=count,
@@ -298,7 +307,7 @@ def _output_from_dict(
         # every output where it could drift out of step.
         step=vec("step", (pitch, 0.0, 0.0)),
         points=pts,
-        reverse=bool(raw.get("reverse", False)),
+        reverse=reverse,
     )
 
 

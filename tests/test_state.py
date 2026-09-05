@@ -357,6 +357,9 @@ HOSTILE_DOCUMENTS = [
         id="scene-brightness-is-nan",
     ),
     pytest.param({"power": {"on": True}}, id="power-is-an-object"),
+    pytest.param({"power": "false"}, id="power-is-a-string"),
+    pytest.param({"power": 0}, id="power-is-a-number"),
+    pytest.param({"power": None}, id="power-is-null"),
     pytest.param({"scenes": [{"name": "x", "effect": "solid", "params": [1]}]},
                  id="scene-params-is-a-list"),
 ]
@@ -386,6 +389,17 @@ class TestHostileStateFilesNeverStopTheLightsComingUp:
         assert all(
             math.isfinite(v) for v in state.params.values() if isinstance(v, (int, float))
         )
+
+    @pytest.mark.parametrize("literal", ['"false"', "0", "null", "[]"])
+    def test_a_wrongly_typed_power_falls_back_rather_than_coercing(self, tmp_path, literal):
+        # bool("false") is True, and a coerced master switch would be the one
+        # setting that decides whether the strip lights at all.
+        path = tmp_path / "state.json"
+        path.write_text(f'{{"power": {literal}}}', encoding="utf-8")
+
+        state = StateStore(path).load()
+
+        assert state.power is default_state().power
 
     def test_a_hand_edited_revision_falls_back_to_zero(self, tmp_path):
         path = tmp_path / "state.json"

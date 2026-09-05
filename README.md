@@ -76,6 +76,15 @@ This is a property of the hardware, not of this software, and no amount of colou
 It is worth knowing before wiring an apartment.
 As accent, cove and ambient lighting these are lovely; as the only light in a kitchen or over a mirror they are a poor choice, and a broad-spectrum white fixture belongs there instead.
 
+## Trust model on the LAN
+
+**The control API is unauthenticated, on purpose.**
+It binds every interface so phones on the home WiFi can reach it, and anything that can reach port 7891 can change the lights, save and delete scenes, and read the layout. There is no token and no TLS.
+
+That is the right trade for a light fitting on a network you control, and it is why the power governor is a hard clamp rather than something a client can talk its way past: the worst case from a hostile device on the LAN is somebody turning your lights orange, not damaged hardware.
+
+It is only correct under that assumption. **Do not port-forward this, do not put it behind a public reverse proxy, and do not run it on a guest or shared network.** If you want it from outside the house, VPN into the home network rather than opening the port.
+
 ## Install
 
 On a fresh Raspberry Pi OS install, on the Pi:
@@ -350,6 +359,8 @@ What is missing is per-board serial number pinning, so that outputs do not swap 
 The `serial` field is in the layout schema for that; it is not yet matched against fcserver's device map.
 
 ## What is deliberately not here
+
+**Authentication.** See [Trust model on the LAN](#trust-model-on-the-lan). The API trusts the local network, which is a decision rather than an omission; a token or mTLS would add a subsystem here and a matching one in the Android app for no gain on a network you already control.
 
 **Scheduling and circadian automation.** No sunrise ramp, no time-of-day scenes, no astronomical clock. That is separate work, and it is not designed out: an effect is a pure function of time and parameters, a scene is a stored effect plus its parameters and brightness, and both are addressable over the API. A scheduler would sit above this and recall scenes on a clock, without anything here changing.
 

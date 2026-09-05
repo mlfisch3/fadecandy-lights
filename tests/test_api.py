@@ -479,6 +479,37 @@ class TestNonFiniteValuesAreRefused:
         assert max(engine.encode()[0][OPC_HEADER_BYTES:]) > 0
 
 
+class TestBooleansAreStrictOnTheWire:
+    """docs/api.md types these as booleans, so a string is a client bug."""
+
+    @pytest.mark.parametrize("literal", ['"true"', '"false"', "1", "0", "null"])
+    def test_master_power_refuses_a_non_boolean(self, client, literal):
+        before = state_of(client.get("/api/state"))["power"]
+        response = client.put(
+            "/api/power",
+            content=f'{{"on": {literal}}}',
+            headers={"content-type": "application/json"},
+        )
+
+        assert response.status_code == 422
+        assert set(response.json()) == {"error", "detail"}
+        assert state_of(client.get("/api/state"))["power"] is before
+
+    def test_master_power_still_accepts_real_booleans(self, client):
+        assert state_of(client.put("/api/power", json={"on": False}))["power"] is False
+        assert state_of(client.put("/api/power", json={"on": True}))["power"] is True
+
+    @pytest.mark.parametrize("literal", ['"true"', "1"])
+    def test_scene_capture_refuses_a_non_boolean(self, client, literal):
+        scene = client.post("/api/scenes", json={"name": "Hearth"}).json()["scene"]
+        response = client.put(
+            f"/api/scenes/{scene['id']}",
+            content=f'{{"capture": {literal}}}',
+            headers={"content-type": "application/json"},
+        )
+        assert response.status_code == 422
+
+
 class TestErrorShape:
     def test_errors_share_one_shape(self, client):
         body = client.get("/api/scenes/ghost").json()

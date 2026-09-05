@@ -29,6 +29,29 @@ class ConfigError(ValueError):
     """Raised when the config file is malformed or self-contradictory."""
 
 
+LOG_LEVELS = ("CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG")
+"""Levels both consumers of this setting understand.
+
+``configure_logging`` reads it through ``logging``, and ``fclights run`` hands
+it to uvicorn. The two do not accept the same names: ``logging`` has WARN and
+NOTSET, uvicorn has TRACE and rejects the first two with a KeyError. Anything
+outside the intersection would let ``fclights check`` pass a config that then
+crash-loops ``fclights run`` under Restart=always, so only the intersection is
+allowed, with the two common aliases normalised into it.
+"""
+
+_LOG_LEVEL_ALIASES = {"WARN": "WARNING", "FATAL": "CRITICAL"}
+
+
+def _log_level(value: str) -> str:
+    level = _LOG_LEVEL_ALIASES.get(value.upper(), value.upper())
+    if level not in LOG_LEVELS:
+        raise ConfigError(
+            f"log_level must be one of {', '.join(LOG_LEVELS)}, got {value!r}"
+        )
+    return level
+
+
 @dataclass(frozen=True)
 class PowerConfig:
     """Supply ceiling and the LED current model used to stay under it."""
@@ -134,6 +157,19 @@ def _text(raw: dict[str, Any], key: str, default: Any, where: str) -> str:
     return value
 
 
+def _flag(raw: dict[str, Any], key: str, default: bool, where: str) -> bool:
+    """Read a boolean field, refusing any other JSON type.
+
+    ``bool()`` makes every non-empty string true, so ``"simulate": "false"``
+    would wire a NullSink and leave the strip dark while every endpoint still
+    answered normally - a fault that looks exactly like bad wiring.
+    """
+    value = raw.get(key, default)
+    if not isinstance(value, bool):
+        raise ConfigError(f"{where} must be true or false, got {value!r}")
+    return value
+
+
 def _origin(value: Any) -> str:
     if not isinstance(value, str):
         raise ConfigError(f"server.cors_origins entries must be strings, got {value!r}")
@@ -201,7 +237,9 @@ def config_from_dict(raw: dict[str, Any]) -> Config:
         simulate_pixels = int(raw.get("simulate_pixels", defaults.simulate_pixels))
         layout_path = Path(_text(raw, "layout_path", defaults.layout_path, "layout_path"))
         state_path = Path(_text(raw, "state_path", defaults.state_path, "state_path"))
-        log_level = _text(raw, "log_level", defaults.log_level, "log_level").upper()
+        log_level = _log_level(_text(raw, "log_level", defaults.log_level, "log_level"))
+        dither = _flag(raw, "dither", defaults.dither, "dither")
+        simulate = _flag(raw, "simulate", defaults.simulate, "simulate")
     except (TypeError, ValueError, OverflowError) as exc:
         # OverflowError is what int() raises for an infinity and what float()
         # raises for an integer literal too large to represent; neither is a
@@ -228,13 +266,13 @@ def config_from_dict(raw: dict[str, Any]) -> Config:
 
     return Config(
         fps=fps,
-        dither=bool(raw.get("dither", defaults.dither)),
+        dither=dither,
         power=power,
         opc=opc,
         server=server,
         layout_path=layout_path,
         state_path=state_path,
-        simulate=bool(raw.get("simulate", defaults.simulate)),
+        simulate=simulate,
         simulate_pixels=simulate_pixels,
         log_level=log_level,
     )

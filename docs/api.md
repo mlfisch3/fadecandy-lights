@@ -11,6 +11,7 @@ The Android app is built against it, so treat a change here as a change to a pub
 ## Contents
 
 - [Discovery](#discovery)
+- [Trust model](#trust-model)
 - [Conventions](#conventions)
 - [Errors](#errors)
 - [Colour values](#colour-values)
@@ -39,6 +40,22 @@ On Android, browse with `NsdManager` for `_fclights._tcp`.
 Resolve the service, then use the resolved host and port as the base URL.
 Fall back to a manually entered address if discovery finds nothing; some home routers and some Android battery-saver settings suppress multicast.
 
+## Trust model
+
+**The API is unauthenticated, and that is deliberate.**
+There is no token, no TLS and no per-client identity.
+It binds `0.0.0.0` and trusts everything on the local network: anything that can reach port 7891 can change the lights, save and delete scenes, and read the layout.
+
+That is the right trade for a light fitting on a home LAN reached by a phone on the same WiFi, and the power governor is a hard clamp regardless of what any client asks for, so the worst a hostile client on the network can do is a nuisance rather than damage.
+
+It is **not** safe outside that assumption:
+
+- Do not port-forward it, and do not put it behind a public reverse proxy.
+- Do not expose it on a network you do not control, including a guest or shared WiFi.
+- Reach it from outside the house over a VPN into the home network, not by opening the port.
+
+A client should not implement any authentication against it; there is nothing to authenticate to.
+
 ## Conventions
 
 - Colours are objects, not bare arrays. See [Colour values](#colour-values).
@@ -46,6 +63,7 @@ Fall back to a manually entered address if discovery finds nothing; some home ro
 - Times are Unix seconds as floats.
 - Unknown fields in a request body are rejected with `422`, rather than ignored.
   A typo in a client fails loudly instead of silently doing nothing.
+- Booleans must be `true` or `false`. The strings `"true"` and `"false"`, and `0`/`1`, are a `422`, for the same reason.
 - `revision` increases on every state change.
   A client that receives a state with a `revision` lower than one it has already applied should discard it; that is the only ordering guarantee needed to keep several phones in step.
 
@@ -176,7 +194,7 @@ Build the UI from this. Do not hardcode the effect list; effects added on the Pi
       "outputs": [ { "index": 0, "count": 64, "name": "run 0", "reverse": false } ]
     }
   ],
-  "bounds": { "min": [0.0, 0.0, 0.0], "max": [17.0333, 0.0, 0.0] }
+  "bounds": { "min": [0.0, 0.0, 0.0], "max": [16.8647, 0.0, 0.0] }
 }
 ```
 
@@ -384,6 +402,9 @@ Neither are the non-finite values JSON parsers accept as an extension, nor integ
 | `rainbow` | Rainbow | `speed`, `cycles`, `saturation`, `axis` |
 | `twinkle` | Twinkle | `color`, `background`, `density`, `decay`, `color_jitter`, `seed` |
 | `fire` | Fire | `cooling`, `sparking`, `speed`, `hue`, `per_segment`, `seed` |
+
+`twinkle.density` is a rate **per run**, not across the installation: each of the layout's outputs gets that many sparks per second, so a strip twinkles at the same rate whether it is the only one connected or one of twenty-four.
+Every effect parameter is defined this way - per run, never as a whole-installation total - so adding a Fadecandy does not change how the strips already up look.
 
 `slowfade.hold` is the fraction of the cycle spent parked at **each** end, not the two ends combined, so its maximum is `0.5`: at `0.5` the two dwells already fill the cycle and the crossfade has no time left to run in.
 With the default `period` of 900 s and `hold` of 0.2, each end is held for 180 s and each crossfade takes 270 s.

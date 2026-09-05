@@ -206,8 +206,13 @@ def state_from_dict(raw: dict[str, Any]) -> State:
     except (TypeError, ValueError, OverflowError):
         brightness = base.brightness
 
+    power = raw.get("power", base.power)
+    if not isinstance(power, bool):
+        log.warning("persisted power %r is not a boolean; using %r", power, base.power)
+        power = base.power
+
     return State(
-        power=bool(raw.get("power", base.power)),
+        power=power,
         brightness=brightness,
         effect=effect_cls.name,
         params=params,

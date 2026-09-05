@@ -242,12 +242,16 @@ class Twinkle(Effect):
         ParamSpec(
             name="density",
             type="float",
-            default=6.0,
+            default=0.75,
             minimum=0.0,
-            maximum=200.0,
-            step=0.5,
-            unit="sparks/s",
-            description="New sparks lit per second across the whole installation.",
+            maximum=25.0,
+            step=0.25,
+            unit="sparks/s per run",
+            description=(
+                "New sparks lit per second on each run. A rate per run rather "
+                "than across the installation, so a strip twinkles the same "
+                "whether it is the only one or one of twenty-four."
+            ),
         ),
         ParamSpec(
             name="decay",
@@ -300,6 +304,16 @@ class Twinkle(Effect):
         self._energy = np.zeros(n, dtype=np.float32)
         self._tint = np.tile(self._fg, (n, 1))
 
+        # Sparks are drawn per run, so the rate has to be spread over the runs
+        # rather than over the frame. Runs are contiguous in frame order, so a
+        # start offset and a length per run is all the sampler needs.
+        lengths = np.bincount(layout.segment) if n else np.zeros(0, dtype=np.int64)
+        self._run_length = lengths.astype(np.int64)
+        self._run_start = np.concatenate(
+            [np.zeros(1, dtype=np.int64), np.cumsum(self._run_length)[:-1]]
+        ) if lengths.size else np.zeros(0, dtype=np.int64)
+        self._run_count = int(lengths.size)
+
     def render(self, frame: np.ndarray, t: float, dt: float) -> None:
         n = self.layout.pixel_count
         if dt > 0:
@@ -307,10 +321,16 @@ class Twinkle(Effect):
 
             # Sparks arrive as a Poisson process; draw the count for this frame
             # and pick that many pixels, rather than rolling a die per pixel.
-            expected = self._density * dt
+            # `density` is per run, so the frame's expected count scales with
+            # how many runs there are and each run is equally likely to be the
+            # one that lights, whatever its length.
+            expected = self._density * dt * self._run_count
             count = int(self._rng.poisson(expected)) if expected > 0 else 0
             if count:
-                idx = self._rng.integers(0, n, size=min(count, n))
+                count = min(count, n)
+                run = self._rng.integers(0, self._run_count, size=count)
+                within = self._rng.random(count) * self._run_length[run]
+                idx = self._run_start[run] + within.astype(np.int64)
                 self._energy[idx] = 1.0
                 if self._jitter > 0:
                     hue_shift = self._rng.uniform(-self._jitter, self._jitter, size=idx.size)

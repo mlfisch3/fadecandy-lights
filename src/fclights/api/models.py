@@ -12,13 +12,19 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class StrictModel(BaseModel):
-    """Reject unknown fields, so a client typo fails loudly instead of silently."""
+    """Reject unknown fields, so a client typo fails loudly instead of silently.
+
+    Boolean fields are also strict: ``"true"`` is a client bug, not a true, and
+    the one place a coerced boolean could reach is the master power switch.
+    """
 
     model_config = ConfigDict(extra="forbid")
 
 
 class PowerRequest(StrictModel):
-    on: bool = Field(description="True to light the strip, false for master off.")
+    on: bool = Field(
+        strict=True, description="True to light the strip, false for master off."
+    )
 
 
 class BrightnessRequest(StrictModel):
@@ -49,6 +55,7 @@ class SceneUpdateRequest(StrictModel):
     )
     capture: bool = Field(
         default=False,
+        strict=True,
         description="Overwrite the scene's effect, parameters and brightness with the live look.",
     )
 

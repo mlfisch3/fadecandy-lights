@@ -278,6 +278,77 @@ class TestConfigMistakesAreReportedNotThrown:
                 {field: 10**400}
             )
 
+    @pytest.mark.parametrize("value", ['"false"', '"true"', "0", "1", "null", "[]"])
+    @pytest.mark.parametrize("key", ["dither", "simulate"])
+    def test_a_wrongly_typed_boolean_is_refused_not_coerced(self, capsys, tmp_path, key, value):
+        # bool("false") is True, so a coerced simulate would wire a NullSink and
+        # leave the strip dark while every endpoint still answered normally.
+        path = tmp_path / "c.json"
+        path.write_text(f'{{"{key}": {value}}}')
+
+        code = main(["check", "-c", str(path), "--simulate", "--pixels", "64"])
+        captured = capsys.readouterr()
+
+        assert code == 2
+        assert captured.err.startswith("fclights: ")
+        assert "Traceback" not in captured.err
+
+    @pytest.mark.parametrize("key", ["dither", "simulate"])
+    def test_a_real_boolean_still_loads(self, key):
+        assert getattr(config_from_dict({key: False}), key) is False
+        assert getattr(config_from_dict({key: True}), key) is True
+
+    @pytest.mark.parametrize("level", ["NOTSET", "TRACE", "VERBOSE", "warning ", ""])
+    def test_a_log_level_run_cannot_start_with_is_refused_by_check(
+        self, capsys, tmp_path, level
+    ):
+        # NOTSET exists in `logging` and TRACE in uvicorn, but neither is in
+        # both, so `check` would pass a config that then crash-loops `run`
+        # under Restart=always.
+        path = tmp_path / "c.json"
+        path.write_text(f'{{"log_level": "{level}"}}')
+
+        code = main(["check", "-c", str(path), "--simulate", "--pixels", "64"])
+        captured = capsys.readouterr()
+
+        assert code == 2
+        assert captured.err.startswith("fclights: ")
+        assert "log_level" in captured.err
+
+    def test_the_log_level_flag_is_validated_too(self, capsys):
+        code = main(["check", "--simulate", "--pixels", "64", "--log-level", "trace"])
+        assert code == 2
+        assert "log_level" in capsys.readouterr().err
+
+    @pytest.mark.parametrize(
+        ("supplied", "expected"),
+        [
+            ("debug", "DEBUG"),
+            ("INFO", "INFO"),
+            ("Warning", "WARNING"),
+            ("error", "ERROR"),
+            ("critical", "CRITICAL"),
+            # `logging` accepts these as aliases and uvicorn does not, so they
+            # are normalised rather than refused.
+            ("WARN", "WARNING"),
+            ("fatal", "CRITICAL"),
+        ],
+    )
+    def test_accepted_log_levels_are_normalised(self, supplied, expected):
+        assert config_from_dict({"log_level": supplied}).log_level == expected
+
+    def test_every_accepted_log_level_is_one_uvicorn_starts_with(self):
+        # The two consumers of this setting must not be able to disagree.
+        import logging
+
+        import uvicorn
+
+        from fclights.config import LOG_LEVELS
+
+        for level in LOG_LEVELS:
+            uvicorn.Config(app=None, log_level=level.lower())
+            assert isinstance(getattr(logging, level), int)
+
     def test_a_usable_configuration_still_exits_zero(self, capsys):
         assert main(["check", "--simulate", "--pixels", "512"]) == 0
         assert "supply ceiling" in capsys.readouterr().out

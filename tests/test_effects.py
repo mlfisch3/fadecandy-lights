@@ -14,7 +14,7 @@ import pytest
 
 from fclights import effects
 from fclights.effects.base import ParamError, hsv_to_rgb_array
-from fclights.layout import simple_layout
+from fclights.layout import build_layout, simple_layout
 
 ALL_EFFECTS = effects.all_effects()
 EFFECT_IDS = [e.name for e in ALL_EFFECTS]
@@ -515,7 +515,7 @@ class TestSpecificBehaviour:
         # The schema says "the same seed replays"; 0 is the default a client
         # sees first, and it used to be the one value that did not.
         cls = effects.get(effect_name)
-        params = cls.coerce_params({"seed": seed, "density": 40.0}
+        params = cls.coerce_params({"seed": seed, "density": 5.0}
                                    if effect_name == "twinkle" else {"seed": seed})
         a = render_sequence(cls(layout, params), layout.pixel_count, frames=40)
         b = render_sequence(cls(layout, params), layout.pixel_count, frames=40)
@@ -528,15 +528,65 @@ class TestSpecificBehaviour:
         assert spec.minimum == -1
         assert spec.default == 0
 
-        params = cls.coerce_params({"seed": -1, "density": 40.0}
+        params = cls.coerce_params({"seed": -1, "density": 5.0}
                                    if effect_name == "twinkle" else {"seed": -1})
         a = render_sequence(cls(layout, params), layout.pixel_count, frames=40)
         b = render_sequence(cls(layout, params), layout.pixel_count, frames=40)
         assert not np.allclose(a, b), "-1 should draw a fresh seed each time"
 
+    def test_twinkle_rate_is_per_run_not_per_installation(self):
+        # Adding boards two and three must not make the strips already up
+        # twinkle less often, and a rate across "the installation" stops meaning
+        # anything once an effect is run on one zone.
+        cls = effects.get("twinkle")
+        params = cls.coerce_params(
+            {"seed": 3, "density": 8.0, "decay": 0.05, "background": [0, 0, 0]}
+        )
+
+        def sparks_on_the_first_run(total_pixels):
+            layout = simple_layout(total_pixels)
+            rendered = render_sequence(cls(layout, params), layout.pixel_count, frames=600)
+            return int((rendered[:, :64].max(axis=2) > 0.5).sum())
+
+        one_board = sparks_on_the_first_run(512)
+        three_boards = sparks_on_the_first_run(1152)
+
+        assert one_board > 50, "no sparks lit"
+        assert three_boards == pytest.approx(one_board, rel=0.35)
+
+    def test_twinkle_gives_a_short_run_the_same_rate_as_a_long_one(self):
+        # Per run, not per pixel: a 10-pixel run twinkles as often as a 64.
+        cls = effects.get("twinkle")
+        layout = build_layout(
+            {
+                "devices": [
+                    {
+                        "id": "fc0",
+                        "outputs": [
+                            {"index": 0, "count": 10},
+                            {"index": 1, "count": 64},
+                        ],
+                    }
+                ]
+            }
+        )
+        effect = cls(
+            layout,
+            cls.coerce_params(
+                {"seed": 11, "density": 12.0, "decay": 0.05, "background": [0, 0, 0]}
+            ),
+        )
+        rendered = render_sequence(effect, layout.pixel_count, frames=900)
+        lit = rendered.max(axis=2) > 0.5
+        short = int(lit[:, :10].sum())
+        long = int(lit[:, 10:].sum())
+
+        assert short > 20 and long > 20
+        assert short == pytest.approx(long, rel=0.4)
+
     def test_twinkle_is_reproducible_for_a_given_seed(self, layout):
         cls = effects.get("twinkle")
-        params = cls.coerce_params({"seed": 99, "density": 40.0})
+        params = cls.coerce_params({"seed": 99, "density": 5.0})
         a = render_sequence(cls(layout, params), layout.pixel_count, frames=40)
         b = render_sequence(cls(layout, params), layout.pixel_count, frames=40)
         np.testing.assert_allclose(a, b)
@@ -546,7 +596,7 @@ class TestSpecificBehaviour:
         effect = cls(
             layout,
             cls.coerce_params(
-                {"seed": 7, "density": 200.0, "decay": 0.2, "background": [0, 0, 0]}
+                {"seed": 7, "density": 25.0, "decay": 0.2, "background": [0, 0, 0]}
             ),
         )
         rendered = render_sequence(effect, layout.pixel_count, frames=60)
@@ -563,7 +613,7 @@ class TestSpecificBehaviour:
         # keep the chosen colour's brightness rather than igniting at full duty.
         cls = effects.get("twinkle")
         half_red = {"color": [128, 0, 0], "background": [0, 0, 0], "seed": 5,
-                    "density": 200.0, "decay": 0.2}
+                    "density": 25.0, "decay": 0.2}
         peak = 128 / 255
 
         jittered = render_sequence(

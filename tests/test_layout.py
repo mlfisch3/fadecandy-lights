@@ -423,6 +423,17 @@ class TestStructurallyWrongDocumentsAreRefused:
         with pytest.raises(LayoutError):
             build_layout(raw)
 
+    @pytest.mark.parametrize("value", ["false", "true", 0, 1, None, []])
+    def test_a_wrongly_typed_reverse_is_refused_not_coerced(self, value):
+        # bool("false") is True, which would silently render the run backwards.
+        with pytest.raises(LayoutError, match="true or false"):
+            build_layout(one_output(4, reverse=value))
+
+    def test_a_real_reverse_still_flips_the_run(self):
+        forward = build_layout(one_output(4)).positions[:, 0]
+        backward = build_layout(one_output(4, reverse=True)).positions[:, 0]
+        np.testing.assert_allclose(backward, forward[::-1])
+
     def test_the_loader_reports_them_too(self, tmp_path):
         path = tmp_path / "layout.json"
         path.write_text('{"devices": [{"id": "fc0", "outputs": 5}]}')
