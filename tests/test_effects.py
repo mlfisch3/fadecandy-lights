@@ -702,6 +702,61 @@ class TestSpecificBehaviour:
         assert rendered[-1].max() < 1e-3
 
 
+class TestLongUptime:
+    """A fixed installation runs for months, and ``t`` is never reset.
+
+    ``Engine._animation_time`` accumulates for the life of the process, so any
+    effect that folds it into a float32 expression loses the animation to
+    rounding long before the Pi is next restarted - silently, and from the
+    first frame after the effect is selected. Every test that starts at t=0
+    passes right through that.
+    """
+
+    A_MONTH = 30 * 24 * 3600.0
+
+    def _frames(self, effect, layout, start, count=12):
+        buffer = np.zeros((layout.pixel_count, 3), dtype=np.float32)
+        out = []
+        for i in range(count):
+            effect.render(buffer, start + i / 60.0, 1 / 60)
+            out.append(buffer.copy())
+        return np.stack(out)
+
+    @staticmethod
+    def _finest_detail(frames):
+        return min(len(np.unique(frame, axis=0)) for frame in frames)
+
+    @pytest.mark.parametrize("effect_name", ["gradient", "rainbow", "wipe", "breathe"])
+    def test_time_driven_effects_still_animate_after_a_month(self, layout, effect_name):
+        cls = effects.get(effect_name)
+        params = cls.coerce_params({"speed": 0.15})
+        early = self._frames(cls(layout, params), layout, 0.0)
+        late = self._frames(cls(layout, params), layout, self.A_MONTH)
+
+        per_frame_change = np.abs(np.diff(late, axis=0)).max(axis=(1, 2))
+        assert per_frame_change.min() > 0, "the picture stopped moving between frames"
+        assert self._finest_detail(late) >= self._finest_detail(early)
+
+    def test_slowfade_still_crosses_between_its_colours_after_a_month(self, small_layout):
+        # SlowFade's period is a parameter up to six hours, so it is sampled
+        # over a whole cycle rather than over a handful of frames.
+        cls = effects.get("slowfade")
+        params = cls.coerce_params(
+            {"color_a": [255, 0, 0], "color_b": [0, 0, 255], "period": 900.0}
+        )
+        effect = cls(small_layout, params)
+        buffer = np.zeros((small_layout.pixel_count, 3), dtype=np.float32)
+
+        seen = []
+        for step in range(90):
+            effect.render(buffer, self.A_MONTH + step * 10.0, 10.0)
+            seen.append(buffer[0].copy())
+        seen = np.stack(seen)
+
+        assert seen[:, 0].max() > 0.95, "never reached the first colour"
+        assert seen[:, 2].max() > 0.95, "never reached the second colour"
+
+
 class TestHSVHelper:
     def test_matches_colorsys_for_scalar_hues(self):
         import colorsys

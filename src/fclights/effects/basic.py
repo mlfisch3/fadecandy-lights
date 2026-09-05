@@ -98,7 +98,12 @@ class Gradient(Effect):
         # One "cycle" is a full colour A to colour B and back along the run.
         # A triangle wave rather than a sawtooth, so the gradient reverses at
         # the ends instead of snapping back and showing a seam as it slides.
-        phase = 2.0 * (self._pos * self._cycles - t * self._speed)
+        # `t` accumulates for the life of the process, and `self._pos` is
+        # float32, so the travelling term is reduced onto its own period in
+        # float64 before it meets the position array. The wave is taken modulo
+        # 2 anyway, so reducing first is exact and leaves the picture alone.
+        travelled = (2.0 * t * self._speed) % 2.0
+        phase = 2.0 * self._pos * self._cycles - travelled
         mix = (1.0 - np.abs((phase % 2.0) - 1.0)).astype(np.float32)[:, None]
         np.multiply(self._b - self._a, mix, out=frame)
         np.add(frame, self._a, out=frame)
@@ -228,7 +233,12 @@ class Rainbow(Effect):
         self._saturation = float(params["saturation"])
 
     def render(self, frame: np.ndarray, t: float, dt: float) -> None:
-        hue = self._pos * self._cycles + t * self._speed
+        # Reduced onto the hue circle in float64 first, for the same reason as
+        # Gradient: an unbounded `t` folded into the float32 position array
+        # eventually quantises the sweep away. Hue wraps modulo 1, so this is
+        # exact.
+        travelled = (t * self._speed) % 1.0
+        hue = self._pos * self._cycles + travelled
         frame[:] = hsv_to_rgb_array(hue, self._saturation, 1.0)
 
 
