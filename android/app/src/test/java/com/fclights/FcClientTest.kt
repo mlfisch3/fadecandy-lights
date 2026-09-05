@@ -6,15 +6,20 @@ import com.fclights.api.FcClient
 import com.fclights.model.ColorValue
 import com.fclights.model.FcJson
 import com.fclights.model.Params
+import java.io.IOException
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import okhttp3.OkHttpClient
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
+import okhttp3.mockwebserver.SocketPolicy
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -211,5 +216,22 @@ class FcClientTest {
         assertTrue(
             server.takeRequest().getHeader("Content-Type").orEmpty().startsWith("application/json")
         )
+    }
+
+    @Test
+    fun `a connection lost while reading the body fails the call rather than hanging`() {
+        // The headers arriving does not mean the body will. A call that never
+        // comes back leaves its parameter overridden locally for good, showing
+        // a value the controller never accepted.
+        server.enqueue(
+            MockResponse()
+                .setBody(Fixtures.state)
+                .setHeader("content-type", "application/json")
+                .setSocketPolicy(SocketPolicy.DISCONNECT_DURING_RESPONSE_BODY)
+        )
+
+        assertThrows(IOException::class.java) {
+            runBlocking { withTimeout(5_000) { client.setPower(true) } }
+        }
     }
 }

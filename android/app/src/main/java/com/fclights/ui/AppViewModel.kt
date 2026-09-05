@@ -22,8 +22,6 @@ import com.fclights.model.retirePending
 import com.fclights.model.retirePendingBrightness
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -94,13 +92,12 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     private var socketJob: Job? = null
     private var discoveryJob: Job? = null
 
-    /** Conflated: a drag only ever needs its most recent value sent. */
-    private val paramSends = Channel<Unit>(Channel.CONFLATED)
-    private val brightnessSends = Channel<Unit>(Channel.CONFLATED)
+    private val paramSends =
+        ThrottledSender(viewModelScope, THROTTLE_MILLIS) { final -> sendParams(final) }
+    private val brightnessSends =
+        ThrottledSender(viewModelScope, THROTTLE_MILLIS) { final -> sendBrightness(final) }
 
     init {
-        viewModelScope.launch { drainParamSends() }
-        viewModelScope.launch { drainBrightnessSends() }
         _ui.value.endpoint?.let { connect(it) }
         startDiscovery()
     }
@@ -180,11 +177,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     fun setBrightness(value: Double, committed: Boolean) {
         _ui.value = _ui.value.copy(pendingBrightness = value.coerceIn(0.0, 1.0))
-        if (committed) {
-            viewModelScope.launch { sendBrightness(final = true) }
-        } else {
-            brightnessSends.trySend(Unit)
-        }
+        brightnessSends.request(final = committed)
     }
 
     fun selectEffect(name: String) = command {
@@ -195,11 +188,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     fun setParam(name: String, value: JsonElement, committed: Boolean) {
         _ui.value = _ui.value.copy(pendingParams = _ui.value.pendingParams + (name to value))
-        if (committed) {
-            viewModelScope.launch { sendParams(final = true) }
-        } else {
-            paramSends.trySend(Unit)
-        }
+        paramSends.request(final = committed)
     }
 
     fun setColorParam(name: String, value: ColorValue, committed: Boolean) =
@@ -213,22 +202,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     fun captureScene(id: String) = command { it.captureScene(id) }
 
-    // -- throttling ---------------------------------------------------------
-
-    private suspend fun drainParamSends() {
-        for (unused in paramSends) {
-            sendParams(final = false)
-            // Roughly 10 Hz while a finger is down, as docs/api.md asks.
-            delay(THROTTLE_MILLIS)
-        }
-    }
-
-    private suspend fun drainBrightnessSends() {
-        for (unused in brightnessSends) {
-            sendBrightness(final = false)
-            delay(THROTTLE_MILLIS)
-        }
-    }
+    // -- sending ------------------------------------------------------------
 
     private suspend fun sendParams(final: Boolean) {
         val api = client ?: return

@@ -193,7 +193,20 @@ class FcClient(
                 override fun onResponse(call: Call, response: Response) {
                     val code = response.code
                     val successful = response.isSuccessful
-                    val text = response.use { it.body?.string().orEmpty() }
+                    // Reading the body can still fail - the headers arriving
+                    // does not mean the rest of it will. OkHttp treats a throw
+                    // from here as the callback's own problem and will not fall
+                    // back to onFailure, so an unhandled one strands the call
+                    // suspended for good.
+                    val text = runCatching { response.use { it.body?.string().orEmpty() } }
+                        .getOrElse { failure ->
+                            if (cont.isActive) {
+                                cont.resumeWithException(
+                                    failure as? IOException ?: IOException(failure)
+                                )
+                            }
+                            return
+                        }
                     if (!cont.isActive) return
                     if (successful) {
                         cont.resume(text)

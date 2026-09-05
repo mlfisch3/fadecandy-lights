@@ -58,7 +58,16 @@ class FcSocket(
         }
     }
 
-    /** One socket's lifetime, ending in [SocketClosed] when it drops. */
+    /**
+     * One socket's lifetime, ending in [SocketClosed] when it drops.
+     *
+     * A drop is not always abrupt. Restarting the service on the Pi shuts the
+     * broadcaster down, which sends every client a normal close frame, and a
+     * half-closed socket delivers `onClosing` rather than `onClosed` until the
+     * closing handshake is answered - so answering it is what makes an orderly
+     * restart end the session here instead of leaving the app parked on state
+     * that has stopped arriving.
+     */
     private fun session(endpoint: Endpoint): Flow<WsMessage> = callbackFlow {
         val request = Request.Builder().url(endpoint.wsUrl).build()
         val socket = http.newWebSocket(request, object : WebSocketListener() {
@@ -68,6 +77,11 @@ class FcSocket(
 
             override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
                 close(SocketClosed(t.message ?: "connection failed"))
+            }
+
+            override fun onClosing(webSocket: WebSocket, code: Int, reason: String) {
+                webSocket.close(code, null)
+                close(SocketClosed(reason.ifBlank { "closed by controller" }))
             }
 
             override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
