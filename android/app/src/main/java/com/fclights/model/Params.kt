@@ -18,6 +18,8 @@ import kotlin.math.roundToLong
  */
 object Params {
 
+    private const val KELVIN_STEP = 50.0
+
     /**
      * The value to show for [spec], preferring what the controller reports and
      * falling back to the schema's declared default.
@@ -71,6 +73,22 @@ object Params {
         if (step == null || step <= 0.0) return clamped
         val snapped = min + ((clamped - min) / step).roundToLong() * step
         // Snapping can land a hair outside the range at the top end.
+        return snapped.coerceIn(minOf(min, max), maxOf(min, max))
+    }
+
+    /**
+     * Quantise a colour temperature to the schema's published range.
+     *
+     * 50 K steps are finer than the eye resolves here and keep the readout
+     * still, but the grid is anchored at zero, so its nearest step can fall
+     * outside a range whose bounds are not multiples of 50 - and the
+     * controller answers 400 for a temperature below its minimum. The range is
+     * whatever `kelvin_range` says, never assumed.
+     */
+    fun quantiseKelvin(spec: ParamSpec, raw: Double): Double {
+        val min = spec.kelvinMin
+        val max = spec.kelvinMax
+        val snapped = (raw / KELVIN_STEP).roundToLong() * KELVIN_STEP
         return snapped.coerceIn(minOf(min, max), maxOf(min, max))
     }
 

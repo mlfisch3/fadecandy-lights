@@ -7,8 +7,10 @@ import com.fclights.model.FcJson
 import com.fclights.model.ParamSpec
 import com.fclights.model.Params
 import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.int
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -135,6 +137,30 @@ class ParamsTest {
         val rgb = Params.encodeColor(ColorValue.ofRgb(255, 170, 80)) as JsonObject
         assertEquals("rgb", (rgb.getValue("mode") as JsonPrimitive).content)
         assertFalse("an rgb colour must not claim a temperature", rgb.containsKey("kelvin"))
+    }
+
+    @Test
+    fun `black keeps its rgb on the wire`() {
+        // encodeDefaults is off, and the controller answers 400 to an rgb
+        // colour with no rgb key - so turning a background off must not drop it.
+        val encoded = Params.encodeColor(ColorValue.ofRgb(0, 0, 0)) as JsonObject
+        assertEquals("rgb", (encoded.getValue("mode") as JsonPrimitive).content)
+        assertEquals(
+            listOf(0, 0, 0),
+            (encoded.getValue("rgb") as JsonArray).map { (it as JsonPrimitive).int },
+        )
+    }
+
+    @Test
+    fun `a kelvin slider stays inside a range the 50 K grid does not divide`() {
+        val awkward = ParamSpec(
+            name = "color", type = "color", default = JsonPrimitive("x"),
+            supportsKelvin = true, kelvinRange = listOf(1820.0, 6480.0), kelvinDefault = 2700.0,
+        )
+        assertEquals(1820.0, Params.quantiseKelvin(awkward, 1820.0), 1e-9)
+        assertEquals(6480.0, Params.quantiseKelvin(awkward, 6480.0), 1e-9)
+        // Mid-range still snaps to the grid.
+        assertEquals(4000.0, Params.quantiseKelvin(awkward, 3990.0), 1e-9)
     }
 
     @Test

@@ -7,6 +7,8 @@ import android.os.Build
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.channelFlow
+import kotlinx.coroutines.withTimeoutOrNull
 
 /** A controller found on the network. */
 data class Found(
@@ -24,12 +26,21 @@ data class Found(
  * machine cannot resolve mDNS at all - so the app's manual address box is the
  * first-class path and this is the shortcut. A flow that never emits is a
  * normal outcome here, not an error.
+ *
+ * A browse is a bounded scan, not a subscription. `NsdManager` browsing never
+ * ends on its own, so an unbounded flow would leave the connect sheet spinning
+ * forever with no way to search again, and would keep multicast traffic going
+ * for the life of the process. [browse] completes when its window elapses;
+ * having found nothing by then is an ordinary outcome, and the caller can
+ * simply scan again.
  */
 class Discovery(context: Context) {
 
     private val nsd = context.applicationContext.getSystemService(Context.NSD_SERVICE) as? NsdManager
 
-    fun browse(): Flow<Found> = callbackFlow {
+    fun browse(window: Long = SCAN_WINDOW_MILLIS): Flow<Found> = browseUntilCancelled().forAtMost(window)
+
+    private fun browseUntilCancelled(): Flow<Found> = callbackFlow {
         val manager = nsd
         if (manager == null) {
             close()
@@ -111,7 +122,27 @@ class Discovery(context: Context) {
             info.host?.hostAddress
         }
 
-    private companion object {
-        const val SERVICE_TYPE = "_fclights._tcp."
+    companion object {
+        private const val SERVICE_TYPE = "_fclights._tcp."
+
+        /**
+         * How long one scan lasts. Long enough for a Pi that is awake to answer
+         * on a network that passes multicast, short enough that a network that
+         * does not stops pretending to look.
+         */
+        const val SCAN_WINDOW_MILLIS = 8_000L
+    }
+}
+
+/**
+ * Collect [this] for at most [millis], then complete.
+ *
+ * `withTimeoutOrNull` cancels the upstream, which is what runs a callbackFlow's
+ * `awaitClose` - so the underlying browse is torn down rather than merely
+ * ignored. `channelFlow` is what makes emitting from inside the timeout legal.
+ */
+internal fun <T> Flow<T>.forAtMost(millis: Long): Flow<T> = channelFlow {
+    withTimeoutOrNull(millis) {
+        collect { send(it) }
     }
 }

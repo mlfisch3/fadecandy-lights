@@ -107,6 +107,9 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     fun connect(endpoint: Endpoint) {
         socketJob?.cancel()
+        // An address has been chosen; there is nothing left to look for, and a
+        // browse costs multicast traffic for as long as it runs.
+        stopDiscovery()
         client = FcClient(endpoint, http)
         prefs.endpoint = endpoint
         _ui.value = _ui.value.copy(
@@ -134,6 +137,10 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    /**
+     * Run one scan. [Discovery.browse] is bounded, so this completes on its own
+     * and finding nothing simply leaves the sheet offering the address box.
+     */
     fun startDiscovery() {
         if (discoveryJob?.isActive == true) return
         _ui.value = _ui.value.copy(discovering = true, discovered = emptyList())

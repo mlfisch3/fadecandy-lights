@@ -20,6 +20,7 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -31,8 +32,9 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import com.fclights.model.Blackbody
 import com.fclights.model.ColorValue
-import com.fclights.model.Hsv
+import com.fclights.model.HsvEdit
 import com.fclights.model.ParamSpec
+import com.fclights.model.Params
 import kotlin.math.roundToInt
 
 /**
@@ -44,9 +46,16 @@ import kotlin.math.roundToInt
  * the slider shows what it will do rather than naming a number. The hue and
  * saturation pair behind it is for the times a coloured light is wanted.
  *
- * Value is deliberately absent from the colour picker: how bright the room
- * gets is master brightness, and a second dimmer hidden inside the colour
- * control would only fight it.
+ * That half also carries a shade axis, because a colour parameter is not
+ * always a light: `wipe.background` defaults to black and `twinkle.background`
+ * to a near-black blue, and the app builds its controls from the published
+ * schema, so it has to be able to reach them. Shade is a property of the
+ * colour - how dark this particular colour is - and not a second master
+ * brightness, which scales the whole installation. The kelvin half has no such
+ * axis on purpose: the controller re-derives a temperature with
+ * `kelvin_to_rgb`, normalising the brightest channel, so a dimmed kelvin
+ * colour cannot be expressed in the API at all and the slider would do
+ * nothing.
  */
 @Composable
 fun ColorControl(
@@ -107,7 +116,7 @@ fun ColorControl(
         if (showingKelvin) {
             KelvinSlider(spec, value.kelvin ?: Blackbody.DEFAULT_KELVIN, onChange)
         } else {
-            HueSaturationSliders(value, onChange)
+            ColourSliders(value, onChange)
         }
 
         if (spec.description.isNotBlank()) {
@@ -136,7 +145,9 @@ private fun KelvinSlider(spec: ParamSpec, kelvin: Double, onChange: (ColorValue,
         GradientSlider(
             colors = track,
             value = ((kelvin - min) / (max - min)).toFloat().coerceIn(0f, 1f),
-            onValueChange = { onChange(ColorValue.ofKelvin(quantiseKelvin(min + it * (max - min))), false) },
+            onValueChange = {
+                onChange(ColorValue.ofKelvin(Params.quantiseKelvin(spec, min + it * (max - min))), false)
+            },
             onValueChangeFinished = { onChange(ColorValue.ofKelvin(kelvin), true) },
         )
         Row {
@@ -155,39 +166,70 @@ private fun KelvinSlider(spec: ParamSpec, kelvin: Double, onChange: (ColorValue,
     }
 }
 
-/** 50 K steps: finer than the eye resolves here, and it keeps the readout still. */
-private fun quantiseKelvin(raw: Double): Double = (raw / 50.0).roundToInt() * 50.0
-
+/**
+ * Hue, saturation and shade.
+ *
+ * The sliders read from an [HsvEdit] rather than from the colour itself: the
+ * round trip through RGB loses the hue of any grey and both axes of black, so
+ * a control that re-derived its positions would throw away the colour the user
+ * was in the middle of choosing the moment they dragged either axis to zero.
+ */
 @Composable
-private fun HueSaturationSliders(value: ColorValue, onChange: (ColorValue, Boolean) -> Unit) {
-    val (hue, saturation) = Hsv.fromRgb255(value.rgb)
+private fun ColourSliders(value: ColorValue, onChange: (ColorValue, Boolean) -> Unit) {
+    val editState = remember { mutableStateOf(HsvEdit.of(value.rgb)) }
+    val edit = editState.value.sync(value.rgb)
+    val hsv = edit.hsv
+
+    fun emit(next: HsvEdit, committed: Boolean) {
+        editState.value = next
+        onChange(ColorValue.ofRgb(next.rgb[0], next.rgb[1], next.rgb[2]), committed)
+    }
+
     val hueTrack = remember {
         List(13) { Color.hsv(it * 30f % 360f, 1f, 1f) }
     }
-    val saturationTrack = remember(hue) {
-        listOf(Color.hsv(hue.toFloat(), 0f, 1f), Color.hsv(hue.toFloat(), 1f, 1f))
+    val saturationTrack = remember(hsv.hue) {
+        listOf(Color.hsv(hsv.hue.toFloat(), 0f, 1f), Color.hsv(hsv.hue.toFloat(), 1f, 1f))
     }
-
-    fun emit(h: Double, s: Double, committed: Boolean) {
-        val rgb = Hsv.toRgb255(h, s)
-        onChange(ColorValue.ofRgb(rgb[0], rgb[1], rgb[2]), committed)
+    val shadeTrack = remember(hsv.hue, hsv.saturation) {
+        listOf(Color.Black, Color.hsv(hsv.hue.toFloat(), hsv.saturation.toFloat(), 1f))
     }
 
     Column {
+        TrackLabel("Hue")
         GradientSlider(
             colors = hueTrack,
-            value = (hue / 360.0).toFloat(),
-            onValueChange = { emit(it.toDouble() * 360.0, saturation, false) },
-            onValueChangeFinished = { emit(hue, saturation, true) },
+            value = (hsv.hue / 360.0).toFloat(),
+            onValueChange = { emit(edit.move(hue = it.toDouble() * 360.0), false) },
+            onValueChangeFinished = { emit(editState.value, true) },
         )
         Spacer(Modifier.height(4.dp))
+        TrackLabel("Saturation")
         GradientSlider(
             colors = saturationTrack,
-            value = saturation.toFloat(),
-            onValueChange = { emit(hue, it.toDouble(), false) },
-            onValueChangeFinished = { emit(hue, saturation, true) },
+            value = hsv.saturation.toFloat(),
+            onValueChange = { emit(edit.move(saturation = it.toDouble()), false) },
+            onValueChangeFinished = { emit(editState.value, true) },
+        )
+        Spacer(Modifier.height(4.dp))
+        TrackLabel("Shade - how dark this colour is")
+        GradientSlider(
+            colors = shadeTrack,
+            value = hsv.value.toFloat(),
+            onValueChange = { emit(edit.move(value = it.toDouble()), false) },
+            onValueChangeFinished = { emit(editState.value, true) },
         )
     }
+}
+
+@Composable
+private fun TrackLabel(text: String) {
+    Text(
+        text,
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(horizontal = 10.dp),
+    )
 }
 
 /**

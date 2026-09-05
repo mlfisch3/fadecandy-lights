@@ -1,5 +1,7 @@
 package com.fclights.model
 
+import kotlinx.serialization.EncodeDefault
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -34,11 +36,17 @@ val FcJson: Json = Json {
  * temperature so the warm-to-cool slider can be put back where the user left
  * it, and `rgb` is always present so a swatch can be drawn without redoing the
  * blackbody conversion.
+ *
+ * `rgb` is encoded even when it equals its default, because the controller
+ * requires it on the wire: `encodeDefaults = false` would otherwise drop
+ * `[0, 0, 0]` and turn "make this black" into a 400.
  */
 @Serializable
 data class ColorValue(
     val mode: String,
     val kelvin: Double? = null,
+    @EncodeDefault(EncodeDefault.Mode.ALWAYS)
+    @OptIn(ExperimentalSerializationApi::class)
     val rgb: List<Int> = listOf(0, 0, 0),
 ) {
     val isKelvin: Boolean get() = mode == "kelvin" && kelvin != null
