@@ -79,13 +79,15 @@ class FcSocket(
      * restart end the session here instead of leaving the app parked on state
      * that has stopped arriving.
      *
-     * Nor does a drop always announce itself. The broadcaster drops a client
-     * whose write times out and leaves the socket open, so the connection stays
-     * healthy at the protocol level - pings are still answered - while no state
-     * will ever arrive on it again. Only the data says so: docs/api.md has
-     * telemetry every two seconds for as long as anyone is connected, so a
-     * silence several times that long means this socket has been abandoned and
-     * the reconnect above should take over.
+     * Nor does a drop always announce itself. The broadcaster now closes any
+     * client it drops (see docs/api.md "Falling behind"), but the network path
+     * in between can still go quiet without either end being told - a NAT box
+     * losing state, a WiFi handoff dropping the flow - and the socket then
+     * stays healthy at the protocol level while no state will ever arrive on
+     * it again. Only the data says so: docs/api.md has telemetry every two
+     * seconds for as long as anyone is connected, so a silence several times
+     * that long means this socket has been abandoned and the reconnect above
+     * should take over.
      */
     private fun session(endpoint: Endpoint): Flow<WsMessage> = callbackFlow {
         val request = Request.Builder().url(endpoint.wsUrl).build()

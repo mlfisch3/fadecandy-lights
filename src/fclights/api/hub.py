@@ -198,6 +198,7 @@ class Broadcaster:
         with contextlib.suppress(asyncio.CancelledError, Exception):
             await task
 
+
 def _abort_transport(websocket: Any) -> bool:
     """Force the TCP connection under ``websocket`` down.  True if it worked.
 

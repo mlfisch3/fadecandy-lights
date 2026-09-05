@@ -84,9 +84,10 @@ class FcSocketTest {
 
     @Test
     fun `a socket the controller has stopped sending on ends the session`() {
-        // The broadcaster drops a client whose write timed out without closing
-        // its socket, so the connection stays open and answers pings while no
-        // state will ever arrive on it again. Silence is the only evidence.
+        // The broadcaster now closes any client it drops, but the network in
+        // between can still go quiet without either end being told, and the
+        // socket then answers pings while no state will ever arrive on it
+        // again. Silence is the only evidence.
         server.enqueue(
             MockResponse().withWebSocketUpgrade(object : WebSocketListener() {
                 override fun onOpen(webSocket: WebSocket, response: Response) {
