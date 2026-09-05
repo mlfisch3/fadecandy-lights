@@ -1,0 +1,802 @@
+"""Effect tests.
+
+Two things matter here.  First, that every registered effect behaves - fills the
+whole buffer, stays in range, produces finite numbers - because a NaN reaching
+the encoder becomes a random 8-bit value on the strip.  Second, that the
+parameter schemas are honest, since the Android app builds its controls from
+them and cannot check them itself.
+"""
+
+from __future__ import annotations
+
+import numpy as np
+import pytest
+
+from fclights import effects
+from fclights.effects.base import ParamError, hsv_to_rgb_array
+from fclights.layout import build_layout, simple_layout
+
+ALL_EFFECTS = effects.all_effects()
+EFFECT_IDS = [e.name for e in ALL_EFFECTS]
+
+
+@pytest.fixture(params=ALL_EFFECTS, ids=EFFECT_IDS)
+def effect_cls(request):
+    return request.param
+
+
+def render_sequence(effect, pixel_count: int, frames: int = 30, fps: float = 60.0):
+    """Render a run of frames and return them stacked."""
+    buffer = np.zeros((pixel_count, 3), dtype=np.float32)
+    dt = 1.0 / fps
+    out = []
+    for i in range(frames):
+        effect.render(buffer, i * dt, dt)
+        out.append(buffer.copy())
+    return np.stack(out)
+
+
+class TestEveryEffect:
+    def test_renders_finite_values_in_range(self, effect_cls, layout):
+        effect = effect_cls(layout, effect_cls.defaults())
+        rendered = render_sequence(effect, layout.pixel_count, frames=120)
+
+        assert np.isfinite(rendered).all(), f"{effect_cls.name} produced NaN or inf"
+        assert rendered.min() >= -1e-6, f"{effect_cls.name} produced negative values"
+        assert rendered.max() <= 1.0 + 1e-6, f"{effect_cls.name} produced values above 1"
+
+    def test_fills_the_whole_buffer(self, effect_cls, layout):
+        # The engine reuses the frame buffer between frames and does not clear
+        # it, so an effect that only writes some pixels would leave the rest
+        # showing the previous effect.
+        buffer = np.full((layout.pixel_count, 3), -7.0, dtype=np.float32)
+        effect = effect_cls(layout, effect_cls.defaults())
+        effect.render(buffer, 0.0, 1 / 60)
+        assert not (buffer == -7.0).any(), f"{effect_cls.name} left pixels untouched"
+
+    def test_output_shape_and_dtype_survive_rendering(self, effect_cls, layout):
+        buffer = np.zeros((layout.pixel_count, 3), dtype=np.float32)
+        effect = effect_cls(layout, effect_cls.defaults())
+        effect.render(buffer, 1.0, 1 / 60)
+        assert buffer.shape == (layout.pixel_count, 3)
+        assert buffer.dtype == np.float32
+
+    def test_works_on_a_single_pixel_layout(self, effect_cls):
+        # Degenerate layouts are where divide-by-span bugs surface.
+        tiny = simple_layout(1)
+        effect = effect_cls(tiny, effect_cls.defaults())
+        rendered = render_sequence(effect, 1, frames=10)
+        assert np.isfinite(rendered).all()
+
+    def test_zero_dt_does_not_break_anything(self, effect_cls, layout):
+        # Two renders can land in the same instant on a coarse clock.
+        effect = effect_cls(layout, effect_cls.defaults())
+        buffer = np.zeros((layout.pixel_count, 3), dtype=np.float32)
+        effect.render(buffer, 0.0, 0.0)
+        effect.render(buffer, 0.0, 0.0)
+        assert np.isfinite(buffer).all()
+
+    def test_extreme_parameter_values_stay_in_range(self, effect_cls, layout):
+        # Drive every numeric knob to both of its declared limits.
+        for pick in (lambda s: s.minimum, lambda s: s.maximum):
+            params = effect_cls.defaults()
+            for spec in effect_cls.params:
+                limit = pick(spec)
+                if spec.type in {"float", "int"} and limit is not None:
+                    params[spec.name] = int(limit) if spec.type == "int" else limit
+            effect = effect_cls(layout, effect_cls.coerce_params(params))
+            rendered = render_sequence(effect, layout.pixel_count, frames=20)
+            assert np.isfinite(rendered).all(), f"{effect_cls.name} at limits produced NaN"
+            assert rendered.min() >= -1e-6 and rendered.max() <= 1.0 + 1e-6
+
+
+class TestSchemas:
+    def test_every_effect_is_discoverable(self):
+        names = effects.names()
+        assert {
+            "solid",
+            "slowfade",
+            "gradient",
+            "breathe",
+            "wipe",
+            "rainbow",
+            "twinkle",
+            "fire",
+        } <= set(names)
+
+    def test_colour_controls_advertise_a_kelvin_slider(self, effect_cls):
+        # The Android app builds a warm-to-cool slider from this, which for
+        # apartment lighting is the control that gets used.
+        for param in effect_cls.schema()["params"]:
+            if param["type"] == "color":
+                assert param["supports_kelvin"] is True
+                low, high = param["kelvin_range"]
+                assert low < param["kelvin_default"] < high
+
+    def test_colour_defaults_are_canonical_objects(self, effect_cls):
+        # So the schema a client reads and the state it reads back agree.
+        for param in effect_cls.schema()["params"]:
+            if param["type"] == "color":
+                assert set(param["default"]) >= {"mode", "rgb"}
+
+    def test_schema_is_json_serialisable(self, effect_cls):
+        import json
+
+        json.dumps(effect_cls.schema())
+
+    def test_defaults_satisfy_their_own_declared_ranges(self, effect_cls):
+        # The Android app trusts these; a default outside its own range would
+        # render a slider already out of bounds.
+        for spec in effect_cls.params:
+            assert spec.coerce(spec.default) is not None or spec.default is not None
+
+    def test_defaults_round_trip_through_coercion(self, effect_cls):
+        assert effect_cls.coerce_params({}) == effect_cls.defaults()
+
+    def test_schema_declares_a_type_the_client_can_render(self, effect_cls):
+        for spec in effect_cls.params:
+            assert spec.type in {"float", "int", "bool", "color", "enum"}
+            if spec.type == "enum":
+                assert spec.choices, f"{effect_cls.name}.{spec.name} is an enum with no choices"
+                assert spec.default in spec.choices
+            if spec.type in {"float", "int"}:
+                assert spec.minimum is not None and spec.maximum is not None, (
+                    f"{effect_cls.name}.{spec.name} is numeric but declares no range, "
+                    "so a client cannot build a slider for it"
+                )
+                assert spec.minimum <= spec.default <= spec.maximum
+
+
+class TestParameterCoercion:
+    def test_unknown_parameters_are_rejected(self):
+        with pytest.raises(ParamError, match="no parameter"):
+            effects.get("solid").coerce_params({"colour": [1, 2, 3]})
+
+    def test_out_of_range_values_are_rejected(self):
+        with pytest.raises(ParamError, match="above maximum"):
+            effects.get("rainbow").coerce_params({"saturation": 4.0})
+        with pytest.raises(ParamError, match="below minimum"):
+            effects.get("rainbow").coerce_params({"saturation": -1.0})
+
+    def test_bad_enum_choice_is_rejected(self):
+        with pytest.raises(ParamError, match="not one of"):
+            effects.get("rainbow").coerce_params({"axis": "diagonal"})
+
+    def test_booleans_are_not_accepted_as_numbers(self):
+        # bool subclasses int in Python; accepting True as 1 would hide a
+        # client bug rather than reporting it.
+        with pytest.raises(ParamError, match="expected a number"):
+            effects.get("rainbow").coerce_params({"speed": True})
+
+    def test_non_numeric_values_are_rejected(self):
+        with pytest.raises(ParamError, match="expected a number"):
+            effects.get("rainbow").coerce_params({"speed": "fast"})
+
+    def test_hex_colours_are_accepted(self):
+        solid = effects.get("solid")
+        assert solid.coerce_params({"color": "#ff8000"})["color"] == {
+            "mode": "rgb",
+            "rgb": [255, 128, 0],
+        }
+        assert solid.coerce_params({"color": "#f80"})["color"]["rgb"] == [255, 136, 0]
+
+    def test_rgb_lists_are_accepted_and_clamped(self):
+        coerced = effects.get("solid").coerce_params({"color": [300, -5, 12.6]})
+        assert coerced["color"] == {"mode": "rgb", "rgb": [255, 0, 13]}
+
+    def test_malformed_colours_are_rejected(self):
+        for bad in ("#12345", "orange", [1, 2], [1, 2, 3, 4], 42):
+            with pytest.raises(ParamError):
+                effects.get("solid").coerce_params({"color": bad})
+
+    def test_ints_are_rounded_not_truncated(self):
+        assert effects.get("twinkle").coerce_params({"seed": 7.6})["seed"] == 8
+
+    def test_partial_params_fall_back_to_defaults(self):
+        coerced = effects.get("gradient").coerce_params({"speed": 0.9})
+        assert coerced["speed"] == 0.9
+        assert coerced["color_a"] == effects.get("gradient").defaults()["color_a"]
+
+
+NON_FINITE = [
+    pytest.param(float("nan"), id="nan"),
+    pytest.param(float("inf"), id="+inf"),
+    pytest.param(float("-inf"), id="-inf"),
+]
+
+
+class TestNonFiniteNumbersAreRefused:
+    """NaN passes every range check, because every comparison against it is False.
+
+    Left alone it reaches the frame, the power governor's scale and the temporal
+    dither's residual, which is carried across frames - so one bad value takes
+    the installation dark until the service is restarted.
+    """
+
+    @pytest.mark.parametrize("value", NON_FINITE)
+    def test_a_float_parameter_refuses_it(self, value):
+        with pytest.raises(ParamError, match="finite"):
+            effects.get("breathe").coerce_params({"speed": value})
+
+    @pytest.mark.parametrize("value", NON_FINITE)
+    def test_an_int_parameter_refuses_it(self, value):
+        # round(nan) raises ValueError and round(inf) OverflowError, neither of
+        # which the API's handlers catch, so both used to surface as a 500.
+        with pytest.raises(ParamError, match="finite"):
+            effects.get("twinkle").coerce_params({"seed": value})
+
+    @pytest.mark.parametrize("value", NON_FINITE)
+    def test_a_colour_component_refuses_it(self, value):
+        with pytest.raises(ParamError, match="finite"):
+            effects.get("solid").coerce_params({"color": [value, 0, 0]})
+
+    @pytest.mark.parametrize("value", NON_FINITE)
+    def test_a_kelvin_colour_refuses_it(self, value):
+        with pytest.raises(ParamError):
+            effects.get("solid").coerce_params({"color": {"kelvin": value}})
+
+    def test_a_finite_value_at_the_boundary_still_passes(self):
+        params = effects.get("breathe").coerce_params({"speed": 0.0})
+        assert params["speed"] == 0.0
+
+
+class TestSpecificBehaviour:
+    def test_solid_defaults_to_a_warm_white(self, small_layout):
+        # This is apartment lighting, not a display piece; out of the box it
+        # should look like a lamp, not a saturated colour.
+        default = effects.get("solid").defaults()["color"]
+        assert default["mode"] == "kelvin"
+        assert 2000 <= default["kelvin"] <= 3500
+
+    def test_colours_can_be_named_as_a_temperature(self, small_layout):
+        from fclights.color import kelvin_to_rgb
+
+        cls = effects.get("solid")
+        effect = cls(small_layout, cls.coerce_params({"color": {"kelvin": 2700}}))
+        buffer = np.zeros((small_layout.pixel_count, 3), dtype=np.float32)
+        effect.render(buffer, 0.0, 1 / 60)
+        np.testing.assert_allclose(buffer[0], kelvin_to_rgb(2700), atol=1e-6)
+
+    def test_a_warmer_setting_really_is_warmer(self, small_layout):
+        cls = effects.get("solid")
+        buffer = np.zeros((small_layout.pixel_count, 3), dtype=np.float32)
+
+        cls(small_layout, cls.coerce_params({"color": {"kelvin": 2000}})).render(
+            buffer, 0.0, 1 / 60
+        )
+        warm_blue = float(buffer[0][2])
+        cls(small_layout, cls.coerce_params({"color": {"kelvin": 6000}})).render(
+            buffer, 0.0, 1 / 60
+        )
+        assert float(buffer[0][2]) > warm_blue
+
+    def test_slowfade_crosses_between_its_two_colours(self, small_layout):
+        from fclights.color import kelvin_to_rgb
+
+        cls = effects.get("slowfade")
+        effect = cls(
+            small_layout,
+            cls.coerce_params(
+                {
+                    "color_a": {"kelvin": 2700},
+                    "color_b": {"kelvin": 5000},
+                    "period": 100.0,
+                    "hold": 0.0,
+                }
+            ),
+        )
+        buffer = np.zeros((small_layout.pixel_count, 3), dtype=np.float32)
+
+        effect.render(buffer, 0.0, 1 / 60)
+        np.testing.assert_allclose(buffer[0], kelvin_to_rgb(2700), atol=2e-3)
+        effect.render(buffer, 50.0, 1 / 60)
+        np.testing.assert_allclose(buffer[0], kelvin_to_rgb(5000), atol=2e-3)
+        effect.render(buffer, 100.0, 1 / 60)
+        np.testing.assert_allclose(buffer[0], kelvin_to_rgb(2700), atol=2e-3)
+
+    def test_slowfade_moves_in_float_between_every_frame(self, small_layout):
+        # The primary use case: a fifteen minute fade between near-identical
+        # whites. Consecutive frames must differ, or the effect has quantised
+        # before the dither at the encoder ever gets a chance.
+        cls = effects.get("slowfade")
+        effect = cls(
+            small_layout,
+            cls.coerce_params(
+                {"color_a": {"kelvin": 2700}, "color_b": {"kelvin": 2900},
+                 "period": 900.0, "hold": 0.0}
+            ),
+        )
+        a = np.zeros((small_layout.pixel_count, 3), dtype=np.float32)
+        b = np.zeros((small_layout.pixel_count, 3), dtype=np.float32)
+        effect.render(a, 200.0, 1 / 60)
+        effect.render(b, 200.0 + 1 / 60, 1 / 60)
+        assert not np.array_equal(a, b), "the fade stalled between consecutive frames"
+
+    def test_slowfade_dwell_parks_at_each_end(self, small_layout):
+        cls = effects.get("slowfade")
+        effect = cls(small_layout, cls.coerce_params({"period": 100.0, "hold": 0.4}))
+        assert effect._mix_at(0.0) == 0.0
+        assert effect._mix_at(4.0) == 0.0, "should still be parked at the near end"
+        assert effect._mix_at(50.0) == pytest.approx(1.0)
+        assert effect._mix_at(54.0) == pytest.approx(1.0), "should be parked at the far end"
+
+    def test_slowfade_dwell_is_per_end_not_shared_between_them(self, small_layout):
+        # The published description says "at each end", and the Android app
+        # renders it verbatim as the slider's help text, so the light has to
+        # spend `hold` of the cycle at end A and another `hold` at end B.
+        cls = effects.get("slowfade")
+        period, hold = 100.0, 0.2
+        effect = cls(
+            small_layout,
+            cls.coerce_params({"period": period, "hold": hold, "easing": "linear"}),
+        )
+        mix = np.array([effect._mix_at(t) for t in np.arange(0.0, period, 0.01)])
+
+        assert (mix == 0.0).mean() == pytest.approx(hold, abs=0.005)
+        assert (mix == 1.0).mean() == pytest.approx(hold, abs=0.005)
+        # Whatever is not dwell is travel, split evenly between the two legs.
+        assert ((mix > 0.0) & (mix < 1.0)).mean() == pytest.approx(1 - 2 * hold, abs=0.005)
+
+    def test_slowfade_dwell_stops_at_a_half(self, small_layout):
+        cls = effects.get("slowfade")
+        spec = next(p for p in cls.params if p.name == "hold")
+        assert spec.maximum == 0.5, "two ends of half a cycle each already fill the cycle"
+        with pytest.raises(ParamError, match="above maximum"):
+            cls.coerce_params({"hold": 0.6})
+
+    def test_slowfade_at_maximum_dwell_degrades_to_a_clean_switch(self, small_layout):
+        # hold=0.5 leaves zero travel; it must not divide by zero or render NaN.
+        cls = effects.get("slowfade")
+        effect = cls(small_layout, cls.coerce_params({"period": 100.0, "hold": 0.5}))
+        mix = np.array([effect._mix_at(t) for t in np.arange(0.0, 100.0, 0.01)])
+
+        assert np.isfinite(mix).all()
+        assert set(np.unique(mix)) <= {0.0, 1.0}
+        assert (mix == 0.0).mean() == pytest.approx(0.5, abs=0.005)
+
+        buffer = np.zeros((small_layout.pixel_count, 3), dtype=np.float32)
+        effect.render(buffer, 0.0, 1 / 60)
+        assert np.isfinite(buffer).all()
+
+    def test_slowfade_with_no_dwell_leaves_each_end_immediately(self, small_layout):
+        cls = effects.get("slowfade")
+        effect = cls(small_layout, cls.coerce_params({"period": 100.0, "hold": 0.0}))
+        assert effect._mix_at(0.0) == 0.0
+        assert effect._mix_at(5.0) > 0.0
+
+    def test_slowfade_is_smooth_at_the_turnaround(self, small_layout):
+        # A kink at the top of the cycle is exactly what a slow fade must not do.
+        cls = effects.get("slowfade")
+        effect = cls(
+            small_layout, cls.coerce_params({"period": 100.0, "hold": 0.0, "easing": "smooth"})
+        )
+        around = [effect._mix_at(t) for t in np.linspace(49.0, 51.0, 41)]
+        steps = np.abs(np.diff(around))
+        assert steps.max() < 0.01, "the crossfade changes direction abruptly"
+
+    def test_slowfade_supports_a_multi_hour_cycle(self, small_layout):
+        cls = effects.get("slowfade")
+        spec = next(p for p in cls.params if p.name == "period")
+        assert spec.maximum >= 3600.0, "a fade should be able to run for hours"
+
+    def test_solid_is_uniform_and_matches_the_requested_colour(self, small_layout):
+        cls = effects.get("solid")
+        effect = cls(small_layout, cls.coerce_params({"color": [255, 128, 0]}))
+        buffer = np.zeros((small_layout.pixel_count, 3), dtype=np.float32)
+        effect.render(buffer, 0.0, 1 / 60)
+
+        assert np.allclose(buffer, buffer[0])
+        np.testing.assert_allclose(buffer[0], [1.0, 128 / 255, 0.0], atol=1e-6)
+
+    def test_solid_does_not_animate(self, small_layout):
+        cls = effects.get("solid")
+        effect = cls(small_layout, cls.coerce_params({}))
+        rendered = render_sequence(effect, small_layout.pixel_count, frames=10)
+        assert np.allclose(rendered[0], rendered[-1])
+
+    def test_gradient_reaches_both_colours_across_one_cycle(self, layout):
+        # One cycle is colour A to colour B and back, so A sits at both ends and
+        # B in the middle. That symmetry is what keeps the seam invisible when
+        # the gradient slides.
+        cls = effects.get("gradient")
+        effect = cls(
+            layout,
+            cls.coerce_params(
+                {"color_a": [255, 0, 0], "color_b": [0, 0, 255], "speed": 0.0, "cycles": 1.0}
+            ),
+        )
+        buffer = np.zeros((layout.pixel_count, 3), dtype=np.float32)
+        effect.render(buffer, 0.0, 1 / 60)
+
+        np.testing.assert_allclose(buffer[0], [1.0, 0.0, 0.0], atol=1e-3)
+        np.testing.assert_allclose(buffer[-1], [1.0, 0.0, 0.0], atol=1e-2)
+        np.testing.assert_allclose(buffer[layout.pixel_count // 2], [0.0, 0.0, 1.0], atol=1e-2)
+
+    def test_gradient_slides_without_a_seam(self, layout):
+        # Sliding by exactly one cycle must land back on the same picture.
+        cls = effects.get("gradient")
+        effect = cls(layout, cls.coerce_params({"speed": 1.0, "cycles": 1.0}))
+        a = np.zeros((layout.pixel_count, 3), dtype=np.float32)
+        b = np.zeros((layout.pixel_count, 3), dtype=np.float32)
+        effect.render(a, 0.0, 1 / 60)
+        effect.render(b, 1.0, 1 / 60)
+        np.testing.assert_allclose(a, b, atol=1e-5)
+
+    def test_gradient_is_position_aware_not_index_aware(self, layout):
+        # Rendering along the x axis of a straight strip must agree with
+        # rendering along the run, or "spatial" means nothing.
+        cls = effects.get("gradient")
+        by_run = cls(layout, cls.coerce_params({"speed": 0.0, "axis": "run"}))
+        by_x = cls(layout, cls.coerce_params({"speed": 0.0, "axis": "x"}))
+
+        a = np.zeros((layout.pixel_count, 3), dtype=np.float32)
+        b = np.zeros((layout.pixel_count, 3), dtype=np.float32)
+        by_run.render(a, 0.0, 1 / 60)
+        by_x.render(b, 0.0, 1 / 60)
+        np.testing.assert_allclose(a, b, atol=2e-3)
+
+    def test_breathe_actually_varies_over_time(self, small_layout):
+        cls = effects.get("breathe")
+        effect = cls(small_layout, cls.coerce_params({"speed": 1.0, "minimum": 0.0}))
+        rendered = render_sequence(effect, small_layout.pixel_count, frames=60)
+        per_frame = rendered.mean(axis=(1, 2))
+        assert per_frame.max() - per_frame.min() > 0.2
+
+    def test_breathe_respects_its_brightness_bounds(self, small_layout):
+        cls = effects.get("breathe")
+        effect = cls(
+            small_layout,
+            cls.coerce_params(
+                {"color": [255, 255, 255], "speed": 2.0, "minimum": 0.25, "maximum": 0.75}
+            ),
+        )
+        rendered = render_sequence(effect, small_layout.pixel_count, frames=90)
+        assert rendered.max() <= 0.75 + 1e-5
+        assert rendered.min() >= 0.25 - 1e-5
+
+    def test_breathe_tolerates_inverted_bounds(self, small_layout):
+        cls = effects.get("breathe")
+        effect = cls(small_layout, cls.coerce_params({"minimum": 0.9, "maximum": 0.1}))
+        rendered = render_sequence(effect, small_layout.pixel_count, frames=30)
+        assert np.isfinite(rendered).all()
+
+    def test_wipe_front_advances_along_the_run(self, layout):
+        cls = effects.get("wipe")
+        effect = cls(
+            layout,
+            cls.coerce_params(
+                {"color": [255, 255, 255], "background": [0, 0, 0], "speed": 1.0}
+            ),
+        )
+        buffer = np.zeros((layout.pixel_count, 3), dtype=np.float32)
+
+        effect.render(buffer, 0.25, 1 / 60)
+        lit_early = int((buffer.mean(axis=1) > 0.5).sum())
+        effect.render(buffer, 0.75, 1 / 60)
+        lit_late = int((buffer.mean(axis=1) > 0.5).sum())
+
+        assert 0 < lit_early < lit_late <= layout.pixel_count
+
+    def test_wipe_bounce_reverses(self, layout):
+        cls = effects.get("wipe")
+        effect = cls(layout, cls.coerce_params({"speed": 1.0, "bounce": True}))
+        buffer = np.zeros((layout.pixel_count, 3), dtype=np.float32)
+
+        # The front reaches the far end at t=1.0 and retreats after it, so the
+        # lit fraction must fall away on the return leg.
+        effect.render(buffer, 1.0, 1 / 60)
+        at_peak = buffer.mean()
+        effect.render(buffer, 1.4, 1 / 60)
+        retreating = buffer.mean()
+        effect.render(buffer, 1.9, 1 / 60)
+        nearly_home = buffer.mean()
+        assert nearly_home < retreating < at_peak
+
+    def test_rainbow_covers_the_hue_circle(self, layout):
+        cls = effects.get("rainbow")
+        effect = cls(layout, cls.coerce_params({"speed": 0.0, "cycles": 1.0}))
+        buffer = np.zeros((layout.pixel_count, 3), dtype=np.float32)
+        effect.render(buffer, 0.0, 1 / 60)
+
+        # Somewhere along the run each channel should peak and each should bottom.
+        assert buffer.max(axis=0).min() > 0.95
+        assert buffer.min(axis=0).max() < 0.05
+
+    def test_rainbow_at_zero_saturation_is_white(self, small_layout):
+        cls = effects.get("rainbow")
+        effect = cls(small_layout, cls.coerce_params({"saturation": 0.0}))
+        buffer = np.zeros((small_layout.pixel_count, 3), dtype=np.float32)
+        effect.render(buffer, 0.3, 1 / 60)
+        np.testing.assert_allclose(buffer, 1.0, atol=1e-5)
+
+    @pytest.mark.parametrize("effect_name", ["twinkle", "fire"])
+    @pytest.mark.parametrize("seed", [0, 1, 99, 2**31 - 1])
+    def test_every_seed_in_the_published_range_replays(self, layout, effect_name, seed):
+        # The schema says "the same seed replays"; 0 is the default a client
+        # sees first, and it used to be the one value that did not.
+        cls = effects.get(effect_name)
+        params = cls.coerce_params({"seed": seed, "density": 5.0}
+                                   if effect_name == "twinkle" else {"seed": seed})
+        a = render_sequence(cls(layout, params), layout.pixel_count, frames=40)
+        b = render_sequence(cls(layout, params), layout.pixel_count, frames=40)
+        np.testing.assert_allclose(a, b)
+
+    @pytest.mark.parametrize("effect_name", ["twinkle", "fire"])
+    def test_the_auto_seed_sits_below_the_replayable_range(self, layout, effect_name):
+        cls = effects.get(effect_name)
+        spec = next(p for p in cls.params if p.name == "seed")
+        assert spec.minimum == -1
+        assert spec.default == 0
+
+        params = cls.coerce_params({"seed": -1, "density": 5.0}
+                                   if effect_name == "twinkle" else {"seed": -1})
+        a = render_sequence(cls(layout, params), layout.pixel_count, frames=40)
+        b = render_sequence(cls(layout, params), layout.pixel_count, frames=40)
+        assert not np.allclose(a, b), "-1 should draw a fresh seed each time"
+
+    def test_twinkle_rate_is_per_run_not_per_installation(self):
+        # Adding boards two and three must not make the strips already up
+        # twinkle less often, and a rate across "the installation" stops meaning
+        # anything once an effect is run on one zone.
+        cls = effects.get("twinkle")
+        params = cls.coerce_params(
+            {"seed": 3, "density": 8.0, "decay": 0.05, "background": [0, 0, 0]}
+        )
+
+        def sparks_on_the_first_run(total_pixels):
+            layout = simple_layout(total_pixels)
+            rendered = render_sequence(cls(layout, params), layout.pixel_count, frames=600)
+            return int((rendered[:, :64].max(axis=2) > 0.5).sum())
+
+        one_board = sparks_on_the_first_run(512)
+        three_boards = sparks_on_the_first_run(1152)
+
+        assert one_board > 50, "no sparks lit"
+        assert three_boards == pytest.approx(one_board, rel=0.35)
+
+    def test_twinkle_gives_a_short_run_the_same_rate_as_a_long_one(self):
+        # Per run, not per pixel: a 10-pixel run twinkles as often as a 64.
+        cls = effects.get("twinkle")
+        layout = build_layout(
+            {
+                "devices": [
+                    {
+                        "id": "fc0",
+                        "outputs": [
+                            {"index": 0, "count": 10},
+                            {"index": 1, "count": 64},
+                        ],
+                    }
+                ]
+            }
+        )
+        effect = cls(
+            layout,
+            cls.coerce_params(
+                {"seed": 11, "density": 12.0, "decay": 0.05, "background": [0, 0, 0]}
+            ),
+        )
+        rendered = render_sequence(effect, layout.pixel_count, frames=900)
+        lit = rendered.max(axis=2) > 0.5
+        short = int(lit[:, :10].sum())
+        long = int(lit[:, 10:].sum())
+
+        assert short > 20 and long > 20
+        assert short == pytest.approx(long, rel=0.4)
+
+    def test_twinkle_is_reproducible_for_a_given_seed(self, layout):
+        cls = effects.get("twinkle")
+        params = cls.coerce_params({"seed": 99, "density": 5.0})
+        a = render_sequence(cls(layout, params), layout.pixel_count, frames=40)
+        b = render_sequence(cls(layout, params), layout.pixel_count, frames=40)
+        np.testing.assert_allclose(a, b)
+
+    def test_twinkle_lights_pixels_and_lets_them_fade(self, layout):
+        cls = effects.get("twinkle")
+        effect = cls(
+            layout,
+            cls.coerce_params(
+                {"seed": 7, "density": 25.0, "decay": 0.2, "background": [0, 0, 0]}
+            ),
+        )
+        rendered = render_sequence(effect, layout.pixel_count, frames=60)
+        assert rendered.max() > 0.5, "no spark ever lit"
+
+        # Stop sparking and confirm the strip actually decays away.
+        quiet = cls(layout, cls.coerce_params({"seed": 7, "density": 0.0, "decay": 0.2,
+                                               "background": [0, 0, 0]}))
+        faded = render_sequence(quiet, layout.pixel_count, frames=120)
+        assert faded[-1].max() < 1e-3
+
+    def test_twinkle_jitter_moves_the_hue_and_nothing_else(self, layout):
+        # color_jitter is documented as a hue spread, so a jittered spark must
+        # keep the chosen colour's brightness rather than igniting at full duty.
+        cls = effects.get("twinkle")
+        half_red = {"color": [128, 0, 0], "background": [0, 0, 0], "seed": 5,
+                    "density": 25.0, "decay": 0.2}
+        peak = 128 / 255
+
+        jittered = render_sequence(
+            cls(layout, cls.coerce_params({**half_red, "color_jitter": 0.2})),
+            layout.pixel_count,
+            frames=60,
+        )
+        assert jittered.max() > 0.4, "no spark ever lit"
+        assert jittered.max() <= peak + 1e-5
+
+        plain = render_sequence(
+            cls(layout, cls.coerce_params({**half_red, "color_jitter": 0.0})),
+            layout.pixel_count,
+            frames=60,
+        )
+        assert jittered.max() == pytest.approx(plain.max(), abs=1e-5)
+
+    def test_twinkle_with_zero_density_shows_only_the_background(self, small_layout):
+        cls = effects.get("twinkle")
+        effect = cls(
+            small_layout,
+            cls.coerce_params({"density": 0.0, "background": [10, 20, 30], "seed": 1}),
+        )
+        buffer = np.zeros((small_layout.pixel_count, 3), dtype=np.float32)
+        effect.render(buffer, 0.0, 1 / 60)
+        np.testing.assert_allclose(buffer[0], [10 / 255, 20 / 255, 30 / 255], atol=1e-6)
+
+    def test_fire_flame_height_does_not_depend_on_the_installation_size(self):
+        # The captain's install needs three boards. A flame whose height changes
+        # when boards two and three arrive would be a silent visual regression
+        # on the strips that were already up.
+        cls = effects.get("fire")
+        params = cls.coerce_params({"seed": 5, "sparking": 1.0})
+
+        def burn(total_pixels):
+            layout = simple_layout(total_pixels)
+            effect = cls(layout, params)
+            rendered = render_sequence(effect, layout.pixel_count, frames=240)
+            lit = rendered[-60:].max(axis=(0, 2)) > 0.05
+            # Height of the flame on the first 64-pixel output.
+            return int(np.count_nonzero(lit[:64]))
+
+        one_board = burn(512)
+        three_boards = burn(1152)
+
+        assert one_board > 4, "the fire never caught"
+        assert three_boards == pytest.approx(one_board, abs=6)
+
+    def test_fire_burns_each_output_over_its_own_length(self, small_layout):
+        # per_segment=False burns the whole run as one flame, so its height
+        # scales with the run rather than with an output.
+        cls = effects.get("fire")
+        layout = simple_layout(128)
+        whole = cls(layout, cls.coerce_params({"seed": 5, "sparking": 1.0,
+                                               "per_segment": False}))
+        rendered = render_sequence(whole, layout.pixel_count, frames=240)
+        lit = rendered[-60:].max(axis=(0, 2)) > 0.05
+        # One flame from pixel 0, not one per 64-pixel output.
+        assert np.count_nonzero(lit[64:]) == 0 or lit[:64].all()
+
+    def test_fire_warms_up_and_stays_bounded(self, layout):
+        cls = effects.get("fire")
+        effect = cls(layout, cls.coerce_params({"seed": 3}))
+        rendered = render_sequence(effect, layout.pixel_count, frames=180)
+        assert rendered[-30:].max() > 0.2, "fire never caught"
+        assert rendered.max() <= 1.0 + 1e-6
+
+    def test_fire_burns_each_output_separately_when_asked(self, layout):
+        # Per-segment fire should be hot near the base of every output, not just
+        # at the very start of the whole run.
+        cls = effects.get("fire")
+        effect = cls(
+            layout, cls.coerce_params({"seed": 5, "per_segment": True, "sparking": 1.0})
+        )
+        rendered = render_sequence(effect, layout.pixel_count, frames=200)
+        brightness = rendered[-60:].mean(axis=(0, 2))
+
+        for segment in range(layout.segment_count):
+            in_segment = layout.segment == segment
+            assert brightness[in_segment].max() > 0.05, f"output {segment} never lit"
+
+    def test_fire_with_no_sparking_burns_out(self, small_layout):
+        cls = effects.get("fire")
+        effect = cls(small_layout, cls.coerce_params({"sparking": 0.0, "cooling": 1.0}))
+        rendered = render_sequence(effect, small_layout.pixel_count, frames=200)
+        assert rendered[-1].max() < 1e-3
+
+
+class TestLongUptime:
+    """A fixed installation runs for months, and ``t`` is never reset.
+
+    ``Engine._animation_time`` accumulates for the life of the process, so any
+    effect that folds it into a float32 expression loses the animation to
+    rounding long before the Pi is next restarted - silently, and from the
+    first frame after the effect is selected. Every test that starts at t=0
+    passes right through that.
+    """
+
+    A_MONTH = 30 * 24 * 3600.0
+
+    def _frames(self, effect, layout, start, count=12):
+        buffer = np.zeros((layout.pixel_count, 3), dtype=np.float32)
+        out = []
+        for i in range(count):
+            effect.render(buffer, start + i / 60.0, 1 / 60)
+            out.append(buffer.copy())
+        return np.stack(out)
+
+    @staticmethod
+    def _finest_detail(frames):
+        return min(len(np.unique(frame, axis=0)) for frame in frames)
+
+    @pytest.mark.parametrize("effect_name", ["gradient", "rainbow", "wipe", "breathe"])
+    def test_time_driven_effects_still_animate_after_a_month(self, layout, effect_name):
+        cls = effects.get(effect_name)
+        params = cls.coerce_params({"speed": 0.15})
+        early = self._frames(cls(layout, params), layout, 0.0)
+        late = self._frames(cls(layout, params), layout, self.A_MONTH)
+
+        per_frame_change = np.abs(np.diff(late, axis=0)).max(axis=(1, 2))
+        assert per_frame_change.min() > 0, "the picture stopped moving between frames"
+        assert self._finest_detail(late) >= self._finest_detail(early)
+
+    def test_slowfade_still_crosses_between_its_colours_after_a_month(self, small_layout):
+        # SlowFade's period is a parameter up to six hours, so it is sampled
+        # over a whole cycle rather than over a handful of frames.
+        cls = effects.get("slowfade")
+        params = cls.coerce_params(
+            {"color_a": [255, 0, 0], "color_b": [0, 0, 255], "period": 900.0}
+        )
+        effect = cls(small_layout, params)
+        buffer = np.zeros((small_layout.pixel_count, 3), dtype=np.float32)
+
+        seen = []
+        for step in range(90):
+            effect.render(buffer, self.A_MONTH + step * 10.0, 10.0)
+            seen.append(buffer[0].copy())
+        seen = np.stack(seen)
+
+        assert seen[:, 0].max() > 0.95, "never reached the first colour"
+        assert seen[:, 2].max() > 0.95, "never reached the second colour"
+
+
+class TestHSVHelper:
+    def test_matches_colorsys_for_scalar_hues(self):
+        import colorsys
+
+        hues = np.linspace(0, 1, 25, endpoint=False)
+        got = hsv_to_rgb_array(hues, 1.0, 1.0)
+        want = np.array([colorsys.hsv_to_rgb(float(h), 1.0, 1.0) for h in hues])
+        np.testing.assert_allclose(got, want, atol=1e-6)
+
+    def test_hue_wraps(self):
+        np.testing.assert_allclose(
+            hsv_to_rgb_array(np.array([0.25]), 1.0, 1.0),
+            hsv_to_rgb_array(np.array([3.25]), 1.0, 1.0),
+            atol=1e-6,
+        )
+        np.testing.assert_allclose(
+            hsv_to_rgb_array(np.array([0.25]), 1.0, 1.0),
+            hsv_to_rgb_array(np.array([-0.75]), 1.0, 1.0),
+            atol=1e-6,
+        )
+
+    def test_zero_value_is_black(self):
+        np.testing.assert_allclose(hsv_to_rgb_array(np.linspace(0, 1, 7), 1.0, 0.0), 0.0)
+
+
+class TestRegistry:
+    def test_unknown_effect_names_report_what_is_available(self):
+        with pytest.raises(effects.UnknownEffectError) as excinfo:
+            effects.get("disco")
+        assert "rainbow" in str(excinfo.value)
+
+    def test_registering_a_duplicate_name_is_rejected(self):
+        class Clash(effects.Effect):
+            name = "solid"
+
+            def render(self, frame, t, dt):
+                frame[:] = 0
+
+        with pytest.raises(ValueError, match="already registered"):
+            effects.register(Clash)
+
+    def test_registering_the_same_class_twice_is_harmless(self):
+        effects.register(effects.get("solid"))

@@ -25,3 +25,6 @@ local.properties
 .vscode/
 .DS_Store
 IMAGES/
+
+# Local dev state
+fclights-state.json

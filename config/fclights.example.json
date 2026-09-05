@@ -1,0 +1,22 @@
+{
+  "fps": 60.0,
+  "dither": true,
+  "power": {
+    "limit_amps": 24.0,
+    "ma_per_channel": 20.0,
+    "idle_ma_per_pixel": 1.0,
+    "gamma": 1.0
+  },
+  "opc": {
+    "host": "127.0.0.1",
+    "port": 7890
+  },
+  "server": {
+    "host": "0.0.0.0",
+    "port": 7891,
+    "cors_origins": []
+  },
+  "layout_path": "/etc/fclights/layout.json",
+  "state_path": "/var/lib/fclights/state.json",
+  "log_level": "INFO"
+}
