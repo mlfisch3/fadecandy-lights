@@ -2,6 +2,7 @@ package com.fclights.api
 
 import com.fclights.model.WsMessage
 import com.fclights.model.decodeWsMessage
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.delay
@@ -55,6 +56,12 @@ class FcSocket(
                 }
             } catch (e: SocketClosed) {
                 closedReason = e.reason
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                // An address OkHttp will not build a URL from throws from
+                // inside the flow, where there is no collector to catch it.
+                closedReason = e.message ?: "cannot open a socket to that address"
             }
             emit(Link.Down(closedReason))
             delay(backoff.delayMillis(attempt))

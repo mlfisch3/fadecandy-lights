@@ -103,6 +103,20 @@ class FcSocketTest {
     }
 
     @Test
+    fun `an address no URL can be built from reports instead of crashing`() {
+        // Defence in depth for an address that reached here anyway - from an
+        // older build's preferences, or an mDNS record. Building the request
+        // throws from inside the flow, where no collector catches it.
+        val socket = FcSocket(OkHttpClient.Builder().build())
+        val link = runBlocking {
+            withTimeout(TIMEOUT_MILLIS) {
+                socket.connect(Endpoint("192.168.1.164 7891")).first { it is Link.Down }
+            }
+        }
+        assertTrue("expected an ordinary disconnection, got $link", link is Link.Down)
+    }
+
+    @Test
     fun `a socket that keeps sending is left alone`() {
         server.enqueue(
             MockResponse().withWebSocketUpgrade(object : WebSocketListener() {

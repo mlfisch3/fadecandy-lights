@@ -2,7 +2,9 @@ package com.fclights
 
 import com.fclights.api.Endpoint
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
@@ -68,5 +70,41 @@ class EndpointTest {
         assertEquals("192.168.1.164:9000", Endpoint("192.168.1.164", 9000).toString())
         // Round-trips through the string the app stores in preferences.
         assertEquals(Endpoint("pi", 9000), Endpoint.parse(Endpoint("pi", 9000).toString()))
+    }
+
+    @Test
+    fun `an address the HTTP client cannot use is rejected, not half-parsed`() {
+        // A space instead of a colon is the easy typo, and it used to parse
+        // into a host that only fails once a URL is built - deep inside the
+        // socket flow, after the address had already been remembered.
+        assertNull(Endpoint.parse("192.168.1.164 7891"))
+        assertNull(Endpoint.parse("a..b"))
+        assertNull(Endpoint.parse("fade candy"))
+        assertNull(Endpoint.parse("pi:80:80"))
+    }
+
+    @Test
+    fun `what parses is exactly what the client can build a URL from`() {
+        listOf(
+            "192.168.1.164",
+            "fadecandy.local",
+            "fadecandy:8080",
+            "http://192.168.1.164:7891/api",
+            "ws://pi/api/ws",
+            "fe80::1",
+            "[fe80::1]:9000",
+        ).forEach { typed ->
+            val endpoint = Endpoint.parse(typed)
+            assertNotNull("$typed should parse", endpoint)
+            assertTrue("$typed parsed to an unusable endpoint", endpoint!!.isUsable)
+        }
+    }
+
+    @Test
+    fun `an address remembered by an older build is dropped rather than replayed`() {
+        // Prefs reads the stored string back through parse on every launch, so
+        // rejecting it here is what leaves the app on the connect sheet instead
+        // of reconnecting to something that cannot work.
+        assertNull(Endpoint.parse(Endpoint("192.168.1.164 7891").toString()))
     }
 }

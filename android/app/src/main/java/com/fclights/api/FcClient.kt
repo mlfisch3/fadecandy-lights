@@ -20,6 +20,7 @@ import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import okhttp3.Call
 import okhttp3.Callback
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -38,6 +39,17 @@ data class Endpoint(val host: String, val port: Int = DEFAULT_PORT) {
     val baseUrl: String get() = "http://${bracketed()}:$port"
     val wsUrl: String get() = "ws://${bracketed()}:$port/api/ws"
 
+    /**
+     * Whether these are URLs OkHttp will actually accept.
+     *
+     * Nothing hand-rolls a hostname rule here: the only definition that matters
+     * is the one the request builder applies, so this asks it. A host it
+     * refuses - a space in the middle, an empty label - throws out of
+     * `Request.Builder.url`, and that throw happens deep inside a flow where it
+     * is nobody's to catch.
+     */
+    val isUsable: Boolean get() = baseUrl.toHttpUrlOrNull() != null
+
     /** A bare IPv6 literal has to be bracketed inside a URL. */
     private fun bracketed(): String =
         if (host.contains(':') && !host.startsWith("[")) "[$host]" else host
@@ -51,6 +63,11 @@ data class Endpoint(val host: String, val port: Int = DEFAULT_PORT) {
          * Parse what a user typed into the address box: `192.168.1.164`,
          * `fadecandy.local`, `fadecandy:7891`, or a full `http://...` URL.
          * Returns null if there is no usable host in it.
+         *
+         * "Usable" is decided by [isUsable] rather than by a pattern, so what
+         * the address box accepts and what the app can connect to are the same
+         * set. Anything else and a typo is offered as valid, remembered, and
+         * then fails somewhere that cannot report it.
          */
         fun parse(text: String): Endpoint? {
             var s = text.trim()
@@ -66,19 +83,22 @@ data class Endpoint(val host: String, val port: Int = DEFAULT_PORT) {
                 val host = s.substring(1, close)
                 val rest = s.substring(close + 1)
                 val port = if (rest.startsWith(":")) rest.drop(1).toIntOrNull() ?: return null else DEFAULT_PORT
-                return if (host.isEmpty() || port !in 1..65535) null else Endpoint(host, port)
+                return if (host.isEmpty() || port !in 1..65535) null else usable(host, port)
             }
 
             // A bare IPv6 literal has more than one colon, and no port.
-            if (s.count { it == ':' } > 1) return Endpoint(s, DEFAULT_PORT)
+            if (s.count { it == ':' } > 1) return usable(s, DEFAULT_PORT)
 
             val host = s.substringBefore(':')
             val portText = s.substringAfter(':', "")
             if (host.isEmpty()) return null
             val port = if (portText.isEmpty()) DEFAULT_PORT else portText.toIntOrNull() ?: return null
             if (port !in 1..65535) return null
-            return Endpoint(host, port)
+            return usable(host, port)
         }
+
+        private fun usable(host: String, port: Int): Endpoint? =
+            Endpoint(host, port).takeIf { it.isUsable }
     }
 }
 

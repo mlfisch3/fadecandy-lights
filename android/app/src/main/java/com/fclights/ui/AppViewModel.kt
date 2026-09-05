@@ -105,6 +105,12 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     // -- connection ---------------------------------------------------------
 
     fun connect(endpoint: Endpoint) {
+        if (!endpoint.isUsable) {
+            // Remembering it is what would turn a typo into an app that cannot
+            // be started rather than a connection that failed.
+            _ui.value = _ui.value.copy(error = "Not an address this app can use: $endpoint")
+            return
+        }
         socketJob?.cancel()
         // An address has been chosen; there is nothing left to look for, and a
         // browse costs multicast traffic for as long as it runs.
@@ -142,19 +148,32 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     private fun openSocket(endpoint: Endpoint) {
         socketJob?.cancel()
         socketJob = viewModelScope.launch {
-            socket.connect(endpoint).collect { link ->
-                when (link) {
-                    is Link.Connecting -> _ui.value = _ui.value.copy(connection = Connection.Connecting)
-                    is Link.Down -> _ui.value = _ui.value.copy(
-                        connection = Connection.Disconnected,
-                        connectionDetail = link.reason,
-                    )
-                    is Link.Up -> _ui.value = _ui.value.copy(
-                        connection = Connection.Connected,
-                        connectionDetail = "",
-                        controller = reduce(_ui.value.controller, link.message),
-                    )
-                }
+            try {
+                follow(endpoint)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                // Nothing above this has a handler: an escape here would reach
+                // the thread's uncaught handler and take the process with it.
+                _ui.value = _ui.value.copy(connection = Connection.Disconnected)
+                report(e)
+            }
+        }
+    }
+
+    private suspend fun follow(endpoint: Endpoint) {
+        socket.connect(endpoint).collect { link ->
+            when (link) {
+                is Link.Connecting -> _ui.value = _ui.value.copy(connection = Connection.Connecting)
+                is Link.Down -> _ui.value = _ui.value.copy(
+                    connection = Connection.Disconnected,
+                    connectionDetail = link.reason,
+                )
+                is Link.Up -> _ui.value = _ui.value.copy(
+                    connection = Connection.Connected,
+                    connectionDetail = "",
+                    controller = reduce(_ui.value.controller, link.message),
+                )
             }
         }
     }
