@@ -4,8 +4,7 @@ Controller for a Fadecandy-driven WS2812B installation, running headless on a Ra
 
 It is built for everyday apartment lighting that approximates natural light - tunable white from candlelight to daylight, and fades slow enough to be measured in minutes - rather than for a display piece.
 
-This repository is the Pi side: the animation engine, the power governor, and the control API.
-The Android app is a separate piece of work built against [docs/api.md](docs/api.md).
+This repository holds both sides: the Pi service - the animation engine, the power governor, and the control API - and the [Android app](android/) that drives it over the contract in [docs/api.md](docs/api.md).
 Wiring, power distribution and safety are covered in full, with diagrams, in [docs/wiring.md](docs/wiring.md).
 
 ## What it is
@@ -99,6 +98,14 @@ sudo ./deploy/setup.sh
 Then work through [docs/bring-up.md](docs/bring-up.md) with the hardware connected.
 Do that before scaling up to the full run; it is written as a checklist that localises failures rather than leaving you guessing.
 
+## The Android app
+
+[android/](android/) holds the native Kotlin app that controls this service.
+It builds to a sideloadable APK with `cd android && ./gradlew assembleDebug`; [android/README.md](android/README.md) covers the toolchain, installing it on a phone, and what is in it.
+
+It has never run on a phone.
+Its client, socket and state handling have been exercised against a real Pi with a Fadecandy attached; the UI has not been looked at on a device.
+
 ## Development without hardware
 
 ```bash
@@ -108,7 +115,7 @@ python3 -m venv .venv && .venv/bin/pip install -e '.[dev]'
 ```
 
 `--simulate` runs the whole service - engine, governor, API, persistence - with no Fadecandy and no fcserver attached.
-The API behaves identically, which is how the Android app gets built before the rig exists.
+The API behaves identically, so the Android app can be built and exercised against it without the rig.
 
 ---
 
@@ -389,6 +396,7 @@ The `serial` field is in the layout schema for that; it is not yet matched again
 | `docs/bring-up.md` | Hardware bring-up checklist. |
 | `tests/opc_sink.py` | Test-double OPC receiver, used in place of fcserver. |
 | `tools/` | Development checks that are not part of the service. |
+| `android/` | The Android app. Builds independently of the Python service. |
 
 ## Testing
 

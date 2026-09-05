@@ -4,7 +4,7 @@ This file is the project's committed home for project-intrinsic agent knowledge:
 
 ## What this is
 
-A Fadecandy-driven WS2812B controller for a Raspberry Pi 3 B+, serving a REST and WebSocket API to a native Android app (a separate project).
+A Fadecandy-driven WS2812B controller for a Raspberry Pi 3 B+, serving a REST and WebSocket API to the native Android app in `android/`.
 `docs/wiring.md` is the authoritative wiring, power and topology record, `README.md` summarises wiring and power sizing, `docs/api.md` is the API contract, `docs/bring-up.md` is the hardware checklist.
 
 ## Working here
@@ -17,9 +17,17 @@ uv venv --python 3.11 .venv && VIRTUAL_ENV=.venv uv pip install -e '.[dev]'
 .venv/bin/fclights check --simulate --pixels 512  # validate config, print power arithmetic
 ```
 
+The Android app is a separate build under `android/`, sharing nothing but `docs/api.md`.
+It needs a JDK 17 and Android SDK 36; `android/README.md` has the commands and the version pins' reasoning.
+
+```bash
+cd android && ./gradlew assembleDebug testDebugUnitTest lintDebug
+FCLIGHTS_TEST_HOST=localhost:7891 ./gradlew testDebugUnitTest  # opt-in, against a running service
+```
+
 ## Sharp edges
 
-**Nothing here has been verified on hardware.** No Fadecandy, Pi or strip has ever been attached. Do not claim otherwise, in commits, docs or CI. `docs/bring-up.md` exists because of that gap.
+**The rig exists now; be exact about what that has and has not proved.** The service runs on the Pi (hostname `fadecandy`, DHCP - do not hardcode the address) with a genuine Fadecandy attached: `/api/health` reports `simulated: false` and `opc_connected: true`, and `/api/status` shows a steady 60 fps with no dropped frames. That covers the render loop, the OPC link and the whole control API, and the Android client has been run against it. It does not cover how any effect actually looks on a strip, and the Android UI has never run on a phone. Claim the first, not the second, and keep working through `docs/bring-up.md` for the rest.
 
 **Gamma lives in fcserver, not here.** Engine values are 0..1 *display* space, not linear light. Applying gamma in an effect or in the encoder would double-correct. `config/fcserver.json` `color` block is the one place it belongs.
 
@@ -30,6 +38,8 @@ uv venv --python 3.11 .venv && VIRTUAL_ENV=.venv uv pip install -e '.[dev]'
 **Effect parameters are per-run, never whole-installation.** A rate, count or length that divides across the whole layout - "sparks per second across the installation", cooling scaled by total pixel count - silently changes how an existing strip looks when a board is added, and becomes meaningless once an effect runs on a subset. A zone model grouping the runs into rooms is queued as the next piece of work, so an effect must already behave the same on a run whether it is one of eight or one of twenty-four. Scale by `layout.segment` and the run's own length; spatial parameters that read the coordinate arrays (`u`, `normalized`) are fine, because those follow whatever layout the effect is handed.
 
 **Do not hardcode strip density or a single Fadecandy.** `pixels_per_metre` defaults to 30.3, *measured* at 33 mm centre to centre, and the real installation (~18 runs, ~1150 pixels) needs three boards. A full 64-pixel output is 2.11 m, so it needs power injection at both ends. Layout, pixel addressing and the OPC client all take a device list; keep it that way. A Fadecandy output is hard-capped at 64 pixels, a board at 512.
+
+**The app builds its controls from the schema, never from a list.** `android/` renders the effect picker and every parameter control from `GET /api/effects` at runtime, so an effect added on the Pi appears on the phone with no app change. A hardcoded effect name or a switch on a parameter name in the app is a bug, not a shortcut. The same goes for the blackbody conversion in `app/.../model/Blackbody.kt`: it is a port of `fclights.color.kelvin_to_rgb` and is tested against values that implementation produced, because the slider is drawn from one and the strip is lit by the other.
 
 **Colour values are objects, not arrays.** `{"mode": "kelvin", "kelvin": 2700, "rgb": [...]}` or `{"mode": "rgb", "rgb": [...]}`. A kelvin colour keeps its temperature so the phone's warm-to-cool slider can be restored, and is re-derived in float rather than read back from the 8-bit `rgb`.
 

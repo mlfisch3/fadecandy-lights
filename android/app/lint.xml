@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The version pins here are deliberate, not neglect.
+
+  AGP 8.13 compiles against API 36, and the AndroidX releases newer than the
+  ones in gradle/libs.versions.toml require API 37 and AGP 9. Moving to those
+  is a toolchain upgrade, not a dependency bump, so lint is told not to nag
+  about it on every build; see android/README.md.
+-->
+<lint>
+    <issue id="GradleDependency" severity="ignore" />
+    <issue id="NewerVersionAvailable" severity="ignore" />
+    <issue id="AndroidGradlePluginVersion" severity="ignore" />
+</lint>

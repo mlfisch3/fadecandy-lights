@@ -1,0 +1,548 @@
+{
+  "effects": [
+    {
+      "name": "breathe",
+      "display_name": "Breathe",
+      "description": "A colour pulsing smoothly between two brightness levels.",
+      "params": [
+        {
+          "name": "color",
+          "type": "color",
+          "default": {
+            "mode": "kelvin",
+            "kelvin": 2700.0,
+            "rgb": [
+              255,
+              173,
+              89
+            ]
+          },
+          "label": "Colour",
+          "description": "",
+          "supports_kelvin": true,
+          "kelvin_range": [
+            1800.0,
+            6500.0
+          ],
+          "kelvin_default": 2700.0
+        },
+        {
+          "name": "speed",
+          "type": "float",
+          "default": 0.25,
+          "label": "Speed",
+          "description": "Cycles per second. 0 freezes the animation.",
+          "minimum": 0.0,
+          "maximum": 3.0,
+          "step": 0.01,
+          "unit": "Hz"
+        },
+        {
+          "name": "minimum",
+          "type": "float",
+          "default": 0.05,
+          "label": "Dimmest",
+          "description": "Brightness at the bottom of the breath.",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "step": 0.01
+        },
+        {
+          "name": "maximum",
+          "type": "float",
+          "default": 1.0,
+          "label": "Brightest",
+          "description": "Brightness at the top of the breath.",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "step": 0.01
+        }
+      ]
+    },
+    {
+      "name": "fire",
+      "display_name": "Fire",
+      "description": "A flickering flame gradient, hottest at the base of each run.",
+      "params": [
+        {
+          "name": "cooling",
+          "type": "float",
+          "default": 0.55,
+          "label": "Cooling",
+          "description": "How fast heat bleeds away. Higher makes a shorter flame.",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "step": 0.01
+        },
+        {
+          "name": "sparking",
+          "type": "float",
+          "default": 0.5,
+          "label": "Sparking",
+          "description": "Chance per frame of a new ember at the base of a run.",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "step": 0.01
+        },
+        {
+          "name": "speed",
+          "type": "float",
+          "default": 1.0,
+          "label": "Speed",
+          "description": "Cycles per second. 0 freezes the animation.",
+          "minimum": 0.0,
+          "maximum": 4.0,
+          "step": 0.01,
+          "unit": "Hz"
+        },
+        {
+          "name": "hue",
+          "type": "float",
+          "default": 0.05,
+          "label": "Hue",
+          "description": "Base hue. 0.05 is orange fire, 0.55 is a cold blue flame.",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "step": 0.005
+        },
+        {
+          "name": "per_segment",
+          "type": "bool",
+          "default": true,
+          "label": "Per Segment",
+          "description": "Burn each output as its own flame instead of one run-long flame."
+        },
+        {
+          "name": "seed",
+          "type": "int",
+          "default": 0,
+          "label": "Seed",
+          "description": "Random seed. The same seed replays the same flame. -1 draws a fresh one each time instead.",
+          "minimum": -1,
+          "maximum": 2147483647
+        }
+      ]
+    },
+    {
+      "name": "gradient",
+      "display_name": "Gradient Sweep",
+      "description": "A two-colour gradient that slides along the run.",
+      "params": [
+        {
+          "name": "color_a",
+          "type": "color",
+          "default": {
+            "mode": "kelvin",
+            "kelvin": 2200.0,
+            "rgb": [
+              255,
+              150,
+              47
+            ]
+          },
+          "label": "Start Colour",
+          "description": "",
+          "supports_kelvin": true,
+          "kelvin_range": [
+            1800.0,
+            6500.0
+          ],
+          "kelvin_default": 2700.0
+        },
+        {
+          "name": "color_b",
+          "type": "color",
+          "default": {
+            "mode": "kelvin",
+            "kelvin": 5000.0,
+            "rgb": [
+              255,
+              230,
+              208
+            ]
+          },
+          "label": "End Colour",
+          "description": "",
+          "supports_kelvin": true,
+          "kelvin_range": [
+            1800.0,
+            6500.0
+          ],
+          "kelvin_default": 2700.0
+        },
+        {
+          "name": "speed",
+          "type": "float",
+          "default": 0.1,
+          "label": "Speed",
+          "description": "Cycles per second. 0 freezes the animation.",
+          "minimum": 0.0,
+          "maximum": 5.0,
+          "step": 0.01,
+          "unit": "Hz"
+        },
+        {
+          "name": "cycles",
+          "type": "float",
+          "default": 1.0,
+          "label": "Cycles",
+          "description": "How many full colour A to B to A repeats fit along the run.",
+          "minimum": 0.1,
+          "maximum": 10.0,
+          "step": 0.1
+        },
+        {
+          "name": "axis",
+          "type": "enum",
+          "default": "run",
+          "label": "Axis",
+          "description": "Sweep along the strip order, or along a spatial axis.",
+          "choices": [
+            "run",
+            "x",
+            "y",
+            "z"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "rainbow",
+      "display_name": "Rainbow",
+      "description": "A hue sweep rolling along the run.",
+      "params": [
+        {
+          "name": "speed",
+          "type": "float",
+          "default": 0.15,
+          "label": "Speed",
+          "description": "Cycles per second. 0 freezes the animation.",
+          "minimum": 0.0,
+          "maximum": 5.0,
+          "step": 0.01,
+          "unit": "Hz"
+        },
+        {
+          "name": "cycles",
+          "type": "float",
+          "default": 1.0,
+          "label": "Cycles",
+          "description": "How many full rainbows fit along the run.",
+          "minimum": 0.1,
+          "maximum": 10.0,
+          "step": 0.1
+        },
+        {
+          "name": "saturation",
+          "type": "float",
+          "default": 1.0,
+          "label": "Saturation",
+          "description": "",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "step": 0.01
+        },
+        {
+          "name": "axis",
+          "type": "enum",
+          "default": "run",
+          "label": "Axis",
+          "description": "",
+          "choices": [
+            "run",
+            "x",
+            "y",
+            "z"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "slowfade",
+      "display_name": "Slow Fade",
+      "description": "A very slow crossfade between two colours, over minutes.",
+      "params": [
+        {
+          "name": "color_a",
+          "type": "color",
+          "default": {
+            "mode": "kelvin",
+            "kelvin": 2700.0,
+            "rgb": [
+              255,
+              173,
+              89
+            ]
+          },
+          "label": "From",
+          "description": "The colour the cycle starts and ends on.",
+          "supports_kelvin": true,
+          "kelvin_range": [
+            1800.0,
+            6500.0
+          ],
+          "kelvin_default": 2700.0
+        },
+        {
+          "name": "color_b",
+          "type": "color",
+          "default": {
+            "mode": "kelvin",
+            "kelvin": 3400.0,
+            "rgb": [
+              255,
+              196,
+              134
+            ]
+          },
+          "label": "To",
+          "description": "The colour at the far end of the cycle.",
+          "supports_kelvin": true,
+          "kelvin_range": [
+            1800.0,
+            6500.0
+          ],
+          "kelvin_default": 2700.0
+        },
+        {
+          "name": "period",
+          "type": "float",
+          "default": 900.0,
+          "label": "Cycle Length",
+          "description": "Seconds for a full round trip, from the first colour to the second and back. 900 is fifteen minutes; the maximum is six hours.",
+          "minimum": 10.0,
+          "maximum": 21600.0,
+          "step": 10.0,
+          "unit": "s"
+        },
+        {
+          "name": "hold",
+          "type": "float",
+          "default": 0.2,
+          "label": "Dwell",
+          "description": "Fraction of the cycle spent sitting at each end before moving again. 0 fades continuously; 0.5 is the maximum, because two ends of half a cycle each already fill the cycle.",
+          "minimum": 0.0,
+          "maximum": 0.5,
+          "step": 0.05
+        },
+        {
+          "name": "easing",
+          "type": "enum",
+          "default": "smooth",
+          "label": "Easing",
+          "description": "Smooth eases in and out of each end; linear ramps evenly.",
+          "choices": [
+            "smooth",
+            "linear"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "solid",
+      "display_name": "Solid Colour",
+      "description": "One steady colour, or one steady white, across the whole installation.",
+      "params": [
+        {
+          "name": "color",
+          "type": "color",
+          "default": {
+            "mode": "kelvin",
+            "kelvin": 2700.0,
+            "rgb": [
+              255,
+              173,
+              89
+            ]
+          },
+          "label": "Colour",
+          "description": "The colour to hold. Set it as a temperature for plain white light.",
+          "supports_kelvin": true,
+          "kelvin_range": [
+            1800.0,
+            6500.0
+          ],
+          "kelvin_default": 2700.0
+        }
+      ]
+    },
+    {
+      "name": "twinkle",
+      "display_name": "Twinkle",
+      "description": "Pixels igniting at random and fading out over a warm base.",
+      "params": [
+        {
+          "name": "color",
+          "type": "color",
+          "default": {
+            "mode": "kelvin",
+            "kelvin": 3200.0,
+            "rgb": [
+              255,
+              190,
+              122
+            ]
+          },
+          "label": "Spark Colour",
+          "description": "",
+          "supports_kelvin": true,
+          "kelvin_range": [
+            1800.0,
+            6500.0
+          ],
+          "kelvin_default": 2700.0
+        },
+        {
+          "name": "background",
+          "type": "color",
+          "default": {
+            "mode": "rgb",
+            "rgb": [
+              6,
+              4,
+              12
+            ]
+          },
+          "label": "Background",
+          "description": "",
+          "supports_kelvin": true,
+          "kelvin_range": [
+            1800.0,
+            6500.0
+          ],
+          "kelvin_default": 2700.0
+        },
+        {
+          "name": "density",
+          "type": "float",
+          "default": 0.75,
+          "label": "Density",
+          "description": "New sparks lit per second on each run. A rate per run rather than across the installation, so a strip twinkles the same whether it is the only one or one of twenty-four.",
+          "minimum": 0.0,
+          "maximum": 25.0,
+          "step": 0.25,
+          "unit": "sparks/s per run"
+        },
+        {
+          "name": "decay",
+          "type": "float",
+          "default": 1.2,
+          "label": "Fade Time",
+          "description": "Seconds for a spark to fade to roughly a tenth of its peak.",
+          "minimum": 0.05,
+          "maximum": 10.0,
+          "step": 0.05,
+          "unit": "s"
+        },
+        {
+          "name": "color_jitter",
+          "type": "float",
+          "default": 0.05,
+          "label": "Color Jitter",
+          "description": "Random hue spread applied to each spark.",
+          "minimum": 0.0,
+          "maximum": 0.5,
+          "step": 0.01
+        },
+        {
+          "name": "seed",
+          "type": "int",
+          "default": 0,
+          "label": "Seed",
+          "description": "Random seed. The same seed replays the same twinkle. -1 draws a fresh one each time instead.",
+          "minimum": -1,
+          "maximum": 2147483647
+        }
+      ]
+    },
+    {
+      "name": "wipe",
+      "display_name": "Colour Wipe",
+      "description": "A colour front travelling along the run, over a background.",
+      "params": [
+        {
+          "name": "color",
+          "type": "color",
+          "default": {
+            "mode": "kelvin",
+            "kelvin": 4000.0,
+            "rgb": [
+              255,
+              211,
+              165
+            ]
+          },
+          "label": "Wipe Colour",
+          "description": "",
+          "supports_kelvin": true,
+          "kelvin_range": [
+            1800.0,
+            6500.0
+          ],
+          "kelvin_default": 2700.0
+        },
+        {
+          "name": "background",
+          "type": "color",
+          "default": {
+            "mode": "rgb",
+            "rgb": [
+              0,
+              0,
+              0
+            ]
+          },
+          "label": "Background",
+          "description": "",
+          "supports_kelvin": true,
+          "kelvin_range": [
+            1800.0,
+            6500.0
+          ],
+          "kelvin_default": 2700.0
+        },
+        {
+          "name": "speed",
+          "type": "float",
+          "default": 0.4,
+          "label": "Speed",
+          "description": "Cycles per second. 0 freezes the animation.",
+          "minimum": 0.0,
+          "maximum": 5.0,
+          "step": 0.01,
+          "unit": "Hz"
+        },
+        {
+          "name": "softness",
+          "type": "float",
+          "default": 0.03,
+          "label": "Softness",
+          "description": "Width of the fade at the leading edge, as a fraction of the run.",
+          "minimum": 0.0,
+          "maximum": 0.5,
+          "step": 0.005
+        },
+        {
+          "name": "bounce",
+          "type": "bool",
+          "default": false,
+          "label": "Bounce",
+          "description": "Sweep back and forth instead of restarting from the beginning."
+        },
+        {
+          "name": "axis",
+          "type": "enum",
+          "default": "run",
+          "label": "Axis",
+          "description": "",
+          "choices": [
+            "run",
+            "x",
+            "y",
+            "z"
+          ]
+        }
+      ]
+    }
+  ]
+}
