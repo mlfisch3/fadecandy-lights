@@ -4,8 +4,8 @@
   <desc id="d2">Fadecandy channel 0 drives one 64-pixel WS2812B run. A yellow DATA wire runs from the
   channel's + pad to the run's DI pigtail. A black GND wire runs from the same channel's minus pad
   and joins the run's black pigtail lead at a junction. From that junction the black lead continues
-  to the supply's V-minus terminal, and the run's red lead goes to V-plus. The Fadecandy carries no
-  strip current; it only shares the ground reference.</desc>
+  to the supply's V-minus terminal, and the run's red lead goes to V-plus through that run's own 5 A
+  branch fuse. The Fadecandy carries no strip current; it only shares the ground reference.</desc>
 
   <style>
     .bg      { fill:#F7F6F1; stroke:#C7C3B8; stroke-width:2; }
@@ -23,6 +23,7 @@
     .panel   { fill:#EFEDE5; stroke:#B9B5A8; stroke-width:1.5; }
     .inset   { fill:#FFFFFF; stroke:#B9B5A8; stroke-width:1.5; stroke-dasharray:5 4; }
     .chip    { fill:#EFEDE5; stroke:#37342C; stroke-width:1.6; }
+    .fuse    { fill:#FFFFFF; stroke:#37342C; stroke-width:1.8; }
     .strip   { fill:#FFFFFF; stroke:#37342C; stroke-width:2; }
     .led     { fill:#E8E4D6; stroke:#9A9587; stroke-width:0.8; }
     .padd    { fill:#FFF3CE; stroke:#4A3800; stroke-width:1.6; }
@@ -160,7 +161,11 @@
   <!-- Run pigtail: DATA x=572, GND x=588, +5V x=604 -->
   <path class="datc" d="M 572 244 V 300"/><path class="dat" d="M 572 244 V 300"/>
   <path class="gnd" d="M 588 244 V 793 H 812"/>
-  <path class="pwr" d="M 604 244 V 733 H 812"/>
+  <path class="pwr" d="M 604 244 V 400"/>
+  <rect class="fuse" x="594" y="400" width="20" height="26" rx="3"/>
+  <path class="pwr" d="M 604 426 V 733 H 812"/>
+  <text class="wlbl" x="626" y="410">BRANCH FUSE &#183; 5 A</text>
+  <text class="lbls" x="626" y="426">every run gets its own, between the +5 V bus and the run</text>
 
   <circle class="dot" cx="588" cy="530" r="6.5"/>
 
@@ -194,7 +199,7 @@
   <text class="boxttl" x="838" y="718">5 V DC supply</text>
   <text class="lbls" x="838" y="738">Set to 5.00 V - not higher. See the note at left.</text>
   <text class="lbls" x="838" y="756">The only source of strip current in this drawing.</text>
-  <text class="lbls" x="838" y="774">Mains side: enclosed, earthed, fused.</text>
+  <text class="lbls" x="838" y="774">Enclosed and earthed. Fused on mains and DC.</text>
   <text class="mono" x="838" y="800">64 px &#215; 60 mA = 3.84 A worst case</text>
   <text class="mono" x="838" y="820">= 19.2 W for this one run at full white</text>
   <text class="lbls" x="838" y="842">Warm ambient scenes draw far less than that.</text>

@@ -59,7 +59,7 @@
   <path class="pwrm" d="M 296 204 H 578"/>
   <text class="tiny" x="279" y="187" text-anchor="middle">MAIN</text>
   <text class="tiny" x="279" y="209" text-anchor="middle">FUSE</text>
-  <text class="tiny" x="279" y="231" text-anchor="middle">35 A</text>
+  <text class="tiny" x="279" y="231" text-anchor="middle">40 A</text>
   <text class="wlbl" x="310" y="164">+5 V bus bar</text>
   <text class="tiny" x="310" y="180">size it for the cluster total: 8 AWG for eight runs, 30.7 A</text>
   <path class="gndm" d="M 230 248 H 244 V 508 H 578"/>
@@ -126,9 +126,9 @@
   <text class="lbls" x="60" y="704">A 60 A supply will happily push 60 A</text>
   <text class="lbls" x="60" y="720">into a shorted 16 AWG branch. The fuse</text>
   <text class="lbls" x="60" y="736">is what stops that becoming a fire.</text>
-  <text class="wlbl" x="60" y="756">Main fuse: 35 A on an 8 AWG bus</text>
-  <text class="lbls" x="60" y="774">Above the 30.7 A the eight runs draw, and</text>
-  <text class="lbls" x="60" y="790">inside 8 AWG&#8217;s ~40 A. Never the reverse.</text>
+  <text class="wlbl" x="60" y="756">Main fuse = the bus bar&#8217;s ampacity</text>
+  <text class="lbls" x="60" y="774">8 AWG &#8594; 40 A, 10 AWG &#8594; 30 A, 12 AWG &#8594; 20 A.</text>
+  <text class="lbls" x="60" y="790">One main per feeder, not per supply.</text>
   <text class="wlbl" x="340" y="566">Order of assembly, every time</text>
   <text class="lbls" x="340" y="586">1. Supply off and unplugged.</text>
   <text class="lbls" x="340" y="604">2. Bus bars and main fuse.</text>
@@ -169,7 +169,7 @@
   <text class="mono" x="640" y="642" xml:space="preserve"> 8    0.00206   ~40 A    bus bar, up to 10 runs</text>
   <text class="lbls" x="640" y="664">These are typical free-air chassis-wiring values, not a code table.</text>
   <text class="lbls" x="640" y="680">Derate them when wires are bundled, in conduit, or in a warm box.</text>
-  <text class="warnt" x="640" y="700">Never fuse above the ampacity of the thinnest wire downstream of it.</text>
+  <text class="warnt" x="640" y="700">A fuse must never exceed the ampacity of the wire it alone protects.</text>
   <text class="h3" x="640" y="730">4. What it costs to leave on</text>
   <text class="mono" x="640" y="754" xml:space="preserve">18 runs, full white   69.1 A &#215; 5 V = 345 W   never happens</text>
   <text class="mono" x="640" y="772" xml:space="preserve">18 runs, ambient 25 %              &#8776;  86 W   realistic</text>
