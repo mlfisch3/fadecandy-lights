@@ -6,8 +6,8 @@
   run, and a black GND wire from that same channel's minus pin, twisted with it and landed on the GND
   bus alongside that run's own ground lead. There are eight such pairs, not eight lone data wires. The
   5 V power supply feeds a red +5 V bus and a black GND bus that power the runs directly, and each run
-  takes its +5 V off that bus through its own 5 A branch fuse. The feeder from the supply's V-plus
-  terminal to the bus passes through a 40 A main fuse, and both bus bars are 8 AWG. Strip current
+  takes its +5 V off that bus through its own 6 A branch fuse. The feeder from the supply's V-plus
+  terminal to the bus passes through a 40 A main fuse, and both bus bars are solid bars. Strip current
   flows only between the supply and the runs; it never passes through the Fadecandy or the Pi. For
   these eight runs the supply must be the sompom S-300-5, 60 A, which they load to 51 per cent; the
   30 A LETOUR S-150-5 would be at 102 per cent of its rating and must not be used here.</desc>
@@ -146,35 +146,35 @@
     <path class="pwr" d="M 240 350 V 393 A 7 7 0 0 1 240 407 V 414"/>
     <rect class="fuse" x="232" y="414" width="16" height="18" rx="3"/>
     <path class="pwr" d="M 240 432 V 440"/>
-    <text class="lbls" x="253" y="428">5 A</text>
+    <text class="lbls" x="253" y="428">6 A</text>
     <path class="pwr" d="M 352 350 V 393 A 7 7 0 0 1 352 407 V 414"/>
     <rect class="fuse" x="344" y="414" width="16" height="18" rx="3"/>
     <path class="pwr" d="M 352 432 V 440"/>
-    <text class="lbls" x="365" y="428">5 A</text>
+    <text class="lbls" x="365" y="428">6 A</text>
     <path class="pwr" d="M 464 350 V 393 A 7 7 0 0 1 464 407 V 414"/>
     <rect class="fuse" x="456" y="414" width="16" height="18" rx="3"/>
     <path class="pwr" d="M 464 432 V 440"/>
-    <text class="lbls" x="477" y="428">5 A</text>
+    <text class="lbls" x="477" y="428">6 A</text>
     <path class="pwr" d="M 576 350 V 393 A 7 7 0 0 1 576 407 V 414"/>
     <rect class="fuse" x="568" y="414" width="16" height="18" rx="3"/>
     <path class="pwr" d="M 576 432 V 440"/>
-    <text class="lbls" x="589" y="428">5 A</text>
+    <text class="lbls" x="589" y="428">6 A</text>
     <path class="pwr" d="M 688 350 V 393 A 7 7 0 0 1 688 407 V 414"/>
     <rect class="fuse" x="680" y="414" width="16" height="18" rx="3"/>
     <path class="pwr" d="M 688 432 V 440"/>
-    <text class="lbls" x="701" y="428">5 A</text>
+    <text class="lbls" x="701" y="428">6 A</text>
     <path class="pwr" d="M 800 350 V 393 A 7 7 0 0 1 800 407 V 414"/>
     <rect class="fuse" x="792" y="414" width="16" height="18" rx="3"/>
     <path class="pwr" d="M 800 432 V 440"/>
-    <text class="lbls" x="813" y="428">5 A</text>
+    <text class="lbls" x="813" y="428">6 A</text>
     <path class="pwr" d="M 912 350 V 393 A 7 7 0 0 1 912 407 V 414"/>
     <rect class="fuse" x="904" y="414" width="16" height="18" rx="3"/>
     <path class="pwr" d="M 912 432 V 440"/>
-    <text class="lbls" x="925" y="428">5 A</text>
+    <text class="lbls" x="925" y="428">6 A</text>
     <path class="pwr" d="M 1024 350 V 393 A 7 7 0 0 1 1024 407 V 414"/>
     <rect class="fuse" x="1016" y="414" width="16" height="18" rx="3"/>
     <path class="pwr" d="M 1024 432 V 440"/>
-    <text class="lbls" x="1037" y="428">5 A</text>
+    <text class="lbls" x="1037" y="428">6 A</text>
     <!-- DATA leads, hop over both buses -->
     <g>
       <path class="datc" d="M 224 350 V 393 A 7 7 0 0 1 224 407 V 433 A 7 7 0 0 1 224 447 V 496"/>
@@ -216,9 +216,9 @@
     <circle class="dotr" cx="688" cy="440" r="4.4"/><circle class="dotr" cx="800" cy="440" r="4.4"/>
     <circle class="dotr" cx="912" cy="440" r="4.4"/><circle class="dotr" cx="1024" cy="440" r="4.4"/>
   </g>
-  <text class="wlbl" x="92" y="391">GND BUS &#183; 8 AWG</text>
-  <text class="wlbl" x="92" y="431">+5 V BUS &#183; 8 AWG</text>
-  <text class="lbls" x="46" y="464">5 A branch fuse</text>
+  <text class="wlbl" x="92" y="391">GND BUS &#183; BAR</text>
+  <text class="wlbl" x="92" y="431">+5 V BUS &#183; BAR</text>
+  <text class="lbls" x="46" y="464">6 A branch fuse</text>
   <text class="lbls" x="46" y="478">on every run</text>
 
   <!-- ================ DATA + GND BUNDLES ================ -->

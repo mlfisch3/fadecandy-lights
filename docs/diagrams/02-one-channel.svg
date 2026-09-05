@@ -4,7 +4,7 @@
   <desc id="d2">Fadecandy channel 0 drives one 64-pixel WS2812B run. A yellow DATA wire runs from the
   channel's + pad to the run's DI pigtail. A black GND wire runs from the same channel's minus pad
   and joins the run's black pigtail lead at a junction. From that junction the black lead continues
-  to the supply's V-minus terminal, and the run's red lead goes to V-plus through that run's own 5 A
+  to the supply's V-minus terminal, and the run's red lead goes to V-plus through that run's own 6 A
   branch fuse. The Fadecandy carries no strip current; it only shares the ground reference.</desc>
 
   <style>
@@ -164,7 +164,7 @@
   <path class="pwr" d="M 604 244 V 400"/>
   <rect class="fuse" x="594" y="400" width="20" height="26" rx="3"/>
   <path class="pwr" d="M 604 426 V 733 H 812"/>
-  <text class="wlbl" x="626" y="410">BRANCH FUSE &#183; 5 A</text>
+  <text class="wlbl" x="626" y="410">BRANCH FUSE &#183; 6 A</text>
   <text class="lbls" x="626" y="426">every run gets its own, between the +5 V bus and the run</text>
 
   <circle class="dot" cx="588" cy="530" r="6.5"/>

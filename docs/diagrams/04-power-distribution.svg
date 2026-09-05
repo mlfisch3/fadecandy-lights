@@ -43,7 +43,7 @@
 
   <rect class="pan" x="40" y="96" width="562" height="704" rx="6"/>
   <text class="panttl" x="60" y="126">Fanning one supply out to four runs</text>
-  <text class="lbls" x="60" y="145">The same pattern scales to any number of runs on one supply.</text>
+  <text class="lbls" x="60" y="145">Scales to any run count. Each run needs TWO +5 V / GND pairs, one per end - &#167; 6.3.</text>
   <rect class="psu" x="60" y="170" width="160" height="104" rx="4"/>
   <text class="wlbl" x="140" y="196" text-anchor="middle">5 V supply</text>
   <text class="tiny" x="140" y="214" text-anchor="middle">set to 5.00 V</text>
@@ -61,9 +61,9 @@
   <text class="tiny" x="279" y="209" text-anchor="middle">FUSE</text>
   <text class="tiny" x="279" y="231" text-anchor="middle">20 A</text>
   <text class="wlbl" x="310" y="164">+5 V bus bar</text>
-  <text class="tiny" x="310" y="180">12 AWG bus, 8 AWG feeder under 1 m - four runs, 15.4 A</text>
+  <text class="tiny" x="310" y="180">Bus bar 20 A+, 10 AWG feeder to 0.59 m - 4 runs, 15.4 A</text>
   <path class="gndm" d="M 230 248 H 244 V 508 H 578"/>
-  <text class="wlbl" x="310" y="530">GND bus bar - same gauge as the +5 V bus</text>
+  <text class="wlbl" x="310" y="530">GND bus bar - a bar, like the +5 V bus</text>
   <circle class="dotr" cx="372" cy="204" r="4.4"/>
   <path class="pwr" d="M 372 204 V 256"/>
   <rect class="fuse" x="359" y="256" width="26" height="22" rx="3"/>
@@ -116,22 +116,22 @@
   <text class="tiny" x="344" y="288" text-anchor="end">fuses</text>
   <text class="tiny" x="332" y="464" text-anchor="end">DATA + GND</text>
   <text class="tiny" x="332" y="478" text-anchor="end">from Fadecandy</text>
-  <text class="wlbl" x="60" y="566">Branch fuse: 5 A</text>
-  <text class="lbls" x="60" y="584">One run tops out at 3.84 A, so a 5 A</text>
-  <text class="lbls" x="60" y="600">fuse holds it and still protects 14 AWG.</text>
-  <text class="wlbl" x="60" y="626">Branch wire: 14 AWG, always</text>
-  <text class="lbls" x="60" y="644">up to 2 m - 0.13 V at 3.84 A, which is its</text>
-  <text class="lbls" x="60" y="660">share of the budget. 16 AWG is 0.20 V.</text>
+  <text class="wlbl" x="60" y="566">Branch fuse: 6 A, one per run</text>
+  <text class="lbls" x="60" y="584">One run is 3.84 A, and 1.25 &#215; 3.84 is</text>
+  <text class="lbls" x="60" y="600">4.8 A. It feeds BOTH injection legs.</text>
+  <text class="wlbl" x="60" y="626">Branch wire: 14 AWG to 1.87 m</text>
+  <text class="lbls" x="60" y="644">per leg - 0.150 V at 3.84 A. Size each</text>
+  <text class="lbls" x="60" y="660">leg for the WHOLE 3.84 A, not half.</text>
   <text class="wlbl" x="60" y="686">Fuses protect wire, not LEDs.</text>
   <text class="lbls" x="60" y="704">A 60 A supply will happily push 60 A</text>
   <text class="lbls" x="60" y="720">into a shorted 14 AWG branch. The fuse</text>
   <text class="lbls" x="60" y="736">is what stops that becoming a fire.</text>
-  <text class="wlbl" x="60" y="756">Main fuse = load &#247; 0.8, rounded up</text>
+  <text class="wlbl" x="60" y="756">Fuse = smallest standard &#8805; 1.25 &#215; load</text>
   <text class="lbls" x="60" y="774">4 runs &#8594; 20 A, 6 runs &#8594; 30 A, 8 runs &#8594; 40 A.</text>
-  <text class="lbls" x="60" y="790">One main per feeder, at the supply end.</text>
-  <text class="wlbl" x="340" y="756">0.25 V is the WHOLE path, apportioned:</text>
-  <text class="lbls" x="340" y="774">feeder 0.08 + bus 0.04 + branch 0.13 V,</text>
-  <text class="lbls" x="340" y="790">each V = I &#215; 2 &#215; L &#215; &#961; at ITS own current.</text>
+  <text class="lbls" x="60" y="790">Then ampacity &#8805; the FUSE. One per feeder.</text>
+  <text class="wlbl" x="340" y="756">0.50 V total, terminals to dimmest LED:</text>
+  <text class="lbls" x="340" y="774">feeder .075 + bus .025 + branch .150,</text>
+  <text class="lbls" x="340" y="790">then .250 inside the strip itself.</text>
   <text class="wlbl" x="340" y="566">Order of assembly, every time</text>
   <text class="lbls" x="340" y="586">1. Supply off and unplugged.</text>
   <text class="lbls" x="340" y="604">2. Bus bars and main fuse.</text>
@@ -152,60 +152,59 @@
   <text class="lbls" x="640" y="238">20 mA per colour channel is the standard WS2812B figure. It is a</text>
   <text class="lbls" x="640" y="254">ceiling, not a typical: a warm scene at a third brightness is nearer</text>
   <text class="lbls" x="640" y="270">1.2 A. Size supplies and fuses for the ceiling regardless.</text>
-  <text class="h3" x="640" y="300">2. Supply headroom - aim for about 60 % load</text>
-  <text class="mono" x="640" y="324" xml:space="preserve">runs &#215; 3.84 A = worst case.   Supply &#8805; that &#247; 0.6</text>
-  <text class="mono" x="640" y="348" xml:space="preserve"> 8 runs   30.7 A  &#8594; S-300-5 (60 A) at 51 %    good</text>
+  <text class="h3" x="640" y="300">2. Supply headroom - 80 % continuous ceiling</text>
+  <text class="mono" x="640" y="324" xml:space="preserve">runs &#215; 3.84 A = worst case.   Supply &#8805; that &#247; 0.8</text>
+  <text class="mono" x="640" y="348" xml:space="preserve"> 6 runs   23.0 A  &#8594; S-150-5 (30 A) at 77 %    ceiling</text>
   <text class="mono" x="640" y="366" xml:space="preserve"> 8 runs   30.7 A  &#8594; S-150-5 (30 A) at 102 %   DO NOT</text>
-  <text class="mono" x="640" y="384" xml:space="preserve">12 runs   46.1 A  &#8594; S-300-5 (60 A) at 77 %    acceptable</text>
-  <text class="mono" x="640" y="402" xml:space="preserve">18 runs   69.1 A  &#8594; both supplies, split by zone</text>
+  <text class="mono" x="640" y="384" xml:space="preserve"> 8 runs   30.7 A  &#8594; S-300-5 (60 A) at 51 %    good</text>
+  <text class="mono" x="640" y="402" xml:space="preserve">12 runs   46.1 A  &#8594; S-300-5 (60 A) at 77 %    ceiling</text>
   <text class="lbls" x="640" y="424">Your 30 A unit cannot carry eight full-white runs. Put the eight-run</text>
-  <text class="lbls" x="640" y="440">starter cluster on the 60 A unit; keep the 30 A one for a second zone.</text>
+  <text class="lbls" x="640" y="440">starter on the 60 A unit. 18 runs = 6 + 12, both at 77 %, none spare.</text>
   <text class="warnt" x="640" y="462">Never parallel two supplies&#8217; V+ outputs. Tie grounds, not V+.</text>
-  <text class="h3" x="640" y="492">3. Conductor sizing and fusing</text>
-  <text class="mono" x="640" y="516" xml:space="preserve">AWG   &#937;/m       typical chassis ampacity</text>
-  <text class="mono" x="640" y="534" xml:space="preserve">22    0.0529    ~ 5 A</text>
-  <text class="mono" x="640" y="552" xml:space="preserve">16    0.0132    ~10 A    bus, 1-2 runs</text>
-  <text class="mono" x="640" y="570" xml:space="preserve">14    0.00829   ~15 A    branch to 2 m; bus, 3 runs</text>
-  <text class="mono" x="640" y="588" xml:space="preserve">12    0.00521   ~20 A    bus bar, 4 runs</text>
-  <text class="mono" x="640" y="606" xml:space="preserve">10    0.00328   ~30 A    bus, 5-6 runs; feeder, 2-3</text>
-  <text class="mono" x="640" y="624" xml:space="preserve"> 8    0.00206   ~40 A    bus, 7-8 runs; feeder, 4-5</text>
-  <text class="mono" x="640" y="642" xml:space="preserve"> 6    0.00130   ~55 A    feeder, 6-8 runs</text>
-  <text class="lbls" x="640" y="664">Run counts are load &#247; 0.8 for heat. The feeder is then stepped up</text>
-  <text class="lbls" x="640" y="680">again for DROP, so a 1 m feeder fits its 0.08 V of the budget.</text>
-  <text class="warnt" x="640" y="700">A fuse must never exceed the ampacity of the wire it alone protects.</text>
+  <text class="h3" x="640" y="492">3. Feeder gauge, main fuse, and how far it reaches</text>
+  <text class="mono" x="640" y="516" xml:space="preserve">runs  load    fuse   feeder: gauge and max length</text>
+  <text class="mono" x="640" y="534" xml:space="preserve"> 1     3.8 A    6 A   16 AWG 0.59 m   14 AWG 0.93 m</text>
+  <text class="mono" x="640" y="552" xml:space="preserve"> 2     7.7 A   10 A   14 AWG 0.47 m   12 AWG 0.74 m</text>
+  <text class="mono" x="640" y="570" xml:space="preserve"> 3    11.5 A   15 A   14 AWG 0.31 m   12 AWG 0.49 m</text>
+  <text class="mono" x="640" y="588" xml:space="preserve"> 4    15.4 A   20 A   12 AWG 0.37 m   10 AWG 0.59 m</text>
+  <text class="mono" x="640" y="606" xml:space="preserve"> 5    19.2 A   25 A   10 AWG 0.47 m    8 AWG 0.76 m</text>
+  <text class="mono" x="640" y="624" xml:space="preserve"> 6    23.0 A   30 A   10 AWG 0.39 m    8 AWG 0.63 m</text>
+  <text class="mono" x="640" y="642" xml:space="preserve"> 7    26.9 A   35 A    8 AWG 0.54 m    6 AWG 0.87 m</text>
+  <text class="mono" x="640" y="660" xml:space="preserve"> 8    30.7 A   40 A    8 AWG 0.47 m    6 AWG 0.76 m</text>
+  <text class="lbls" x="640" y="682">Ampacity NEC T.310.16 60 C. Loop R NEC Ch.9 T.8 stranded 75 C.</text>
+  <text class="warnt" x="640" y="702">A fuse must never exceed the ampacity of the wire it alone protects.</text>
   <text class="h3" x="640" y="730">4. What it costs to leave on</text>
   <text class="mono" x="640" y="754" xml:space="preserve">18 runs, full white   69.1 A &#215; 5 V = 345 W   never happens</text>
   <text class="mono" x="640" y="772" xml:space="preserve">18 runs, ambient 25 %              &#8776;  86 W   realistic</text>
   <text class="mono" x="640" y="790" xml:space="preserve">86 W &#215; 5 h/day &#215; 30 days           &#8776;  13 kWh/month</text>
-  <text class="warnt" x="40" y="822">Check every gauge, fuse rating and drop figure here against a current wire-ampacity table before you buy cable or cut anything.</text>
-  <text class="lbls" x="40" y="840">They follow from the assumptions stated in the guide, and the guide is not a substitute for that check. Sizing is also a layout decision: a supply</text>
-  <text class="lbls" x="40" y="856">beside the block it feeds - 0.3 m rather than 1 m - takes the eight-run feeder from 6 AWG to 8 AWG at no cost in copper elsewhere.</text>
+  <text class="lbls" x="40" y="822">Every figure here is derived in &#167; 6.2 from NEC Table 310.16 (ampacity), Chapter 9 Table 8 (resistance), 240.6(A) (standard fuse ratings)</text>
+  <text class="lbls" x="40" y="840">and 210.19(A) Informational Note No. 4 (the 3 % branch / 5 % total drop guidance). Sizing is also a layout decision: putting the supply</text>
+  <text class="lbls" x="40" y="856">beside the block it feeds - 0.3 m rather than 1 m - takes the eight-run feeder from 4 AWG to 8 AWG, a quarter of the cross-section.</text>
   <rect class="note" x="40" y="876" width="1100" height="344" rx="6"/>
   <text class="notet" x="60" y="904">Does a 64-pixel run need injection at its far end?</text>
   <text class="notep" x="60" y="930">Do not apply an "inject every 2 m" length rule here. That number is</text>
   <text class="notep" x="60" y="947">written for 60 LEDs/m strips, and yours are 30 LEDs/m. Current sets</text>
   <text class="notep" x="60" y="964">the drop, not length, and half the density is half the current.</text>
-  <text class="mono" x="60" y="992" xml:space="preserve">V_tip = I_total &#215; r_rail &#215; L    r_rail = &#937;/m of ONE rail</text>
+  <text class="mono" x="60" y="992" xml:space="preserve">V = I_span &#215; r_rail &#215; L_span   r_rail = &#937;/m of ONE rail</text>
   <text class="notep" x="60" y="1016">A run fed from one end carries everything at the feed and nothing</text>
   <text class="notep" x="60" y="1033">at the tip, so the average is half - but both rails drop, and the</text>
   <text class="notep" x="60" y="1050">two cancel. Compare in amp-metres, not metres:</text>
   <text class="mono" x="60" y="1074" xml:space="preserve">2.0 m of 60 LEDs/m   120 px  7.20 A &#215; 2.00 m = 14.4 A&#183;m  the rule&#8217;s case</text>
   <text class="mono" x="60" y="1092" xml:space="preserve">your run, 30 LEDs/m   64 px  3.84 A &#215; 2.11 m =  8.10 A&#183;m  56 % of it</text>
-  <text class="notep" x="60" y="1114">The same tip drop as about 1.5 m of 60 LEDs/m strip, not 2.11 m.</text>
-  <text class="notet" x="60" y="1138">Full white needs injection once r_rail passes about</text>
-  <text class="notet" x="60" y="1155">0.062 &#937;/m. A 30 % cap moves that to about 0.21 &#937;/m for</text>
-  <text class="notet" x="60" y="1172">the 4.5 V floor, and 0.10 &#937;/m for the 5 % drop budget.</text>
-  <text class="notet" x="620" y="930">1. Rail resistance.   V_tip = 8.10 &#215; r_rail</text>
-  <text class="mono" x="620" y="956" xml:space="preserve">r_rail &#937;/m    full white    at a 30 % cap</text>
-  <text class="mono" x="620" y="974" xml:space="preserve">  0.05          0.41 V         0.12 V</text>
-  <text class="mono" x="620" y="992" xml:space="preserve">  0.10          0.81 V         0.24 V</text>
-  <text class="mono" x="620" y="1010" xml:space="preserve">  0.20          1.62 V         0.49 V</text>
-  <text class="mono" x="620" y="1028" xml:space="preserve">  0.30          2.43 V         0.73 V</text>
+  <text class="notep" x="60" y="1114">That kills the 2 m rule - but it does not license a one-end feed.</text>
+  <text class="notet" x="60" y="1138">The pads see 4.75 V, not 5.00 V: &#167; 6.2 spends 0.25 V</text>
+  <text class="notet" x="60" y="1155">getting there, so the strip&#8217;s own rails have 0.250 V.</text>
+  <text class="notet" x="60" y="1172">Working from 5.00 V doubles every threshold below.</text>
+  <text class="notet" x="620" y="930">1. How many points you feed the run at</text>
+  <text class="mono" x="620" y="956" xml:space="preserve">points  spans          drop      r_rail for 0.250 V</text>
+  <text class="mono" x="620" y="974" xml:space="preserve">one end 1 x 2.11 m &#215; 3.84 A  8.10 &#215; r  &#8804; 0.031 &#937;/m</text>
+  <text class="mono" x="620" y="992" xml:space="preserve">BOTH    2 x 1.055 m &#215; 1.92 A 2.03 &#215; r  &#8804; 0.123 &#937;/m</text>
+  <text class="mono" x="620" y="1010" xml:space="preserve">+ mid   4 x 0.527 m &#215; 0.96 A 0.51 &#215; r  &#8804; 0.494 &#937;/m</text>
+  <text class="mono" x="620" y="1028" xml:space="preserve">No FPC strip reaches 0.031, so feed BOTH ends.</text>
   <text class="warnt" x="620" y="1054">Unverified: r_rail for your silicone-sleeved strips is not known</text>
   <text class="warnt" x="620" y="1071">and was not established here. Do not substitute a generic figure.</text>
-  <text class="notet" x="620" y="1098">2. The brightness you actually run.</text>
-  <text class="notep" x="620" y="1122">Drop scales with current, so a 30 % cap divides every figure by</text>
-  <text class="notep" x="620" y="1139">three. Settle it by eye: drive one run white, and look for a far</text>
-  <text class="notep" x="620" y="1156">end that is dimmer, or pink, while the near end is still white.</text>
-  <text class="warnt" x="60" y="1198">Open item: these thresholds assume a 5.0 V feed at the strip, but up to 0.25 V is spent getting there - see &#167; 6.3 before acting on them.</text>
+  <text class="notet" x="620" y="1098">2. Then settle it with a meter, not by eye.</text>
+  <text class="notep" x="620" y="1122">Drive one run at full white, both legs fitted, and meter at the</text>
+  <text class="notep" x="620" y="1139">MIDPOINT of the strip. It must read 4.50 V or better. If not:</text>
+  <text class="notep" x="620" y="1156">cap the brightness, or add a third injection point at that midpoint.</text>
 </svg>
