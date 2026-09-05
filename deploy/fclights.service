@@ -9,6 +9,13 @@ Wants=network-online.target
 # client reconnects on its own once fcserver comes back.
 After=avahi-daemon.service
 
+# A doomed fclights (bad config, missing venv, wrong host) must stop rather
+# than spin forever. Same reason as fcserver.service: an unrate-limited
+# Restart=always is a journal-flooding crash loop when the failure is not
+# transient. systemctl reset-failed fclights clears the stop.
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
 [Service]
 Type=simple
 ExecStart=/opt/fclights/venv/bin/fclights run --config /etc/fclights/fclights.json

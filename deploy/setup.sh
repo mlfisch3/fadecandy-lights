@@ -13,6 +13,13 @@
 # deploy/install-fcserver.sh, which asks first. Pass --yes to skip that prompt,
 # or --no-fcserver to leave fcserver alone entirely. docs/fcserver.md explains
 # where the binary comes from and why it is not built from source.
+#
+# The script refuses to run on anything that is not a Raspberry Pi. This is not
+# a nicety: on 2026-09-05, running it on a WSL dev box installed a systemd unit
+# pointing at a nonexistent binary, and Restart=always respawned it 7,551 times
+# in 15 hours, filling the journal and erasing unrelated logs. If you know
+# exactly what you are doing (a test rig, packaging work), pass --allow-non-pi
+# or set FCLIGHTS_ALLOW_NON_PI=1.
 
 set -euo pipefail
 
@@ -30,11 +37,13 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 FCSERVER_ARGS=()
 INSTALL_FCSERVER=1
+ALLOW_NON_PI="${FCLIGHTS_ALLOW_NON_PI:-0}"
 for arg in "$@"; do
     case "${arg}" in
-        -y|--yes)      FCSERVER_ARGS+=(--yes) ;;
-        --no-fcserver) INSTALL_FCSERVER=0 ;;
-        *) printf 'usage: %s [--yes] [--no-fcserver]\n' "$0" >&2; exit 1 ;;
+        -y|--yes)        FCSERVER_ARGS+=(--yes) ;;
+        --no-fcserver)   INSTALL_FCSERVER=0 ;;
+        --allow-non-pi)  ALLOW_NON_PI=1 ;;
+        *) printf 'usage: %s [--yes] [--no-fcserver] [--allow-non-pi]\n' "$0" >&2; exit 1 ;;
     esac
 done
 
@@ -45,15 +54,31 @@ die()  { printf '\033[31merror: %s\033[0m\n' "$*" >&2; exit 1; }
 [[ $EUID -eq 0 ]] || die "run this with sudo"
 
 say "Checking the host"
+# The rig is Pi-only: fcserver drives USB hardware that only exists on the Pi,
+# the udev rule targets it, and Restart=always on a doomed unit turns "wrong
+# host" into a runaway crash loop (see the header comment). Refuse by default,
+# and require the operator to say so explicitly if they want to override.
+NON_PI_OVERRIDE_HINT='pass --allow-non-pi or set FCLIGHTS_ALLOW_NON_PI=1 to override'
 if [[ -r /proc/device-tree/model ]]; then
     MODEL="$(tr -d '\0' < /proc/device-tree/model)"
     echo "    board:  ${MODEL}"
     case "${MODEL}" in
         *"Raspberry Pi 3"*) : ;;
         *"Raspberry Pi"*)   warn "targeted at a Pi 3 B+; ${MODEL} is not what this was written for" ;;
+        *)
+            if [[ ${ALLOW_NON_PI} -eq 1 ]]; then
+                warn "host is ${MODEL}, not a Raspberry Pi; continuing because --allow-non-pi is set"
+            else
+                die "host is ${MODEL}, not a Raspberry Pi; ${NON_PI_OVERRIDE_HINT}"
+            fi
+            ;;
     esac
 else
-    warn "this does not look like a Raspberry Pi; continuing anyway"
+    if [[ ${ALLOW_NON_PI} -eq 1 ]]; then
+        warn "this does not look like a Raspberry Pi; continuing because --allow-non-pi is set"
+    else
+        die "this does not look like a Raspberry Pi (no /proc/device-tree/model); ${NON_PI_OVERRIDE_HINT}"
+    fi
 fi
 echo "    arch:   $(dpkg --print-architecture)"
 echo "    python: $(python3 --version)"

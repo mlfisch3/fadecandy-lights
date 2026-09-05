@@ -37,6 +37,9 @@ Partway through it will show you a plan for installing `fcserver` and ask before
 `fcserver` is not part of this repository, so this step fetches it - from an unmaintained third-party mirror, because the original upstream repository is gone from GitHub.
 Read [fcserver.md](fcserver.md) before you answer if you want to know exactly what is being fetched and from where.
 
+`setup.sh` refuses to run on anything that is not a Raspberry Pi - the service units drive USB hardware that only exists on the Pi, and a doomed unit under `Restart=always` is a crash loop that fills the journal.
+If you have a reason to run it elsewhere (a packaging test rig), pass `--allow-non-pi` or set `FCLIGHTS_ALLOW_NON_PI=1`.
+
 **Verify:** the script ends with a "Done" block listing the API URL, config paths and the power ceiling, and the fcserver step ended with "fcserver is installed" after printing a version line like `fcserver-1.04-25-gf911031`.
 
 **If the fcserver step warned instead of finishing:** everything else was installed, so fix just that and rerun `sudo ./deploy/install-fcserver.sh` on its own rather than the whole script.

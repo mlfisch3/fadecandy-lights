@@ -99,7 +99,7 @@ class Installation:
             f'>>"{self.installer_log}"\nexit {code}',
         )
 
-    def run(self, *args: str) -> subprocess.CompletedProcess[str]:
+    def run(self, *args: str, allow_non_pi: bool = True) -> subprocess.CompletedProcess[str]:
         environ = dict(
             os.environ,
             PATH=f"{self.stub_bin}{os.pathsep}{os.environ['PATH']}",
@@ -110,6 +110,13 @@ class Installation:
             FCLIGHTS_UDEV_DIR=str(self.udev_dir),
             FCSERVER_BIN=str(self.fcserver_bin),
         )
+        # The tests run on Linux boxes that are not Raspberry Pis, so the host
+        # guard fires unless explicitly allowed. The tests that exercise the
+        # guard itself pass allow_non_pi=False.
+        if allow_non_pi:
+            environ["FCLIGHTS_ALLOW_NON_PI"] = "1"
+        else:
+            environ.pop("FCLIGHTS_ALLOW_NON_PI", None)
         return subprocess.run(
             [*fake_root(), str(self.root / "deploy" / "setup.sh"), *args],
             capture_output=True,
@@ -188,3 +195,37 @@ def test_setup_installs_the_packaged_configuration(installation: Installation) -
     config = json.loads((installation.config_dir / "fclights.json").read_text())
     assert isinstance(config, dict)
     assert (installation.udev_dir / "99-fadecandy.rules").is_file()
+
+
+def test_setup_refuses_on_non_pi_by_default(installation: Installation) -> None:
+    """Running on a WSL box or a laptop is what caused the runaway crash loop."""
+    installation.with_installer_exiting(0)
+
+    result = installation.run("--yes", allow_non_pi=False)
+
+    assert result.returncode != 0
+    assert "Raspberry Pi" in result.stderr
+    # The refusal must name the override, or the operator cannot recover from it.
+    assert "--allow-non-pi" in result.stderr
+    assert "FCLIGHTS_ALLOW_NON_PI" in result.stderr
+    # Nothing was installed; the guard fired before any state was touched.
+    assert not installation.finished()
+    assert not installation.installer_log.exists()
+
+
+def test_setup_allow_non_pi_flag_overrides_the_guard(installation: Installation) -> None:
+    installation.with_installer_exiting(0)
+
+    result = installation.run("--yes", "--allow-non-pi", allow_non_pi=False)
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert installation.finished()
+    assert "--allow-non-pi is set" in result.stderr
+
+
+@pytest.mark.parametrize("unit", ["fcserver.service", "fclights.service"])
+def test_systemd_units_have_start_rate_limit(unit: str) -> None:
+    """A doomed unit must stop; an unrate-limited Restart=always is a crash loop."""
+    body = (REPO / "deploy" / unit).read_text()
+    assert "StartLimitIntervalSec=" in body
+    assert "StartLimitBurst=" in body

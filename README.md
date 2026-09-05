@@ -101,6 +101,10 @@ sudo ./deploy/setup.sh
 That installs the service, its config, the udev rule and the systemd units, and then offers to fetch `fcserver` - which is not part of this repository.
 Answer yes, or pass `--yes` to skip the prompt and `--no-fcserver` to handle it yourself.
 
+The script refuses to run on anything that is not a Raspberry Pi.
+`fcserver.service` and `fclights.service` are useless without the hardware they drive, and an earlier run on a WSL dev box respawned a doomed unit 7,551 times in 15 hours before it was caught.
+Pass `--allow-non-pi` (or set `FCLIGHTS_ALLOW_NON_PI=1`) if you have a reason.
+
 **`fcserver` needs a word of warning.**
 Micah Scott's original `scanlime/fadecandy` repository, the address in every Fadecandy tutorial on the internet, is gone from GitHub and returns 404.
 `deploy/install-fcserver.sh` fetches the binary from [`PimentNoir/fadecandy`](https://github.com/PimentNoir/fadecandy) instead, **an unmaintained third-party mirror**, pinned to a commit and verified against a recorded SHA-256.

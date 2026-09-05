@@ -12,6 +12,14 @@ Description=Fadecandy server (USB to LED, OPC on localhost)
 Documentation=https://github.com/PimentNoir/fadecandy
 After=network.target
 
+# A doomed fcserver (missing binary, missing armhf runtime, wrong host) must
+# stop rather than spin forever. On 2026-09-05 an unrate-limited Restart=always
+# respawned this unit 7,551 times in 15 hours, filled the journal and erased
+# unrelated logs. Five failures inside a minute is enough to prove the fault
+# is not transient; systemctl reset-failed fcserver clears the stop.
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
 [Service]
 Type=simple
 ExecStart=/usr/local/bin/fcserver /etc/fclights/fcserver.json
