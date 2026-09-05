@@ -99,6 +99,7 @@ If someone does want to revisit it, the honest first step is vendoring a working
 ```bash
 sudo ./deploy/install-fcserver.sh              # ask before changing anything
 sudo ./deploy/install-fcserver.sh --yes        # no prompt
+sudo ./deploy/install-fcserver.sh --force      # replace the binary that is there
      ./deploy/install-fcserver.sh --dry-run    # print the plan, change nothing
 ```
 
@@ -107,6 +108,15 @@ It detects the architecture and prints a plan for *this* machine before touching
 - `arm64` / `aarch64` - enable the `armhf` foreign architecture, install `libc6:armhf` and `libstdc++6:armhf`, then install the binary.
 - `armhf` / `armv7l` / `armv6l` - install the binary; the runtime is already there.
 - anything else - stop with exit code 3 and say so. There is no prebuilt fcserver for `amd64`; the mirror's `bin/fcserver-galileo` is i386 and is not automated here.
+
+On a host that already has everything - the `armhf` runtime enabled and an `fcserver` matching the pin - the plan is empty, nothing is asked and nothing needs root.
+
+If `fcserver` is already installed it is hashed and compared against the pin, and then left exactly as it is either way.
+A match says so.
+A mismatch is a warning naming both digests, saying plainly that the installed binary is not the pinned one and that its provenance has not been verified, and giving the one command that replaces it: `sudo ./deploy/install-fcserver.sh --force` (or `FCSERVER_REINSTALL=1`).
+It is deliberately not fatal and deliberately does not overwrite anything.
+A hand-installed `fcserver` that works is worth more than an unattended verification step that replaced it as a side effect; detecting a mismatch and repairing one are separate actions, and you choose when the second happens.
+`--force` re-fetches, re-verifies the digest exactly as a first install does - it replaces the binary, it does not relax the check - and overwrites the target.
 
 It then fetches the commit-pinned URL, **refuses to install on a SHA-256 mismatch**, and finally runs `fcserver --help`, which prints a usage banner and exits without opening a socket.
 That last step is the point: it is the check that would have caught the arm64 failure, and its error message names the missing runtime rather than repeating the shell's "required file not found".

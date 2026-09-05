@@ -46,6 +46,11 @@ Read [fcserver.md](fcserver.md) before you answer if you want to know exactly wh
 - *"download failed"* - network, or the mirror has gone the way of the original. [fcserver.md](fcserver.md) has the manual steps.
 - *"did not run"* with `required file not found` - the `armhf` runtime is missing on a 64-bit image. This is the failure the script exists to prevent; rerun it with `sudo`.
 
+**If it warned that `/usr/local/bin/fcserver` is not the pinned build:** you have an `fcserver` from somewhere else - most likely installed by hand before this script existed.
+Nothing was changed, and the rest of the install is unaffected.
+The warning prints both digests; if you want the pinned build in its place, run `sudo ./deploy/install-fcserver.sh --force`, which re-fetches and re-verifies it before overwriting.
+If you would rather keep what you have, keep it - but the binary you are running has not been checked against anything.
+
 **If a pip install fails with "no prebuilt wheel":** you are on an architecture or a Python version without wheels for one of numpy, pydantic-core or uvicorn.
 Check `dpkg --print-architecture` (expect `arm64`, or `armhf` on a 32-bit image) and `python3 --version` (needs 3.10 or newer).
 On `arm64` you will also see `armhf` in `dpkg --print-foreign-architectures` once `fcserver` is installed; that is deliberate and only affects `fcserver`, never the Python side.

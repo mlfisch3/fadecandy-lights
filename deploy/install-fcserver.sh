@@ -4,6 +4,7 @@
 #
 #     sudo ./deploy/install-fcserver.sh              # ask before changing anything
 #     sudo ./deploy/install-fcserver.sh --yes        # no prompt
+#     sudo ./deploy/install-fcserver.sh --force      # replace the binary that is there
 #          ./deploy/install-fcserver.sh --dry-run    # print the plan, touch nothing
 #
 # fcserver is not part of this repository and cannot be built from source any
@@ -11,6 +12,10 @@
 # whom it is talking. The short version: Micah Scott's original repository is
 # gone from GitHub, so the binary comes from an unmaintained third-party
 # mirror, pinned by commit and verified by digest.
+#
+# An fcserver that is already installed is checked against that digest and then
+# left alone whatever the answer; --force is how you replace one that does not
+# match it.
 #
 # The only prebuilt Linux/ARM binary anyone ships is 32-bit armhf. On a 64-bit
 # Raspberry Pi OS image it needs the armhf runtime alongside the arm64 one -
@@ -30,14 +35,18 @@ FCSERVER_BIN="${FCSERVER_BIN:-/usr/local/bin/fcserver}"
 
 ASSUME_YES=0
 DRY_RUN=0
+FORCE="${FCSERVER_REINSTALL:-0}"
 for arg in "$@"; do
     case "${arg}" in
         -y|--yes)     ASSUME_YES=1 ;;
         -n|--dry-run) DRY_RUN=1 ;;
-        -h|--help)    sed -n '2,20p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit 0 ;;
+        -f|--force)   FORCE=1 ;;
+        -h|--help)    sed -n '2,25p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit 0 ;;
         *)            printf 'error: unknown option %s\n' "${arg}" >&2; exit 1 ;;
     esac
 done
+
+FORCE_COMMAND="sudo ${BASH_SOURCE[0]} --force"
 
 say()  { printf '\n\033[1m==> %s\033[0m\n' "$*"; }
 warn() { printf '\033[33mwarning: %s\033[0m\n' "$*" >&2; }
@@ -47,7 +56,10 @@ step() { printf '    %s\n' "$*"; }
 # --- Architecture ---------------------------------------------------------
 #
 # FCSERVER_ARCH exists so the detection and the plan can be exercised for an
-# architecture the test machine is not; it is not meant for operators.
+# architecture the test machine is not; it is not meant for operators. The
+# other host facts this script reads - which foreign architectures dpkg knows
+# and which armhf packages are installed - come from dpkg itself, so a test
+# that wants to fix them puts its own dpkg on PATH.
 
 detect_arch() {
     if [[ -n "${FCSERVER_ARCH:-}" ]]; then
@@ -57,6 +69,18 @@ detect_arch() {
     else
         uname -m
     fi
+}
+
+armhf_is_foreign() {
+    [[ "$(dpkg --print-foreign-architectures 2>/dev/null || true)" == *armhf* ]]
+}
+
+package_installed() {
+    [[ "$(dpkg-query -W -f='${db:Status-Status}' "$1" 2>/dev/null || true)" == installed ]]
+}
+
+armhf_runtime_installed() {
+    package_installed libc6:armhf && package_installed libstdc++6:armhf
 }
 
 ARCH="$(detect_arch)"
@@ -98,20 +122,55 @@ fi
 # --- Plan -----------------------------------------------------------------
 
 plan=()
-if [[ -x "${FCSERVER_BIN}" ]]; then
-    step "already installed, will re-verify only"
+DO_INSTALL=0
+MULTIARCH_WORK=0
+
+# A binary that is already there is checked against the pin and then left
+# exactly as it was, whichever way that check came out. An unattended
+# verification step that replaces a working binary as a side effect is worse
+# than the gap it closes: detecting a mismatch and repairing one are separate
+# actions, and the operator chooses when the second happens. --force (or
+# FCSERVER_REINSTALL=1) is that repair.
+if [[ -x "${FCSERVER_BIN}" && ${FORCE} -eq 0 ]]; then
+    installed_sha="$(sha256sum "${FCSERVER_BIN}" | cut -d' ' -f1)"
+    if [[ "${installed_sha}" == "${FCSERVER_SHA256}" ]]; then
+        step "already installed; sha256 matches the pinned build (${FCSERVER_SHA256})"
+    else
+        warn "${FCSERVER_BIN} is not the pinned fcserver build, and its provenance has not been verified"
+        {
+            printf '    installed sha256: %s\n' "${installed_sha}"
+            printf '    pinned sha256:    %s\n' "${FCSERVER_SHA256}"
+            printf '    Leaving it exactly as it is. To replace it with the pinned build, run:\n'
+            printf '        %s\n' "${FORCE_COMMAND}"
+        } >&2
+    fi
 else
+    DO_INSTALL=1
+    if [[ -e "${FCSERVER_BIN}" ]]; then
+        step "--force given; ${FCSERVER_BIN} will be replaced with the pinned build"
+    fi
+fi
+
+if [[ ${NEEDS_MULTIARCH} -eq 1 ]]; then
+    if armhf_is_foreign; then
+        step "armhf is already a foreign architecture"
+    else
+        MULTIARCH_WORK=1
+        plan+=("dpkg --add-architecture armhf")
+    fi
+    if armhf_runtime_installed; then
+        step "the armhf runtime is already installed"
+    else
+        MULTIARCH_WORK=1
+        plan+=("apt-get update")
+        plan+=("apt-get install -y libc6:armhf libstdc++6:armhf")
+    fi
+fi
+
+if [[ ${DO_INSTALL} -eq 1 ]]; then
     plan+=("fetch ${FCSERVER_URL}")
     plan+=("verify sha256 ${FCSERVER_SHA256}")
     plan+=("install it as ${FCSERVER_BIN} (mode 0755)")
-fi
-if [[ ${NEEDS_MULTIARCH} -eq 1 ]]; then
-    if [[ "$(dpkg --print-foreign-architectures 2>/dev/null || true)" == *armhf* ]]; then
-        step "armhf is already a foreign architecture"
-    else
-        plan=("dpkg --add-architecture armhf" "apt-get update" "${plan[@]}")
-    fi
-    plan+=("apt-get install -y libc6:armhf libstdc++6:armhf")
 fi
 
 if [[ ${#plan[@]} -gt 0 ]]; then
@@ -137,27 +196,33 @@ if [[ ${#plan[@]} -gt 0 && ${ASSUME_YES} -eq 0 ]]; then
 fi
 
 # Only the parts of the plan that need root demand it, so the fetch-and-verify
-# path can be exercised against a writable target without sudo.
-if [[ ${NEEDS_MULTIARCH} -eq 1 && $EUID -ne 0 ]]; then
+# path can be exercised against a writable target without sudo, and a host with
+# nothing left to do needs nothing at all.
+if [[ ${MULTIARCH_WORK} -eq 1 && $EUID -ne 0 ]]; then
     die "enabling the armhf runtime needs root; rerun with sudo"
 fi
-if [[ ! -x "${FCSERVER_BIN}" && ! -w "$(dirname "${FCSERVER_BIN}")" ]]; then
+if [[ ${DO_INSTALL} -eq 1 && ! -w "$(dirname "${FCSERVER_BIN}")" ]]; then
     die "cannot write ${FCSERVER_BIN}; rerun with sudo"
 fi
 
 # --- Do it ----------------------------------------------------------------
 
-if [[ ${NEEDS_MULTIARCH} -eq 1 ]]; then
+if [[ ${MULTIARCH_WORK} -eq 1 ]]; then
     say "Enabling the armhf runtime"
-    if [[ "$(dpkg --print-foreign-architectures)" != *armhf* ]]; then
+    if ! armhf_is_foreign; then
         dpkg --add-architecture armhf
-        apt-get update -qq
     fi
-    apt-get install -y --no-install-recommends libc6:armhf libstdc++6:armhf \
-        || die "could not install the armhf runtime; see docs/fcserver.md"
+    # The update is tied to needing the packages, not to having just added the
+    # architecture: an update that failed once must not leave every later run
+    # unable to install from lists it never fetched.
+    if ! armhf_runtime_installed; then
+        apt-get update -qq
+        apt-get install -y --no-install-recommends libc6:armhf libstdc++6:armhf \
+            || die "could not install the armhf runtime; see docs/fcserver.md"
+    fi
 fi
 
-if [[ ! -x "${FCSERVER_BIN}" ]]; then
+if [[ ${DO_INSTALL} -eq 1 ]]; then
     say "Fetching fcserver"
     tmp="$(mktemp -d)"
     trap 'rm -rf "${tmp}"' EXIT

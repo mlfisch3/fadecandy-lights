@@ -16,11 +16,16 @@
 
 set -euo pipefail
 
-PREFIX=/opt/fclights
-CONFIG_DIR=/etc/fclights
-STATE_DIR=/var/lib/fclights
+# The install roots are overridable so this script can be run end to end
+# against a scratch tree; that is for tests, not for operators. Change one of
+# these and the systemd units, which name the defaults, will not match.
+PREFIX="${FCLIGHTS_PREFIX:-/opt/fclights}"
+CONFIG_DIR="${FCLIGHTS_CONFIG_DIR:-/etc/fclights}"
+STATE_DIR="${FCLIGHTS_STATE_DIR:-/var/lib/fclights}"
+UNIT_DIR="${FCLIGHTS_UNIT_DIR:-/etc/systemd/system}"
+UDEV_DIR="${FCLIGHTS_UDEV_DIR:-/etc/udev/rules.d}"
 SERVICE_USER=fclights
-FCSERVER_BIN=/usr/local/bin/fcserver
+FCSERVER_BIN="${FCSERVER_BIN:-/usr/local/bin/fcserver}"
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 FCSERVER_ARGS=()
@@ -111,7 +116,8 @@ for pair in "fclights.example.json:fclights.json" "layout.example.json:layout.js
 done
 
 say "Installing the udev rule for the Fadecandy"
-install -m 0644 "${REPO_ROOT}/deploy/99-fadecandy.rules" /etc/udev/rules.d/99-fadecandy.rules
+install -d -m 0755 "${UDEV_DIR}"
+install -m 0644 "${REPO_ROOT}/deploy/99-fadecandy.rules" "${UDEV_DIR}/99-fadecandy.rules"
 udevadm control --reload-rules
 udevadm trigger --subsystem-match=usb || true
 
@@ -133,8 +139,9 @@ else
 fi
 
 say "Installing systemd units"
-install -m 0644 "${REPO_ROOT}/deploy/fcserver.service" /etc/systemd/system/fcserver.service
-install -m 0644 "${REPO_ROOT}/deploy/fclights.service" /etc/systemd/system/fclights.service
+install -d -m 0755 "${UNIT_DIR}"
+install -m 0644 "${REPO_ROOT}/deploy/fcserver.service" "${UNIT_DIR}/fcserver.service"
+install -m 0644 "${REPO_ROOT}/deploy/fclights.service" "${UNIT_DIR}/fclights.service"
 systemctl daemon-reload
 
 say "Publishing the mDNS service name"
