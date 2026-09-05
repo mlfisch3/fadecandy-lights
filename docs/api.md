@@ -198,6 +198,9 @@ Build the UI from this. Do not hardcode the effect list; effects added on the Pi
 }
 ```
 
+Only the first of the eight outputs is shown above; the real response for this 512-pixel board lists all eight.
+`devices[].pixel_count` is the sum of that board's `outputs[].count`, so it is the number of pixels the board actually drives rather than the 512 it can address.
+
 `bounds` are metres, derived from `pixels_per_metre` and the layout's per-output positions.
 Useful for drawing a preview to scale.
 
