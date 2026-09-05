@@ -9,18 +9,43 @@
 # It is idempotent: running it again upgrades in place and leaves your config,
 # your layout and your saved scenes alone.
 #
-# What it does not do is build fcserver. Upstream ships an armhf binary that
-# runs on both 32- and 64-bit Raspberry Pi OS; if it is not already present the
-# script tells you where to get it and stops, rather than guessing.
+# fcserver is not part of this repository and is fetched by
+# deploy/install-fcserver.sh, which asks first. Pass --yes to skip that prompt,
+# or --no-fcserver to leave fcserver alone entirely. docs/fcserver.md explains
+# where the binary comes from and why it is not built from source.
+#
+# The script refuses to run on anything that is not a Raspberry Pi. This is not
+# a nicety: on 2026-09-05, running it on a WSL dev box installed a systemd unit
+# pointing at a nonexistent binary, and Restart=always respawned it 7,551 times
+# in 15 hours, filling the journal and erasing unrelated logs. If you know
+# exactly what you are doing (a test rig, packaging work), pass --allow-non-pi
+# or set FCLIGHTS_ALLOW_NON_PI=1.
 
 set -euo pipefail
 
-PREFIX=/opt/fclights
-CONFIG_DIR=/etc/fclights
-STATE_DIR=/var/lib/fclights
+# The install roots are overridable so this script can be run end to end
+# against a scratch tree; that is for tests, not for operators. Change one of
+# these and the systemd units, which name the defaults, will not match.
+PREFIX="${FCLIGHTS_PREFIX:-/opt/fclights}"
+CONFIG_DIR="${FCLIGHTS_CONFIG_DIR:-/etc/fclights}"
+STATE_DIR="${FCLIGHTS_STATE_DIR:-/var/lib/fclights}"
+UNIT_DIR="${FCLIGHTS_UNIT_DIR:-/etc/systemd/system}"
+UDEV_DIR="${FCLIGHTS_UDEV_DIR:-/etc/udev/rules.d}"
 SERVICE_USER=fclights
-FCSERVER_BIN=/usr/local/bin/fcserver
+FCSERVER_BIN="${FCSERVER_BIN:-/usr/local/bin/fcserver}"
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+FCSERVER_ARGS=()
+INSTALL_FCSERVER=1
+ALLOW_NON_PI="${FCLIGHTS_ALLOW_NON_PI:-0}"
+for arg in "$@"; do
+    case "${arg}" in
+        -y|--yes)        FCSERVER_ARGS+=(--yes) ;;
+        --no-fcserver)   INSTALL_FCSERVER=0 ;;
+        --allow-non-pi)  ALLOW_NON_PI=1 ;;
+        *) printf 'usage: %s [--yes] [--no-fcserver] [--allow-non-pi]\n' "$0" >&2; exit 1 ;;
+    esac
+done
 
 say()  { printf '\n\033[1m==> %s\033[0m\n' "$*"; }
 warn() { printf '\033[33mwarning: %s\033[0m\n' "$*" >&2; }
@@ -29,15 +54,31 @@ die()  { printf '\033[31merror: %s\033[0m\n' "$*" >&2; exit 1; }
 [[ $EUID -eq 0 ]] || die "run this with sudo"
 
 say "Checking the host"
+# The rig is Pi-only: fcserver drives USB hardware that only exists on the Pi,
+# the udev rule targets it, and Restart=always on a doomed unit turns "wrong
+# host" into a runaway crash loop (see the header comment). Refuse by default,
+# and require the operator to say so explicitly if they want to override.
+NON_PI_OVERRIDE_HINT='pass --allow-non-pi or set FCLIGHTS_ALLOW_NON_PI=1 to override'
 if [[ -r /proc/device-tree/model ]]; then
     MODEL="$(tr -d '\0' < /proc/device-tree/model)"
     echo "    board:  ${MODEL}"
     case "${MODEL}" in
         *"Raspberry Pi 3"*) : ;;
         *"Raspberry Pi"*)   warn "targeted at a Pi 3 B+; ${MODEL} is not what this was written for" ;;
+        *)
+            if [[ ${ALLOW_NON_PI} -eq 1 ]]; then
+                warn "host is ${MODEL}, not a Raspberry Pi; continuing because --allow-non-pi is set"
+            else
+                die "host is ${MODEL}, not a Raspberry Pi; ${NON_PI_OVERRIDE_HINT}"
+            fi
+            ;;
     esac
 else
-    warn "this does not look like a Raspberry Pi; continuing anyway"
+    if [[ ${ALLOW_NON_PI} -eq 1 ]]; then
+        warn "this does not look like a Raspberry Pi; continuing because --allow-non-pi is set"
+    else
+        die "this does not look like a Raspberry Pi (no /proc/device-tree/model); ${NON_PI_OVERRIDE_HINT}"
+    fi
 fi
 echo "    arch:   $(dpkg --print-architecture)"
 echo "    python: $(python3 --version)"
@@ -100,32 +141,32 @@ for pair in "fclights.example.json:fclights.json" "layout.example.json:layout.js
 done
 
 say "Installing the udev rule for the Fadecandy"
-install -m 0644 "${REPO_ROOT}/deploy/99-fadecandy.rules" /etc/udev/rules.d/99-fadecandy.rules
+install -d -m 0755 "${UDEV_DIR}"
+install -m 0644 "${REPO_ROOT}/deploy/99-fadecandy.rules" "${UDEV_DIR}/99-fadecandy.rules"
 udevadm control --reload-rules
 udevadm trigger --subsystem-match=usb || true
 
-say "Checking for fcserver"
-if [[ -x "${FCSERVER_BIN}" ]]; then
-    echo "    found ${FCSERVER_BIN}"
+# install-fcserver.sh detects the architecture, since the only prebuilt binary
+# is 32-bit armhf and a 64-bit image needs the armhf runtime installed beside
+# the arm64 one. It is a separate script so it can be rerun on its own.
+if [[ ${INSTALL_FCSERVER} -eq 1 ]]; then
+    rc=0
+    FCSERVER_BIN="${FCSERVER_BIN}" "${REPO_ROOT}/deploy/install-fcserver.sh" \
+        "${FCSERVER_ARGS[@]+"${FCSERVER_ARGS[@]}"}" || rc=$?
+    case "${rc}" in
+        0) : ;;
+        2) warn "fcserver was not installed; rerun deploy/install-fcserver.sh when you want it" ;;
+        3) warn "no fcserver binary exists for this architecture; see docs/fcserver.md" ;;
+        *) warn "installing fcserver failed; see docs/fcserver.md. Everything else is installed." ;;
+    esac
 else
-    warn "${FCSERVER_BIN} is missing."
-    cat <<'EOT'
-
-    fcserver is the stock upstream Fadecandy server and is not part of this
-    repository. Fetch the release binary and install it:
-
-        wget https://github.com/scanlime/fadecandy/archive/refs/heads/master.tar.gz
-        tar xf master.tar.gz
-        sudo install -m 0755 fadecandy-master/bin/fcserver-rpi /usr/local/bin/fcserver
-
-    Then rerun this script. Everything else has been installed already.
-
-EOT
+    say "Skipping fcserver (--no-fcserver)"
 fi
 
 say "Installing systemd units"
-install -m 0644 "${REPO_ROOT}/deploy/fcserver.service" /etc/systemd/system/fcserver.service
-install -m 0644 "${REPO_ROOT}/deploy/fclights.service" /etc/systemd/system/fclights.service
+install -d -m 0755 "${UNIT_DIR}"
+install -m 0644 "${REPO_ROOT}/deploy/fcserver.service" "${UNIT_DIR}/fcserver.service"
+install -m 0644 "${REPO_ROOT}/deploy/fclights.service" "${UNIT_DIR}/fclights.service"
 systemctl daemon-reload
 
 say "Publishing the mDNS service name"

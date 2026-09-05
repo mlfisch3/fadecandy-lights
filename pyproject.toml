@@ -38,6 +38,7 @@ where = ["src"]
 testpaths = ["tests"]
 asyncio_mode = "auto"
 filterwarnings = ["error::DeprecationWarning:fclights.*"]
+markers = ["network: reaches the public internet"]
 
 [tool.ruff]
 line-length = 100

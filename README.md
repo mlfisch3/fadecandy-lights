@@ -10,7 +10,7 @@ Wiring, power distribution and safety are covered in full, with diagrams, in [do
 ## What it is
 
 A Raspberry Pi 3 B+ runs two services.
-[`fcserver`](https://github.com/scanlime/fadecandy), the stock upstream Fadecandy server, owns the USB link to the Fadecandy board and listens for Open Pixel Control on localhost.
+`fcserver`, the stock Fadecandy server, owns the USB link to the Fadecandy board and listens for Open Pixel Control on localhost.
 `fclights`, this project, renders frames and pushes them to fcserver over OPC, and serves the REST and WebSocket API the phones talk to.
 
 ```
@@ -56,6 +56,9 @@ That is the current recommended image for a Pi 3, and aarch64 has the broadest m
 32-bit `armhf` should work too - the code is architecture-neutral and the dependencies publish armv7l wheels - but `arm64` is the targeted and documented path.
 The service needs Python 3.10 or newer.
 
+The one thing `arm64` costs you is `fcserver`, which only exists as a prebuilt 32-bit `armhf` binary and so needs the `armhf` runtime installed alongside the `arm64` one.
+`deploy/install-fcserver.sh` handles that; [docs/fcserver.md](docs/fcserver.md) explains it.
+
 Nothing here needs a Pi 4, more than 1 GB of RAM, or a 64-bit-only dependency.
 At 512 pixels the render loop is expected to cost a low single-digit percentage of one core, which is what should let the board run this continuously for months and leaves headroom to grow past one Fadecandy later. That figure is reasoned from the frame arithmetic, not measured on a board - `GET /api/status` reports `render_ms` so you can check it on yours.
 
@@ -94,6 +97,21 @@ git clone <this repo> fadecandy-lights
 cd fadecandy-lights
 sudo ./deploy/setup.sh
 ```
+
+That installs the service, its config, the udev rule and the systemd units, and then offers to fetch `fcserver` - which is not part of this repository.
+Answer yes, or pass `--yes` to skip the prompt and `--no-fcserver` to handle it yourself.
+
+The script refuses to run on anything that is not a Raspberry Pi.
+`fcserver.service` and `fclights.service` are useless without the hardware they drive, and an earlier run on a WSL dev box respawned a doomed unit 7,551 times in 15 hours before it was caught.
+Pass `--allow-non-pi` (or set `FCLIGHTS_ALLOW_NON_PI=1`) if you have a reason.
+
+**`fcserver` needs a word of warning.**
+Micah Scott's original `scanlime/fadecandy` repository, the address in every Fadecandy tutorial on the internet, is gone from GitHub and returns 404.
+`deploy/install-fcserver.sh` fetches the binary from [`PimentNoir/fadecandy`](https://github.com/PimentNoir/fadecandy) instead, **an unmaintained third-party mirror**, pinned to a commit and verified against a recorded SHA-256.
+It is not an official source; it is the only surviving one.
+On `arm64` the script also enables the `armhf` runtime the binary needs - two packages, running natively on the Cortex-A53, not emulation.
+Building `fcserver` from source instead would be cleaner, and is not possible: all three of its vendored dependencies are submodules of repositories that are also 404.
+[docs/fcserver.md](docs/fcserver.md) has the whole story, the evidence, and the manual steps if you would rather do it by hand.
 
 Then work through [docs/bring-up.md](docs/bring-up.md) with the hardware connected.
 Do that before scaling up to the full run; it is written as a checklist that localises failures rather than leaving you guessing.
@@ -390,10 +408,11 @@ The `serial` field is in the layout schema for that; it is not yet matched again
 | `src/fclights/state.py` | State, scenes, and persistence. |
 | `src/fclights/opc.py` | Open Pixel Control client. |
 | `config/` | Example config, layout, and fcserver config. |
-| `deploy/` | systemd units, udev rule, setup script. |
+| `deploy/` | systemd units, udev rule, setup script, and the fcserver installer. |
 | `docs/api.md` | The control API contract. |
 | `docs/wiring.md` | Wiring, power and topology record, with the colour diagrams in `docs/diagrams/`. |
 | `docs/bring-up.md` | Hardware bring-up checklist. |
+| `docs/fcserver.md` | Where `fcserver` comes from, and why it is not built from source. |
 | `tests/opc_sink.py` | Test-double OPC receiver, used in place of fcserver. |
 | `tools/` | Development checks that are not part of the service. |
 | `android/` | The Android app. Builds independently of the Python service. |
