@@ -1,0 +1,272 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1180 1146" width="1180" height="1146"
+     role="img" aria-labelledby="t3 d3">
+  <title id="t3">Topology for many zones: all runs home to one point, versus clustering</title>
+  <desc id="d3">Three layouts compared. Option A brings all eighteen runs home to a single supply and
+  Fadecandy, so every run needs its own long pair of heavy 5 V conductors and the voltage drop makes
+  it fail. Option B keeps one supply and its fused distribution blocks local to a group of adjacent
+  clusters, so only the thin data and ground wires travel far; its single central Fadecandy is only
+  allowed while every run it drives comes off that one supply. Option C puts a supply and a Fadecandy
+  in each cluster, so a single USB cable is the only thing that travels far, and every supply's
+  V-minus terminal is bonded to every other with 8 AWG. Below: the arithmetic for voltage drop on
+  power runs, and the timing argument that bounds the length of a single-ended data run.</desc>
+
+  <style>
+    .bg      { fill:#F7F6F1; stroke:#C7C3B8; stroke-width:2; }
+    .ttl     { font:700 25px ui-sans-serif,system-ui,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; fill:#15140F; }
+    .sub     { font:400 14.5px ui-sans-serif,system-ui,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; fill:#4A4740; }
+    .lbls    { font:400 11.5px ui-sans-serif,system-ui,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; fill:#4A4740; }
+    .tiny    { font:400 10px ui-sans-serif,system-ui,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; fill:#4A4740; }
+    .wlbl    { font:700 11px ui-sans-serif,system-ui,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; fill:#15140F; }
+    .colttl  { font:700 15px ui-sans-serif,system-ui,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; fill:#15140F; }
+    .mono    { font:600 11.5px ui-monospace,'SFMono-Regular',Consolas,'Liberation Mono',monospace; fill:#15140F; }
+
+    .col     { fill:#FFFFFF; stroke:#C7C3B8; stroke-width:1.6; }
+    .box     { fill:#FFFFFF; stroke:#37342C; stroke-width:1.8; }
+    .clu     { fill:#F1F5F7; stroke:#4E7C87; stroke-width:1.8; }
+    .psu     { fill:#EFEDE5; stroke:#37342C; stroke-width:1.5; }
+    .run     { fill:#FFFFFF; stroke:#37342C; stroke-width:1.5; }
+
+    .tagbad  { fill:#CE2318; }
+    .taggood { fill:#2F6F3E; }
+    .tagbest { fill:#0B5A69; }
+    .tagt    { font:700 11px ui-sans-serif,system-ui,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; fill:#FFFFFF; }
+
+    .gnd     { stroke:#111111; stroke-width:3.4; fill:none; stroke-linecap:round; }
+    .pwr     { stroke:#CE2318; stroke-width:3.4; fill:none; stroke-linecap:round; }
+    .gndt    { stroke:#111111; stroke-width:1.7; fill:none; stroke-linecap:round; }
+    .pwrt    { stroke:#CE2318; stroke-width:1.7; fill:none; stroke-linecap:round; }
+    .datc    { stroke:#4A3800; stroke-width:5.4; fill:none; stroke-linejoin:round; stroke-linecap:round; }
+    .dat     { stroke:#F5B70A; stroke-width:2.6; fill:none; stroke-linejoin:round; stroke-linecap:round; }
+    .datct   { stroke:#4A3800; stroke-width:3.4; fill:none; stroke-linecap:round; }
+    .datt    { stroke:#F5B70A; stroke-width:1.6; fill:none; stroke-linecap:round; }
+    .usbc    { stroke:#37342C; stroke-width:7; fill:none; stroke-linecap:round; }
+    .usb     { stroke:#FFFFFF; stroke-width:3; fill:none; stroke-linecap:round; stroke-dasharray:5 4; }
+    .bond    { stroke:#111111; stroke-width:6; fill:none; stroke-linecap:round; }
+
+    .note    { fill:#FFF9E3; stroke:#C9A227; stroke-width:1.6; }
+    .notet   { font:700 13px ui-sans-serif,system-ui,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; fill:#3D3200; }
+    .notep   { font:400 12.5px ui-sans-serif,system-ui,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; fill:#3D3200; }
+    .warnt   { font:700 12px ui-sans-serif,system-ui,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; fill:#7A140C; }
+    .okt     { font:700 12px ui-sans-serif,system-ui,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; fill:#1F5A31; }
+  </style>
+
+  <rect class="bg" x="1" y="1" width="1178" height="1144" rx="6"/>
+  <text class="ttl" x="40" y="46">Diagram 3 - Topology for many zones: one central point, or clusters?</text>
+  <text class="sub" x="40" y="72">Long 5 V runs are costly in copper and fail on voltage drop. Long data runs cost nothing in current, but are bounded by signal integrity.</text>
+
+  <rect class="col" x="40" y="96" width="356" height="680" rx="6"/>
+  <rect class="tagbad" x="56" y="110" width="62" height="20" rx="4"/>
+  <text class="tagt" x="64" y="124">AVOID</text>
+  <text class="colttl" x="56" y="155">Option A - All home to one point</text>
+  <text class="lbls" x="56" y="174">Every run needs its own long,</text>
+  <text class="lbls" x="56" y="190">heavy 5 V pair.</text>
+  <text class="tiny" x="56" y="209">One supply, so no V&#8722; bond needed - and no other virtue.</text>
+  <rect class="col" x="412" y="96" width="372" height="680" rx="6"/>
+  <rect class="taggood" x="428" y="110" width="53" height="20" rx="4"/>
+  <text class="tagt" x="436" y="124">GOOD</text>
+  <text class="colttl" x="428" y="155">Option B - One supply, local blocks</text>
+  <text class="lbls" x="428" y="174">One supply, adjacent zones, a fused block in each.</text>
+  <rect class="col" x="800" y="96" width="340" height="680" rx="6"/>
+  <rect class="tagbest" x="816" y="110" width="90" height="20" rx="4"/>
+  <text class="tagt" x="824" y="124">BEST FAR</text>
+  <text class="colttl" x="816" y="155">Option C - Local Fadecandy too</text>
+  <text class="lbls" x="816" y="170">One USB cable to each zone.</text>
+  <!-- Option A -->
+  <rect class="run" x="56" y="214" width="72" height="26" rx="3"/>
+  <text class="tiny" x="92" y="231" text-anchor="middle">64 px run</text>
+  <rect class="run" x="152" y="214" width="72" height="26" rx="3"/>
+  <text class="tiny" x="188" y="231" text-anchor="middle">64 px run</text>
+  <rect class="run" x="248" y="214" width="72" height="26" rx="3"/>
+  <text class="tiny" x="284" y="231" text-anchor="middle">64 px run</text>
+  <text class="wlbl" x="336" y="231">&#215; 18</text>
+  <rect class="box" x="148" y="326" width="120" height="62" rx="4"/>
+  <text class="wlbl" x="208" y="348" text-anchor="middle">ONE supply</text>
+  <text class="wlbl" x="208" y="364" text-anchor="middle">+ ONE Fadecandy</text>
+  <text class="tiny" x="208" y="379" text-anchor="middle">69 A converging here</text>
+  <path class="pwrt" d="M 83 240 L 194 326"/>
+  <path class="gndt" d="M 92 240 L 208 326"/>
+  <path class="datct" d="M 101 240 L 222 326"/>
+  <path class="datt"  d="M 101 240 L 222 326"/>
+  <path class="gndt" d="M 110 240 L 236 326"/>
+  <path class="pwrt" d="M 179 240 L 194 326"/>
+  <path class="gndt" d="M 188 240 L 208 326"/>
+  <path class="datct" d="M 197 240 L 222 326"/>
+  <path class="datt"  d="M 197 240 L 222 326"/>
+  <path class="gndt" d="M 206 240 L 236 326"/>
+  <path class="pwrt" d="M 275 240 L 194 326"/>
+  <path class="gndt" d="M 284 240 L 208 326"/>
+  <path class="datct" d="M 293 240 L 222 326"/>
+  <path class="datt"  d="M 293 240 L 222 326"/>
+  <path class="gndt" d="M 302 240 L 236 326"/>
+  <text class="warnt" x="56" y="418">36 heavy power conductors plus 36 signal</text>
+  <text class="warnt" x="56" y="435">conductors, all landing on one box.</text>
+  <text class="lbls" x="56" y="460">A 6 m 18 AWG feed at 3.84 A loses 0.96 V.</text>
+  <text class="lbls" x="56" y="477">That run then sees about 4.0 V - under the</text>
+  <text class="lbls" x="56" y="494">4.5 V the WS2812B is characterised at. It</text>
+  <text class="lbls" x="56" y="511">goes dim and pink, and because VIH is 0.7 &#215;</text>
+  <text class="lbls" x="56" y="528">its own supply, the logic margin moves too.</text>
+  <text class="lbls" x="56" y="553">Fixing it by brute force means 12 AWG to</text>
+  <text class="lbls" x="56" y="570">every one of the 18 runs. That is a lot of</text>
+  <text class="lbls" x="56" y="587">expensive copper to solve a problem you can</text>
+  <text class="lbls" x="56" y="604">avoid by moving the supply instead.</text>
+  <!-- Option B -->
+  <rect class="box" x="424" y="300" width="84" height="96" rx="4"/>
+  <text class="wlbl" x="466" y="326" text-anchor="middle">Pi 3B+</text>
+  <text class="wlbl" x="466" y="344" text-anchor="middle">+ ONE</text>
+  <text class="wlbl" x="466" y="362" text-anchor="middle">Fadecandy</text>
+  <text class="tiny" x="466" y="382" text-anchor="middle">8 channels</text>
+  <rect class="clu" x="520" y="186" width="252" height="96" rx="5"/>
+  <text class="wlbl" x="530" y="205">Zone 1 &#183; living room</text>
+  <rect class="psu" x="530" y="214" width="92" height="46" rx="3"/>
+  <text class="tiny" x="576" y="232" text-anchor="middle">the 5 V PSU</text>
+  <text class="tiny" x="576" y="246" text-anchor="middle">+ fused block</text>
+  <path class="pwr" d="M 622 228 H 714"/>
+  <path class="gnd" d="M 622 244 H 714"/>
+  <rect class="run" x="714" y="214" width="48" height="46" rx="3"/>
+  <text class="tiny" x="738" y="233" text-anchor="middle">3</text>
+  <text class="tiny" x="738" y="247" text-anchor="middle">runs</text>
+  <path class="datct" d="M 520 272 H 738 V 260"/>
+  <path class="datt"  d="M 520 272 H 738 V 260"/>
+  <text class="tiny" x="628" y="269">DATA + GND in</text>
+  <path class="datct" d="M 508 344 C 514 344, 514 272, 520 272"/>
+  <path class="datt"  d="M 508 344 C 514 344, 514 272, 520 272"/>
+  <path class="gndt"  d="M 508 352 C 516 352, 516 277, 520 277"/>
+  <rect class="clu" x="520" y="316" width="252" height="96" rx="5"/>
+  <text class="wlbl" x="530" y="335">Zone 2 &#183; bedroom</text>
+  <rect class="psu" x="530" y="344" width="92" height="46" rx="3"/>
+  <text class="tiny" x="576" y="362" text-anchor="middle">fused block, fed</text>
+  <text class="tiny" x="576" y="376" text-anchor="middle">from zone 1 PSU</text>
+  <path class="pwr" d="M 622 358 H 714"/>
+  <path class="gnd" d="M 622 374 H 714"/>
+  <rect class="run" x="714" y="344" width="48" height="46" rx="3"/>
+  <text class="tiny" x="738" y="363" text-anchor="middle">3</text>
+  <text class="tiny" x="738" y="377" text-anchor="middle">runs</text>
+  <path class="datct" d="M 520 402 H 738 V 390"/>
+  <path class="datt"  d="M 520 402 H 738 V 390"/>
+  <text class="tiny" x="628" y="399">DATA + GND in</text>
+  <path class="datct" d="M 508 344 C 514 344, 514 402, 520 402"/>
+  <path class="datt"  d="M 508 344 C 514 344, 514 402, 520 402"/>
+  <path class="gndt"  d="M 508 352 C 516 352, 516 407, 520 407"/>
+  <rect class="clu" x="520" y="446" width="252" height="96" rx="5"/>
+  <text class="wlbl" x="530" y="465">Zone 3 &#183; kitchen</text>
+  <rect class="psu" x="530" y="474" width="92" height="46" rx="3"/>
+  <text class="tiny" x="576" y="492" text-anchor="middle">fused block, fed</text>
+  <text class="tiny" x="576" y="506" text-anchor="middle">from zone 1 PSU</text>
+  <path class="pwr" d="M 622 488 H 714"/>
+  <path class="gnd" d="M 622 504 H 714"/>
+  <rect class="run" x="714" y="474" width="48" height="46" rx="3"/>
+  <text class="tiny" x="738" y="493" text-anchor="middle">2</text>
+  <text class="tiny" x="738" y="507" text-anchor="middle">runs</text>
+  <path class="datct" d="M 520 532 H 738 V 520"/>
+  <path class="datt"  d="M 520 532 H 738 V 520"/>
+  <text class="tiny" x="628" y="529">DATA + GND in</text>
+  <path class="datct" d="M 508 344 C 514 344, 514 532, 520 532"/>
+  <path class="datt"  d="M 508 344 C 514 344, 514 532, 520 532"/>
+  <path class="gndt"  d="M 508 352 C 516 352, 516 537, 520 537"/>
+  <text class="okt" x="428" y="570">Heavy copper stays in the shared-supply cluster.</text>
+  <text class="lbls" x="428" y="590">A +5 V / GND feeder pair still crosses from the PSU to</text>
+  <text class="lbls" x="428" y="607">zones 2 and 3 - which is why they must be adjacent: &#167; 6.2</text>
+  <text class="lbls" x="428" y="624">rule 4 allows each feeder about 1 m. Each run also needs</text>
+  <text class="lbls" x="428" y="641">its own DATA + GND pair, under about 5 m, twisted.</text>
+  <text class="warnt" x="428" y="666">A central board is allowed only while every run</text>
+  <text class="warnt" x="428" y="682">it drives is fed from the SAME supply.</text>
+  <text class="lbls" x="428" y="702">The moment a second supply is needed, that board would</text>
+  <text class="lbls" x="428" y="719">bridge two power zones through its 24-26 AWG grounds -</text>
+  <text class="lbls" x="428" y="736">so use Option C instead.</text>
+  <!-- Option C -->
+  <rect class="box" x="812" y="300" width="80" height="96" rx="4"/>
+  <text class="wlbl" x="852" y="326" text-anchor="middle">Pi 3B+</text>
+  <text class="wlbl" x="852" y="344" text-anchor="middle">+ powered</text>
+  <text class="wlbl" x="852" y="362" text-anchor="middle">USB hub</text>
+  <text class="tiny" x="852" y="382" text-anchor="middle">Diagram 5</text>
+  <rect class="clu" x="904" y="176" width="224" height="116" rx="5"/>
+  <text class="wlbl" x="914" y="195">Zone 1 &#183; living room</text>
+  <rect class="psu" x="914" y="202" width="92" height="42" rx="3"/>
+  <text class="tiny" x="960" y="219" text-anchor="middle">local 5 V PSU</text>
+  <text class="tiny" x="960" y="233" text-anchor="middle">+ fused block</text>
+  <rect class="box" x="914" y="252" width="92" height="28" rx="3"/>
+  <text class="tiny" x="960" y="270" text-anchor="middle">Fadecandy</text>
+  <path class="pwr" d="M 1006 216 H 1070"/>
+  <path class="gnd" d="M 1006 232 H 1070"/>
+  <path class="datct" d="M 1006 266 H 1070"/>
+  <path class="datt"  d="M 1006 266 H 1070"/>
+  <rect class="run" x="1070" y="202" width="48" height="78" rx="3"/>
+  <text class="tiny" x="1094" y="237" text-anchor="middle">6</text>
+  <text class="tiny" x="1094" y="251" text-anchor="middle">runs</text>
+  <path class="usbc" d="M 892 348 C 898 348, 898 266, 904 266"/>
+  <path class="usb"  d="M 892 348 C 898 348, 898 266, 904 266"/>
+  <rect class="clu" x="904" y="306" width="224" height="116" rx="5"/>
+  <text class="wlbl" x="914" y="325">Zone 2 &#183; bedroom</text>
+  <rect class="psu" x="914" y="332" width="92" height="42" rx="3"/>
+  <text class="tiny" x="960" y="349" text-anchor="middle">local 5 V PSU</text>
+  <text class="tiny" x="960" y="363" text-anchor="middle">+ fused block</text>
+  <rect class="box" x="914" y="382" width="92" height="28" rx="3"/>
+  <text class="tiny" x="960" y="400" text-anchor="middle">Fadecandy</text>
+  <path class="pwr" d="M 1006 346 H 1070"/>
+  <path class="gnd" d="M 1006 362 H 1070"/>
+  <path class="datct" d="M 1006 396 H 1070"/>
+  <path class="datt"  d="M 1006 396 H 1070"/>
+  <rect class="run" x="1070" y="332" width="48" height="78" rx="3"/>
+  <text class="tiny" x="1094" y="367" text-anchor="middle">6</text>
+  <text class="tiny" x="1094" y="381" text-anchor="middle">runs</text>
+  <path class="usbc" d="M 892 348 C 898 348, 898 396, 904 396"/>
+  <path class="usb"  d="M 892 348 C 898 348, 898 396, 904 396"/>
+  <rect class="clu" x="904" y="436" width="224" height="116" rx="5"/>
+  <text class="wlbl" x="914" y="455">Zone 3 &#183; kitchen</text>
+  <rect class="psu" x="914" y="462" width="92" height="42" rx="3"/>
+  <text class="tiny" x="960" y="479" text-anchor="middle">local 5 V PSU</text>
+  <text class="tiny" x="960" y="493" text-anchor="middle">+ fused block</text>
+  <rect class="box" x="914" y="512" width="92" height="28" rx="3"/>
+  <text class="tiny" x="960" y="530" text-anchor="middle">Fadecandy</text>
+  <path class="pwr" d="M 1006 476 H 1070"/>
+  <path class="gnd" d="M 1006 492 H 1070"/>
+  <path class="datct" d="M 1006 526 H 1070"/>
+  <path class="datt"  d="M 1006 526 H 1070"/>
+  <rect class="run" x="1070" y="462" width="48" height="78" rx="3"/>
+  <text class="tiny" x="1094" y="497" text-anchor="middle">6</text>
+  <text class="tiny" x="1094" y="511" text-anchor="middle">runs</text>
+  <path class="usbc" d="M 892 348 C 898 348, 898 526, 904 526"/>
+  <path class="usb"  d="M 892 348 C 898 348, 898 526, 904 526"/>
+  <text class="okt" x="812" y="570">Nothing but USB crosses the room.</text>
+  <text class="lbls" x="812" y="590">Data and power stay short and local. A passive USB 2.0</text>
+  <text class="lbls" x="812" y="607">segment is 5 m; a powered hub starts a new one.</text>
+  <text class="warnt" x="812" y="632">Bond every PSU&#8217;s V&#8722; to every other. Required.</text>
+  <path class="bond" d="M 818 656 H 918"/>
+  <rect x="812" y="650" width="13" height="12" fill="#FFFFFF" stroke="#111111" stroke-width="1.6"/>
+  <rect x="911" y="650" width="13" height="12" fill="#FFFFFF" stroke="#111111" stroke-width="1.6"/>
+  <text class="tiny" x="932" y="660">8 AWG V&#8722; to V&#8722;</text>
+  <text class="lbls" x="812" y="682">The boards and the hub already tie these two supply</text>
+  <text class="lbls" x="812" y="699">grounds through 24-26 AWG. The bond keeps that thin</text>
+  <text class="lbls" x="812" y="716">path from being the only tie - &#167; 5.3 has the limits.</text>
+  <rect class="note" x="40" y="796" width="550" height="330" rx="6"/>
+  <text class="notet" x="60" y="824">Why long +5 V runs are the problem</text>
+  <text class="notep" x="60" y="848">Drop is set by the round trip, so count the wire out AND back:</text>
+  <text class="mono" x="60" y="874" xml:space="preserve">R_loop = 2 &#215; length_m &#215; &#961;        V_drop = I &#215; R_loop</text>
+  <text class="notep" x="60" y="900">Copper &#961; at 20 &#176;C, ohms per metre of one conductor:</text>
+  <text class="mono" x="60" y="924" xml:space="preserve">22 AWG 0.0529   20 AWG 0.0333   18 AWG 0.0209</text>
+  <text class="mono" x="60" y="942" xml:space="preserve">16 AWG 0.0132   14 AWG 0.00829  12 AWG 0.00521</text>
+  <text class="notep" x="60" y="968">One run at full white draws 3.84 A. Budget 0.25 V of drop, i.e. 5 %:</text>
+  <text class="mono" x="60" y="992" xml:space="preserve">6.0 m 18 AWG   0.251 &#937;   0.96 V   run sees 4.04 V   FAILS</text>
+  <text class="mono" x="60" y="1010" xml:space="preserve">6.0 m 12 AWG   0.063 &#937;   0.24 V   run sees 4.76 V   works</text>
+  <text class="mono" x="60" y="1028" xml:space="preserve">1.5 m 16 AWG   0.040 &#937;   0.15 V   run sees 4.85 V   works</text>
+  <text class="notep" x="60" y="1054">The last line is Option B. A short 16 AWG hop from a local supply beats</text>
+  <text class="notep" x="60" y="1071">a long 12 AWG haul from a central one, for a fraction of the copper.</text>
+  <text class="notep" x="60" y="1096">Add the strip&#39;s own internal drop on top. Measure it: meter across a</text>
+  <text class="notep" x="60" y="1113">run&#39;s red and black leads while it is lit white, compare with the supply.</text>
+  <rect class="note" x="606" y="796" width="534" height="330" rx="6"/>
+  <text class="notet" x="626" y="824">Why long data runs are cheap in current - but still bounded</text>
+  <text class="notep" x="626" y="848">A WS2812B data input draws &#177;1 &#181;A and presents 15 pF. Gauge is almost</text>
+  <text class="notep" x="626" y="865">irrelevant: 24 to 26 AWG is ample at any indoor length. Timing is the limit.</text>
+  <text class="mono" x="626" y="891" xml:space="preserve">bit period  1.25 &#181;s     T0H 0.4 &#181;s     T1H 0.8 &#181;s</text>
+  <text class="mono" x="626" y="909" xml:space="preserve">tolerance   &#177;150 ns     propagation    ~5 ns per metre</text>
+  <text class="notep" x="626" y="935">A reflection on an unterminated line makes a round trip: 10 m is roughly</text>
+  <text class="notep" x="626" y="952">100 ns, the same order as the whole &#177;150 ns budget. The Fadecandy&#39;s 68 &#937;</text>
+  <text class="notep" x="626" y="969">series resistor damps that, but only if the line impedance is near it -</text>
+  <text class="notep" x="626" y="986">which means DATA twisted with its own GND, not run as a lone wire.</text>
+  <text class="notet" x="626" y="1014">Practical limits - engineering practice, not a datasheet number</text>
+  <text class="mono" x="626" y="1038" xml:space="preserve">to ~2 m    plain hookup wire, data and ground together</text>
+  <text class="mono" x="626" y="1056" xml:space="preserve">to ~5 m    twisted pair, away from mains cable. Do this.</text>
+  <text class="mono" x="626" y="1074" xml:space="preserve">past ~5 m  do not stretch it. Move the Fadecandy into the</text>
+  <text class="mono" x="626" y="1092" xml:space="preserve">           zone and extend USB (Option C), or convert to a</text>
+  <text class="mono" x="626" y="1110" xml:space="preserve">           differential RS-485 pair and back again at the run.</text>
+</svg>
