@@ -15,7 +15,9 @@ from pathlib import Path
 
 import pytest
 
-TOOL = Path(__file__).parent.parent / "tools" / "check-svg-text-fit.py"
+REPO = Path(__file__).parent.parent
+TOOL = REPO / "tools" / "check-svg-text-fit.py"
+DIAGRAMS = sorted((REPO / "docs" / "diagrams").glob("*.svg"))
 
 CHROME_CANDIDATES = ("google-chrome", "google-chrome-stable", "chromium", "chromium-browser")
 
@@ -34,12 +36,30 @@ def diagram(body: str) -> str:
     )
 
 
-def run(path: Path) -> subprocess.CompletedProcess[str]:
+def run(*paths: Path) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
-        [sys.executable, str(TOOL), str(path)],
+        [sys.executable, str(TOOL), *(str(path) for path in paths)],
         capture_output=True,
         text=True,
-        timeout=180,
+        timeout=300,
+    )
+
+
+def test_every_committed_diagram_fits_inside_its_panels() -> None:
+    """The committed drawings are the artifacts the checker exists to protect.
+
+    The synthetic cases below prove the checker works; this one proves the
+    drawings do, so an overrun that reaches docs/diagrams fails a command
+    instead of waiting for someone to notice it.
+    """
+    assert DIAGRAMS, "no diagrams found under docs/diagrams to check"
+
+    result = run(*DIAGRAMS)
+
+    assert result.returncode == 0, (
+        "tools/check-svg-text-fit.py rejected a committed diagram:\n"
+        + result.stdout
+        + result.stderr
     )
 
 

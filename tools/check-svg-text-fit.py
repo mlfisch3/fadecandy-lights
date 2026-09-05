@@ -121,7 +121,8 @@ def text_node_count(svg_path):
     This is what the probe is expected to measure. If the probe reports zero
     and this says otherwise, the probe did not do its job.
     """
-    source = open(svg_path, encoding="utf-8").read()
+    with open(svg_path, encoding="utf-8") as handle:
+        source = handle.read()
     try:
         root = ElementTree.fromstring(source)
     except ElementTree.ParseError:
@@ -140,7 +141,8 @@ def collisions(chrome, svg_path):
     as .warnt across files, so stacking them in one document lets a later
     stylesheet restyle an earlier drawing and mismeasures every label in it.
     """
-    source = open(svg_path, encoding="utf-8").read()
+    with open(svg_path, encoding="utf-8") as handle:
+        source = handle.read()
     if source.lstrip().startswith("<?xml"):
         source = source.split("?>", 1)[1]
     page = ('<!doctype html><html><head><meta charset="utf-8">'
@@ -170,9 +172,7 @@ def collisions(chrome, svg_path):
     measured = int(marker.split()[1])
     expected = text_node_count(svg_path)
     if measured == 0 and expected:
-        raise ProbeError(
-            "measured 0 of the {} text nodes in this file".format(expected)
-        )
+        raise ProbeError(f"measured 0 of the {expected} text nodes in this file")
     return rest
 
 
