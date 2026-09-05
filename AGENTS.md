@@ -61,6 +61,15 @@ Two facts that are easy to get wrong and are settled there:
 - The Fadecandy output header carries GND and DATA only. There is no +5 V pin on it, and strip
   power must come from the external supply.
 
+Power sizing lives in §6.2 and is anchored to named NEC tables (310.16 and 402.5 for ampacity,
+Chapter 9 Table 8 for resistance, 240.6(A) for fuse ratings, 210.19(A) Informational Note No. 4 for
+the drop budget). Do not reintroduce uncited "typical chassis-wiring" figures, and do not patch a
+number in isolation: the section was corrected in four consecutive rounds that way, and each round's
+fix contained the next round's bug. The two traps that caused them: **4.5 V is a floor at the dimmest
+LED, not at the strip's solder pads** (confusing the two makes §6.3 optimistic by 2x), and a fuse is
+sized against the *conductor's ampacity* and 1.25x the load in one direction, never as a range
+between them.
+
 Diagrams live in `docs/diagrams/*.svg` as hand-written SVG so they stay diffable. They render with
 an explicit light panel background so they stay legible on dark documentation backgrounds, label
 every conductor in text as well as colour, and use `xml:space="preserve"` on monospace rows to keep

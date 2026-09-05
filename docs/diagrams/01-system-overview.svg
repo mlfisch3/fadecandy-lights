@@ -1,15 +1,16 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1180 880" width="1180" height="880"
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1180 960" width="1180" height="960"
      role="img" aria-labelledby="t1 d1">
   <title id="t1">Fadecandy system overview: one Raspberry Pi, one Fadecandy, eight LED runs, one 5 V supply</title>
   <desc id="d1">The Raspberry Pi 3B+ connects to a Fadecandy board over USB. Each of the Fadecandy's
   eight channels leaves the board as a pair: a yellow DATA wire to the DI pad of one 64-pixel WS2812B
   run, and a black GND wire from that same channel's minus pin, twisted with it and landed on the GND
   bus alongside that run's own ground lead. There are eight such pairs, not eight lone data wires. The
-  5 V power supply feeds a red +5 V bus and a black GND bus that power the runs directly, and each run
-  takes its +5 V off that bus through its own 5 A branch fuse. The feeder from the supply's V-plus
-  terminal to the bus passes through a 40 A main fuse, and both bus bars are 8 AWG. Strip current
-  flows only between the supply and the runs; it never passes through the Fadecandy or the Pi. For
-  these eight runs the supply must be the sompom S-300-5, 60 A, which they load to 51 per cent; the
+  5 V power supply feeds a red +5 V bus and a black GND bus that power the runs directly. Each run has
+  four power legs, not two: a red and a black at its DI end and a red and a black at its far end, with
+  both of that run's reds landing on the same single 6 A branch fuse. The feeder from the supply's
+  V-plus terminal to the bus passes through a 40 A main fuse, and both bus bars are solid bars. Strip
+  current flows only between the supply and the runs; it never passes through the Fadecandy or the Pi.
+  For these eight runs the supply must be the sompom S-300-5, 60 A, which they load to 51 per cent; the
   30 A LETOUR S-150-5 would be at 102 per cent of its rating and must not be used here.</desc>
 
   <style>
@@ -51,7 +52,7 @@
     .warnt   { font:600 12.5px ui-sans-serif,system-ui,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; fill:#7A140C; }
   </style>
 
-  <rect class="bg" x="1" y="1" width="1178" height="878" rx="6"/>
+  <rect class="bg" x="1" y="1" width="1178" height="958" rx="6"/>
 
   <text class="ttl" x="40" y="46">Diagram 1 - System overview: one control point, eight runs</text>
   <text class="sub" x="40" y="72">Strip current flows only between the 5 V supply and the runs. It never passes through the Fadecandy or the Pi.</text>
@@ -134,47 +135,92 @@
     <g><rect class="led" x="992" y="206" width="32" height="12"/><rect class="led" x="992" y="224" width="32" height="12"/><rect class="led" x="992" y="242" width="32" height="12"/><rect class="led" x="992" y="260" width="32" height="12"/><rect class="led" x="992" y="278" width="32" height="12"/><rect class="led" x="992" y="296" width="32" height="12"/><text class="lbls" x="1008" y="325" text-anchor="middle">64 px</text></g>
   </g>
 
+  <text class="lbls" x="180" y="216" text-anchor="end">far end</text>
+  <text class="lbls" x="180" y="356" text-anchor="end">DI end</text>
+
   <!-- ===================== PIGTAIL LEADS ===================== -->
-  <!-- For each run cx: GND at cx-16 to bus y=400; +5V at cx+16 to bus y=440 (hop at 400); DATA at cx to band y=505 (hops at 400 and 440) -->
+  <!-- Per run, centre cx. DI end is the bottom of the run box, far end the top.
+       DI GND at cx-16 down to the GND bus at y=400.  Far GND leaves the box's left
+       edge at y=210, runs out to cx-40 and down to the same bus.
+       DI +5 V at cx+16 down to the join node at y=410.  Far +5 V leaves the box's
+       right edge at y=210, runs out to cx+40 and down to that same node, so both
+       legs pass through the one 6 A branch fuse below it before reaching the bus.
+       DATA at cx down to the band at y=496, hopping both buses. -->
   <g>
-    <!-- GND leads -->
-    <path class="gnd" d="M 208 350 V 400"/><path class="gnd" d="M 320 350 V 400"/>
-    <path class="gnd" d="M 432 350 V 400"/><path class="gnd" d="M 544 350 V 400"/>
-    <path class="gnd" d="M 656 350 V 400"/><path class="gnd" d="M 768 350 V 400"/>
-    <path class="gnd" d="M 880 350 V 400"/><path class="gnd" d="M 992 350 V 400"/>
-    <!-- +5V leads, hop over GND bus -->
-    <path class="pwr" d="M 240 350 V 393 A 7 7 0 0 1 240 407 V 414"/>
+    <!-- GND leads: DI end at the box bottom, far end out of the box's left edge -->
+    <path class="gnd" d="M 208 350 V 400"/>
+    <path class="gnd" d="M 320 350 V 400"/>
+    <path class="gnd" d="M 432 350 V 400"/>
+    <path class="gnd" d="M 544 350 V 400"/>
+    <path class="gnd" d="M 656 350 V 400"/>
+    <path class="gnd" d="M 768 350 V 400"/>
+    <path class="gnd" d="M 880 350 V 400"/>
+    <path class="gnd" d="M 992 350 V 400"/>
+    <path class="gnd" d="M 200 210 H 184 V 400"/>
+    <path class="gnd" d="M 312 210 H 296 V 400"/>
+    <path class="gnd" d="M 424 210 H 408 V 400"/>
+    <path class="gnd" d="M 536 210 H 520 V 400"/>
+    <path class="gnd" d="M 648 210 H 632 V 400"/>
+    <path class="gnd" d="M 760 210 H 744 V 400"/>
+    <path class="gnd" d="M 872 210 H 856 V 400"/>
+    <path class="gnd" d="M 984 210 H 968 V 400"/>
+    <!-- +5 V leads: DI end and far end, joined above ONE branch fuse per run -->
+    <path class="pwr" d="M 240 350 V 393 A 7 7 0 0 1 240 407 V 410"/>
+    <path class="pwr" d="M 248 210 H 264 V 393 A 7 7 0 0 1 264 407 V 410 H 240"/>
+    <circle class="dotr" cx="240" cy="410" r="4.2"/>
+    <path class="pwr" d="M 240 410 V 414"/>
     <rect class="fuse" x="232" y="414" width="16" height="18" rx="3"/>
     <path class="pwr" d="M 240 432 V 440"/>
-    <text class="lbls" x="253" y="428">5 A</text>
-    <path class="pwr" d="M 352 350 V 393 A 7 7 0 0 1 352 407 V 414"/>
+    <text class="lbls" x="253" y="428">6 A</text>
+    <path class="pwr" d="M 352 350 V 393 A 7 7 0 0 1 352 407 V 410"/>
+    <path class="pwr" d="M 360 210 H 376 V 393 A 7 7 0 0 1 376 407 V 410 H 352"/>
+    <circle class="dotr" cx="352" cy="410" r="4.2"/>
+    <path class="pwr" d="M 352 410 V 414"/>
     <rect class="fuse" x="344" y="414" width="16" height="18" rx="3"/>
     <path class="pwr" d="M 352 432 V 440"/>
-    <text class="lbls" x="365" y="428">5 A</text>
-    <path class="pwr" d="M 464 350 V 393 A 7 7 0 0 1 464 407 V 414"/>
+    <text class="lbls" x="365" y="428">6 A</text>
+    <path class="pwr" d="M 464 350 V 393 A 7 7 0 0 1 464 407 V 410"/>
+    <path class="pwr" d="M 472 210 H 488 V 393 A 7 7 0 0 1 488 407 V 410 H 464"/>
+    <circle class="dotr" cx="464" cy="410" r="4.2"/>
+    <path class="pwr" d="M 464 410 V 414"/>
     <rect class="fuse" x="456" y="414" width="16" height="18" rx="3"/>
     <path class="pwr" d="M 464 432 V 440"/>
-    <text class="lbls" x="477" y="428">5 A</text>
-    <path class="pwr" d="M 576 350 V 393 A 7 7 0 0 1 576 407 V 414"/>
+    <text class="lbls" x="477" y="428">6 A</text>
+    <path class="pwr" d="M 576 350 V 393 A 7 7 0 0 1 576 407 V 410"/>
+    <path class="pwr" d="M 584 210 H 600 V 393 A 7 7 0 0 1 600 407 V 410 H 576"/>
+    <circle class="dotr" cx="576" cy="410" r="4.2"/>
+    <path class="pwr" d="M 576 410 V 414"/>
     <rect class="fuse" x="568" y="414" width="16" height="18" rx="3"/>
     <path class="pwr" d="M 576 432 V 440"/>
-    <text class="lbls" x="589" y="428">5 A</text>
-    <path class="pwr" d="M 688 350 V 393 A 7 7 0 0 1 688 407 V 414"/>
+    <text class="lbls" x="589" y="428">6 A</text>
+    <path class="pwr" d="M 688 350 V 393 A 7 7 0 0 1 688 407 V 410"/>
+    <path class="pwr" d="M 696 210 H 712 V 393 A 7 7 0 0 1 712 407 V 410 H 688"/>
+    <circle class="dotr" cx="688" cy="410" r="4.2"/>
+    <path class="pwr" d="M 688 410 V 414"/>
     <rect class="fuse" x="680" y="414" width="16" height="18" rx="3"/>
     <path class="pwr" d="M 688 432 V 440"/>
-    <text class="lbls" x="701" y="428">5 A</text>
-    <path class="pwr" d="M 800 350 V 393 A 7 7 0 0 1 800 407 V 414"/>
+    <text class="lbls" x="701" y="428">6 A</text>
+    <path class="pwr" d="M 800 350 V 393 A 7 7 0 0 1 800 407 V 410"/>
+    <path class="pwr" d="M 808 210 H 824 V 393 A 7 7 0 0 1 824 407 V 410 H 800"/>
+    <circle class="dotr" cx="800" cy="410" r="4.2"/>
+    <path class="pwr" d="M 800 410 V 414"/>
     <rect class="fuse" x="792" y="414" width="16" height="18" rx="3"/>
     <path class="pwr" d="M 800 432 V 440"/>
-    <text class="lbls" x="813" y="428">5 A</text>
-    <path class="pwr" d="M 912 350 V 393 A 7 7 0 0 1 912 407 V 414"/>
+    <text class="lbls" x="813" y="428">6 A</text>
+    <path class="pwr" d="M 912 350 V 393 A 7 7 0 0 1 912 407 V 410"/>
+    <path class="pwr" d="M 920 210 H 936 V 393 A 7 7 0 0 1 936 407 V 410 H 912"/>
+    <circle class="dotr" cx="912" cy="410" r="4.2"/>
+    <path class="pwr" d="M 912 410 V 414"/>
     <rect class="fuse" x="904" y="414" width="16" height="18" rx="3"/>
     <path class="pwr" d="M 912 432 V 440"/>
-    <text class="lbls" x="925" y="428">5 A</text>
-    <path class="pwr" d="M 1024 350 V 393 A 7 7 0 0 1 1024 407 V 414"/>
+    <text class="lbls" x="925" y="428">6 A</text>
+    <path class="pwr" d="M 1024 350 V 393 A 7 7 0 0 1 1024 407 V 410"/>
+    <path class="pwr" d="M 1032 210 H 1048 V 393 A 7 7 0 0 1 1048 407 V 410 H 1024"/>
+    <circle class="dotr" cx="1024" cy="410" r="4.2"/>
+    <path class="pwr" d="M 1024 410 V 414"/>
     <rect class="fuse" x="1016" y="414" width="16" height="18" rx="3"/>
     <path class="pwr" d="M 1024 432 V 440"/>
-    <text class="lbls" x="1037" y="428">5 A</text>
+    <text class="lbls" x="1037" y="428">6 A</text>
     <!-- DATA leads, hop over both buses -->
     <g>
       <path class="datc" d="M 224 350 V 393 A 7 7 0 0 1 224 407 V 433 A 7 7 0 0 1 224 447 V 496"/>
@@ -196,13 +242,6 @@
     </g>
   </g>
 
-  <!-- pigtail annotation -->
-  <path d="M 1052 250 H 1040 Q 1032 250 1032 262 V 344" fill="none" stroke="#8A857A" stroke-width="1.2"/>
-  <text class="lbls" x="1048" y="204">Each run's black /</text>
-  <text class="lbls" x="1048" y="219">yellow / red pigtail</text>
-  <text class="lbls" x="1048" y="234">is at its DI end.</text>
-  <text class="lbls" x="1048" y="249">Far end: unused.</text>
-
   <!-- ===================== BUSES ===================== -->
   <path class="busg" d="M 80 400 H 1120"/>
   <path class="busp" d="M 110 440 H 1120"/>
@@ -216,9 +255,9 @@
     <circle class="dotr" cx="688" cy="440" r="4.4"/><circle class="dotr" cx="800" cy="440" r="4.4"/>
     <circle class="dotr" cx="912" cy="440" r="4.4"/><circle class="dotr" cx="1024" cy="440" r="4.4"/>
   </g>
-  <text class="wlbl" x="92" y="391">GND BUS &#183; 8 AWG</text>
-  <text class="wlbl" x="92" y="431">+5 V BUS &#183; 8 AWG</text>
-  <text class="lbls" x="46" y="464">5 A branch fuse</text>
+  <text class="wlbl" x="92" y="391">GND BUS &#183; BAR</text>
+  <text class="wlbl" x="92" y="431">+5 V BUS &#183; BAR</text>
+  <text class="lbls" x="46" y="464">6 A branch fuse</text>
   <text class="lbls" x="46" y="478">on every run</text>
 
   <!-- ================ DATA + GND BUNDLES ================ -->
@@ -306,4 +345,9 @@
   <text class="notet" x="356" y="799" style="font-weight:400">bonded, the LEDs have no reference, and the run will show</text>
   <text class="notet" x="356" y="816" style="font-weight:400">nothing, flicker, or display garbage colours.</text>
   <text class="notet" x="356" y="838">Data and ground always travel together. Always.</text>
+
+  <rect class="note" x="40" y="864" width="1100" height="80" rx="5"/>
+  <text class="notet" x="60" y="888">Every run has FOUR power legs: +5 V and GND at its DI end, and +5 V and GND again at its far end. Both of a run&#8217;s reds land on that run&#8217;s ONE 6 A fuse.</text>
+  <text class="notet" x="60" y="908" style="font-weight:400">Your strips have solder pads at the DI end only, so the far-end pair means opening and resealing about 18 sealed silicone sleeves. &#167; 6.3 gives the one</text>
+  <text class="notet" x="60" y="928" style="font-weight:400">alternative: feed the DI end alone under a 25 % brightness cap, which asks exactly as much of the strip as full white fed from both ends does.</text>
 </svg>

@@ -292,22 +292,28 @@ Voltage drop along a long run shows up as the far end being dimmer and pinker th
 
 These strips measure **33 mm centre to centre**, so 30.3 LEDs/m and a full 64-pixel output is **2.11 m**.
 
-Rules of thumb for 5 V WS2812B at that density:
+**Do not use an "inject every 2 m" rule at this density.** It is written for 60 LEDs/m strips, and current, not length, is what sets the drop. `docs/wiring.md` §6.3 works it properly; the results are:
 
-- **Inject at both ends of any run over about 2 m** (roughly 60 pixels at this pitch).
-- **A full 64-pixel run is 2.11 m, so it is over that threshold: inject at both ends of every one.** Feed 5 V and ground at the far end as well as the near end.
-- **Inject every 2 to 2.5 m** on anything longer than a single output.
-- Run injection wire back to the **supply**, not along the strip. 18 AWG for injection runs; 16 AWG if the run is long or the current is high.
-- Every injection point ties 5 V to 5 V and ground to ground. The data line is **not** injected; it continues pixel to pixel as normal.
+> **Changed:** this section used to say 18 AWG injection wire, 16 AWG if the run is long. That is wrong at this current and length. It is **14 AWG**, and the branch fuse is **6 A**. See `docs/wiring.md` §6.2.
+
+
+- **At full white, every 64-pixel run is fed at both ends.** That is not a contingency, it is the design. Fed from one end, a 2.11 m run would need a strip rail resistance no flexible PCB achieves; fed from both ends the requirement is four times looser and a decent strip meets it.
+- **Feed 5 V and ground at each end**, both legs off that run's single branch fuse. The data line is **not** injected; it continues pixel to pixel as normal.
+- **There is one lever that avoids that work, and it is a brightness cap.** These strips have pads at the DI end only, so feeding both ends means opening and resealing about 18 sealed silicone sleeves. Fed from the DI end alone, a **25 % cap asks exactly the same of the strip that full white fed from both ends does** - 0.123 Ω/m either way - and §7 already puts realistic ambient light here at about 25 %. The choice is reversible and changes no gauge and no fuse rating; `docs/wiring.md` §6.3 states both options with the figures.
+- **Run injection wire back to the distribution block, not along the strip.** 14 AWG up to 1.87 m per leg is the default. Size each leg for the whole 3.84 A, not half of it.
 - Splitting the installation across the Fadecandy's eight outputs still helps: eight 2.11 m runs fed at both ends are a far easier wiring problem than one 512-pixel, 16.9 m chain.
 
-If you are feeding it all from one supply, size the wire from the supply to each injection point for that segment's share of the total, not the average.
+**`docs/wiring.md` §6.2 is the authoritative sizing table** - feeder gauge, main fuse and maximum length for 1 to 8 runs on one supply, the bus specification, and the voltage-drop budget those hold to. Do not size cable from this summary.
 
 ## Fusing
 
-Put a fuse between the supply and the strip, rated a little above your configured ceiling.
-The governor is software; it is the thing that stops the *normal* case from overloading the supply.
-A fuse is what covers a short in the wiring, which no amount of correct software prevents.
+**Size fuses from the full-white load, never from the configured software ceiling.**
+The governor is software; it stops the *normal* case from overloading the supply.
+A fuse covers a short in the wiring, which no amount of correct software prevents, and it has to hold when the software is wrong.
+
+The rule, in full in `docs/wiring.md` §6.2: take 1.25 × the full-white load, round up to the nearest standard fuse rating, and then require the conductor's ampacity to be at or above that **fuse** rating.
+For one 64-pixel run that is 3.84 A, a 6 A branch fuse, and 14 AWG.
+A fuse is needed wherever the conductor gets smaller: one main at the supply end of each feeder, and one branch fuse per run.
 
 ---
 

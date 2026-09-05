@@ -4,8 +4,12 @@
   <desc id="d2">Fadecandy channel 0 drives one 64-pixel WS2812B run. A yellow DATA wire runs from the
   channel's + pad to the run's DI pigtail. A black GND wire runs from the same channel's minus pad
   and joins the run's black pigtail lead at a junction. From that junction the black lead continues
-  to the supply's V-minus terminal, and the run's red lead goes to V-plus through that run's own 5 A
-  branch fuse. The Fadecandy carries no strip current; it only shares the ground reference.</desc>
+  to the supply's V-minus terminal. The run is fed at both ends: a red lead from the DI-end pigtail
+  and a second red lead soldered to the strip's own plus-5-volt rail at the far end, both meeting
+  above that run's single 6 A branch fuse on the way to V-plus, and a matching pair of black leads
+  returning to V-minus. The far-end pair does not exist on the strip as bought; it is soldered on
+  after opening the silicone sleeve, unless the run is fed from the DI end alone under a brightness
+  cap. The Fadecandy carries no strip current; it only shares the ground reference.</desc>
 
   <style>
     .bg      { fill:#F7F6F1; stroke:#C7C3B8; stroke-width:2; }
@@ -51,7 +55,7 @@
   <rect class="bg" x="1" y="1" width="1178" height="878" rx="6"/>
 
   <text class="ttl" x="40" y="46">Diagram 2 - One channel in detail, and where ground is made common</text>
-  <text class="sub" x="40" y="72">Fadecandy channel 0 &#8594; the DI pigtail of one 64-pixel run. Power for that run comes only from the 5 V supply.</text>
+  <text class="sub" x="40" y="72">Fadecandy channel 0 &#8594; the DI pigtail of one 64-pixel run. Power for that run comes only from the 5 V supply, at both of its ends.</text>
 
   <!-- ===================== LEGEND ===================== -->
   <rect class="panel" x="40" y="90" width="1100" height="52" rx="5"/>
@@ -148,8 +152,7 @@
   </g>
   <text class="mono" x="592" y="212" text-anchor="middle">DI</text>
   <text class="monos" x="592" y="228" text-anchor="middle">px 1</text>
-  <text class="lbls" x="760" y="264">px 2 &#8594; 64, each pixel re-drives the next</text>
-  <text class="lbls" x="1140" y="284" text-anchor="end">far end: unterminated, nothing connected</text>
+  <text class="lbls" x="760" y="258">px 2 &#8594; 64, each pixel re-drives the next</text>
 
   <!-- ===================== WIRING ===================== -->
   <!-- ch0 DATA: pad (130,330) jog left to x=112, down to y=500, right to 572, up to 300 -->
@@ -164,29 +167,49 @@
   <path class="pwr" d="M 604 244 V 400"/>
   <rect class="fuse" x="594" y="400" width="20" height="26" rx="3"/>
   <path class="pwr" d="M 604 426 V 733 H 812"/>
-  <text class="wlbl" x="626" y="410">BRANCH FUSE &#183; 5 A</text>
-  <text class="lbls" x="626" y="426">every run gets its own, between the +5 V bus and the run</text>
+  <text class="wlbl" x="678" y="410">BRANCH FUSE &#183; 6 A</text>
+  <text class="lbls" x="678" y="426">every run gets its own, between the +5 V bus and the run</text>
+
+  <!-- far-end pair: soldered to the strip's own rails, both power legs off the SAME fuse.
+       The red joins the DI-end red above the branch fuse; the black crosses below the red's
+       last horizontal, at y=760, so no conductor crosses another anywhere in this drawing. -->
+  <path class="pwr" d="M 1092 244 V 288 H 604"/>
+  <circle cx="604" cy="288" r="6" fill="#CE2318"/>
+  <path class="gnd" d="M 1116 244 V 380 H 666 V 760 H 588"/>
+  <circle class="dot" cx="588" cy="760" r="6"/>
+  <text class="wlbl" x="1086" y="264" text-anchor="end">+5 V</text>
+  <text class="wlbl" x="1124" y="264">GND</text>
+  <text class="wlbl" x="700" y="278">+5 V &#183; far-end leg - the SAME 6 A fuse</text>
+  <text class="wlbl" x="700" y="374">GND &#183; far-end leg &#8594; supply V&#8722;</text>
+  <text class="lbls" x="1100" y="316" text-anchor="end">far end: no pads here. Open the</text>
+  <text class="lbls" x="1100" y="332" text-anchor="end">sleeve and solder this pair to the</text>
+  <text class="lbls" x="1100" y="348" text-anchor="end">strip&#8217;s own rails - &#167; 11 step 2.</text>
+
+  <rect class="note" x="700" y="440" width="440" height="96" rx="5"/>
+  <text class="notet" x="716" y="464">Four power legs per run, not two</text>
+  <text class="notep" x="716" y="486">+5 V and GND at the DI end, +5 V and GND again at the far</text>
+  <text class="notep" x="716" y="503">end, and both reds off the SAME 6 A fuse. &#167; 6.3 gives one</text>
+  <text class="notep" x="716" y="520">way out: feed the DI end alone under a 25 % brightness cap.</text>
 
   <circle class="dot" cx="588" cy="530" r="6.5"/>
 
   <!-- pigtail bracket -->
-  <path class="brk" d="M 566 298 H 610"/>
-  <text class="lbls" x="620" y="302">the run's own 3-wire pigtail, all at the DI end</text>
+  <path class="brk" d="M 566 314 H 610"/>
+  <text class="lbls" x="620" y="318">the run's own 3-wire pigtail, all at the DI end</text>
 
   <!-- wire labels -->
   <text class="wlbl" x="300" y="494">DATA &#183; ch 0 &#8594; DI</text>
   <text class="wlbl" x="300" y="524">GND &#183; return - twist with the data wire</text>
-  <text class="wlbl" x="630" y="727">+5 V &#183; supply V+ &#8594; run</text>
+  <text class="wlbl" x="676" y="727">+5 V &#8594; supply V+</text>
   <text class="wlbl" x="630" y="787">GND &#183; run &#8594; supply V&#8722;</text>
   <text class="wlbl" x="548" y="328" text-anchor="end">DATA</text>
-  <path class="brk" d="M 592 326 H 618"/>
-  <text class="wlbl" x="622" y="330">GND</text>
-  <path class="brk" d="M 606 346 H 618"/>
-  <text class="wlbl" x="622" y="350">+5 V</text>
+  <path class="brk" d="M 592 332 H 618"/>
+  <text class="wlbl" x="622" y="336">GND</text>
+  <path class="brk" d="M 606 352 H 618"/>
+  <text class="wlbl" x="622" y="356">+5 V</text>
 
   <!-- common ground callout -->
   <path class="hl" d="M 588 530 m -22 0 a 22 22 0 1 0 44 0 a 22 22 0 1 0 -44 0"/>
-  <path class="lead" d="M 610 540 L 700 578"/>
   <rect class="warn" x="700" y="546" width="440" height="124" rx="5"/>
   <text class="warnt" x="716" y="572">GROUND IS MADE COMMON HERE</text>
   <text class="warnp" x="716" y="594">The Fadecandy's &#8722; wire and the run's black lead meet, and</text>
