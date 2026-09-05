@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.lifecycle.viewmodel.compose.viewModel
 
 class MainActivity : ComponentActivity() {
@@ -13,6 +14,10 @@ class MainActivity : ComponentActivity() {
         setContent {
             FclightsTheme {
                 val model: AppViewModel = viewModel()
+                LifecycleStartEffect(model) {
+                    model.onVisible()
+                    onStopOrDispose { model.onHidden() }
+                }
                 LightsScreen(model)
             }
         }

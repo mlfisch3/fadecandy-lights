@@ -2,11 +2,14 @@ package com.fclights.api
 
 import com.fclights.model.WsMessage
 import com.fclights.model.decodeWsMessage
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
@@ -30,6 +33,7 @@ sealed interface Link {
 class FcSocket(
     private val http: OkHttpClient,
     private val backoff: Backoff = Backoff(),
+    private val silenceMillis: Long = SILENCE_MILLIS,
 ) {
     /**
      * Connect, and keep reconnecting for as long as the flow is collected.
@@ -67,11 +71,27 @@ class FcSocket(
      * closing handshake is answered - so answering it is what makes an orderly
      * restart end the session here instead of leaving the app parked on state
      * that has stopped arriving.
+     *
+     * Nor does a drop always announce itself. The broadcaster drops a client
+     * whose write times out and leaves the socket open, so the connection stays
+     * healthy at the protocol level - pings are still answered - while no state
+     * will ever arrive on it again. Only the data says so: docs/api.md has
+     * telemetry every two seconds for as long as anyone is connected, so a
+     * silence several times that long means this socket has been abandoned and
+     * the reconnect above should take over.
      */
     private fun session(endpoint: Endpoint): Flow<WsMessage> = callbackFlow {
         val request = Request.Builder().url(endpoint.wsUrl).build()
+        val frames = Channel<Unit>(Channel.CONFLATED)
+        launch {
+            while (withTimeoutOrNull(silenceMillis) { frames.receive() } != null) {
+                // Every frame buys another window; only their absence ends it.
+            }
+            close(SocketClosed("the controller stopped sending"))
+        }
         val socket = http.newWebSocket(request, object : WebSocketListener() {
             override fun onMessage(webSocket: WebSocket, text: String) {
+                frames.trySend(Unit)
                 decodeWsMessage(text)?.let { trySend(it) }
             }
 
@@ -92,6 +112,15 @@ class FcSocket(
     }
 
     private class SocketClosed(val reason: String) : Exception(reason)
+
+    companion object {
+        /**
+         * How long a socket may say nothing before it is assumed abandoned.
+         * Five telemetry intervals: long enough that a moment of a slow network
+         * does not cost a reconnect, short enough not to sit on stale lights.
+         */
+        const val SILENCE_MILLIS = 10_000L
+    }
 }
 
 /**

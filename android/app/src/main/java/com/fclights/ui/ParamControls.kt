@@ -44,15 +44,16 @@ import kotlinx.serialization.json.JsonElement
 fun ParamControl(
     spec: ParamSpec,
     values: Map<String, JsonElement>,
-    onChange: (JsonElement, Boolean) -> Unit,
-    onColorChange: (ColorValue, Boolean) -> Unit,
+    onChange: (JsonElement) -> Unit,
+    onColorChange: (ColorValue) -> Unit,
+    onCommit: () -> Unit,
 ) {
     when (spec.type) {
-        "float" -> FloatParam(spec, values, onChange)
-        "int" -> IntParam(spec, values, onChange)
-        "bool" -> BoolParam(spec, values, onChange)
-        "enum" -> EnumParam(spec, values, onChange)
-        "color" -> ColorParam(spec, values, onColorChange)
+        "float" -> FloatParam(spec, values, onChange, onCommit)
+        "int" -> IntParam(spec, values, onChange, onCommit)
+        "bool" -> BoolParam(spec, values, onChange, onCommit)
+        "enum" -> EnumParam(spec, values, onChange, onCommit)
+        "color" -> ColorParam(spec, values, onColorChange, onCommit)
         // A type this build has never heard of. Say so rather than silently
         // dropping a control the user is looking for.
         else -> UnsupportedParam(spec)
@@ -88,15 +89,16 @@ private fun ParamDescription(spec: ParamSpec) {
 private fun FloatParam(
     spec: ParamSpec,
     values: Map<String, JsonElement>,
-    onChange: (JsonElement, Boolean) -> Unit,
+    onChange: (JsonElement) -> Unit,
+    onCommit: () -> Unit,
 ) {
     val value = Params.float(spec, values)
     Column {
         ParamHeader(spec, Params.formatFloat(spec, value))
         Slider(
             value = Params.toSliderPosition(spec, value),
-            onValueChange = { onChange(Params.encodeFloat(Params.fromSliderPosition(spec, it)), false) },
-            onValueChangeFinished = { onChange(Params.encodeFloat(value), true) },
+            onValueChange = { onChange(Params.encodeFloat(Params.fromSliderPosition(spec, it))) },
+            onValueChangeFinished = onCommit,
             valueRange = 0f..1f,
         )
         ParamDescription(spec)
@@ -107,7 +109,8 @@ private fun FloatParam(
 private fun IntParam(
     spec: ParamSpec,
     values: Map<String, JsonElement>,
-    onChange: (JsonElement, Boolean) -> Unit,
+    onChange: (JsonElement) -> Unit,
+    onCommit: () -> Unit,
 ) {
     val value = Params.int(spec, values)
     val min = spec.minimum ?: 0.0
@@ -116,8 +119,8 @@ private fun IntParam(
         ParamHeader(spec, value.toString())
         Slider(
             value = value.toFloat(),
-            onValueChange = { onChange(Params.encodeInt(Params.quantiseInt(spec, it.toDouble())), false) },
-            onValueChangeFinished = { onChange(Params.encodeInt(value), true) },
+            onValueChange = { onChange(Params.encodeInt(Params.quantiseInt(spec, it.toDouble()))) },
+            onValueChangeFinished = onCommit,
             valueRange = min.toFloat()..max.toFloat(),
         )
         ParamDescription(spec)
@@ -128,7 +131,8 @@ private fun IntParam(
 private fun BoolParam(
     spec: ParamSpec,
     values: Map<String, JsonElement>,
-    onChange: (JsonElement, Boolean) -> Unit,
+    onChange: (JsonElement) -> Unit,
+    onCommit: () -> Unit,
 ) {
     val value = Params.bool(spec, values)
     Column {
@@ -138,7 +142,13 @@ private fun BoolParam(
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.weight(1f),
             )
-            Switch(checked = value, onCheckedChange = { onChange(Params.encodeBool(it), true) })
+            Switch(
+                checked = value,
+                onCheckedChange = {
+                    onChange(Params.encodeBool(it))
+                    onCommit()
+                },
+            )
         }
         ParamDescription(spec)
     }
@@ -149,7 +159,8 @@ private fun BoolParam(
 private fun EnumParam(
     spec: ParamSpec,
     values: Map<String, JsonElement>,
-    onChange: (JsonElement, Boolean) -> Unit,
+    onChange: (JsonElement) -> Unit,
+    onCommit: () -> Unit,
 ) {
     val value = Params.choice(spec, values)
     Column {
@@ -158,7 +169,10 @@ private fun EnumParam(
             spec.choices.orEmpty().forEach { choice ->
                 FilterChip(
                     selected = choice == value,
-                    onClick = { onChange(Params.encodeChoice(choice), true) },
+                    onClick = {
+                        onChange(Params.encodeChoice(choice))
+                        onCommit()
+                    },
                     label = { Text(choice) },
                 )
             }
@@ -171,12 +185,14 @@ private fun EnumParam(
 private fun ColorParam(
     spec: ParamSpec,
     values: Map<String, JsonElement>,
-    onChange: (ColorValue, Boolean) -> Unit,
+    onChange: (ColorValue) -> Unit,
+    onCommit: () -> Unit,
 ) {
     ColorControl(
         spec = spec,
         value = Params.color(spec, values),
         onChange = onChange,
+        onCommit = onCommit,
     )
 }
 

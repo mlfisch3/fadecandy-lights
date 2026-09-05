@@ -64,7 +64,8 @@ import kotlin.math.roundToInt
 fun ColorControl(
     spec: ParamSpec,
     value: ColorValue,
-    onChange: (ColorValue, Boolean) -> Unit,
+    onChange: (ColorValue) -> Unit,
+    onCommit: () -> Unit,
 ) {
     val kelvinAvailable = spec.supportsKelvin
     val showingKelvin = value.isKelvin && kelvinAvailable
@@ -91,7 +92,8 @@ fun ColorControl(
                     selected = showingKelvin,
                     onClick = {
                         if (!showingKelvin) {
-                            onChange(ColorValue.ofKelvin(spec.kelvinDefault ?: Blackbody.DEFAULT_KELVIN), true)
+                            onChange(ColorValue.ofKelvin(spec.kelvinDefault ?: Blackbody.DEFAULT_KELVIN))
+                            onCommit()
                         }
                     },
                     label = { Text("Warm - cool") },
@@ -106,9 +108,9 @@ fun ColorControl(
                                     rgb.getOrElse(0) { 255 },
                                     rgb.getOrElse(1) { 255 },
                                     rgb.getOrElse(2) { 255 },
-                                ),
-                                true,
+                                )
                             )
+                            onCommit()
                         }
                     },
                     label = { Text("Colour") },
@@ -117,9 +119,9 @@ fun ColorControl(
         }
 
         if (showingKelvin) {
-            KelvinSlider(spec, value.kelvin ?: Blackbody.DEFAULT_KELVIN, onChange)
+            KelvinSlider(spec, value.kelvin ?: Blackbody.DEFAULT_KELVIN, onChange, onCommit)
         } else {
-            ColourSliders(value, onChange)
+            ColourSliders(value, onChange, onCommit)
         }
 
         if (spec.description.isNotBlank()) {
@@ -133,7 +135,12 @@ fun ColorControl(
 }
 
 @Composable
-private fun KelvinSlider(spec: ParamSpec, kelvin: Double, onChange: (ColorValue, Boolean) -> Unit) {
+private fun KelvinSlider(
+    spec: ParamSpec,
+    kelvin: Double,
+    onChange: (ColorValue) -> Unit,
+    onCommit: () -> Unit,
+) {
     val min = spec.kelvinMin
     val max = spec.kelvinMax
     val track = remember(min, max) {
@@ -149,9 +156,9 @@ private fun KelvinSlider(spec: ParamSpec, kelvin: Double, onChange: (ColorValue,
             colors = track,
             value = ((kelvin - min) / (max - min)).toFloat().coerceIn(0f, 1f),
             onValueChange = {
-                onChange(ColorValue.ofKelvin(Params.quantiseKelvin(spec, min + it * (max - min))), false)
+                onChange(ColorValue.ofKelvin(Params.quantiseKelvin(spec, min + it * (max - min))))
             },
-            onValueChangeFinished = { onChange(ColorValue.ofKelvin(kelvin), true) },
+            onValueChangeFinished = onCommit,
         )
         Row {
             Text(
@@ -179,18 +186,18 @@ private fun KelvinSlider(spec: ParamSpec, kelvin: Double, onChange: (ColorValue,
  * immediately, and a release sends exactly what the three tracks are showing.
  */
 @Composable
-private fun ColourSliders(value: ColorValue, onChange: (ColorValue, Boolean) -> Unit) {
+private fun ColourSliders(
+    value: ColorValue,
+    onChange: (ColorValue) -> Unit,
+    onCommit: () -> Unit,
+) {
     var remembered by remember { mutableStateOf(Hsv.fromRgb255(value.rgb)) }
     val hsv = Hsv.axesFor(value.rgb, remembered)
 
-    fun send(axes: HsvColor, committed: Boolean) {
-        val rgb = Hsv.toRgb255(axes.hue, axes.saturation, axes.value)
-        onChange(ColorValue.ofRgb(rgb[0], rgb[1], rgb[2]), committed)
-    }
-
     fun drag(axes: HsvColor) {
         remembered = axes
-        send(axes, false)
+        val rgb = Hsv.toRgb255(axes.hue, axes.saturation, axes.value)
+        onChange(ColorValue.ofRgb(rgb[0], rgb[1], rgb[2]))
     }
 
     val hueTrack = remember {
@@ -209,7 +216,7 @@ private fun ColourSliders(value: ColorValue, onChange: (ColorValue, Boolean) -> 
             colors = hueTrack,
             value = (hsv.hue / 360.0).toFloat(),
             onValueChange = { drag(hsv.copy(hue = it.toDouble() * 360.0)) },
-            onValueChangeFinished = { send(hsv, true) },
+            onValueChangeFinished = onCommit,
         )
         Spacer(Modifier.height(4.dp))
         TrackLabel("Saturation")
@@ -217,7 +224,7 @@ private fun ColourSliders(value: ColorValue, onChange: (ColorValue, Boolean) -> 
             colors = saturationTrack,
             value = hsv.saturation.toFloat(),
             onValueChange = { drag(hsv.copy(saturation = it.toDouble())) },
-            onValueChangeFinished = { send(hsv, true) },
+            onValueChangeFinished = onCommit,
         )
         Spacer(Modifier.height(4.dp))
         TrackLabel("Shade - how dark this colour is")
@@ -225,7 +232,7 @@ private fun ColourSliders(value: ColorValue, onChange: (ColorValue, Boolean) -> 
             colors = shadeTrack,
             value = hsv.value.toFloat(),
             onValueChange = { drag(hsv.copy(value = it.toDouble())) },
-            onValueChangeFinished = { send(hsv, true) },
+            onValueChangeFinished = onCommit,
         )
     }
 }

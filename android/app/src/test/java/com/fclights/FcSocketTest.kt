@@ -14,6 +14,7 @@ import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.SocketPolicy
 import org.junit.After
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -43,8 +44,8 @@ class FcSocketTest {
     }
 
     /** Collect until the session ends, or fail rather than hang if it never does. */
-    private fun linksUntilDown(): List<Link> = runBlocking {
-        val socket = FcSocket(OkHttpClient.Builder().build())
+    private fun linksUntilDown(silenceMillis: Long = FcSocket.SILENCE_MILLIS): List<Link> = runBlocking {
+        val socket = FcSocket(OkHttpClient.Builder().build(), silenceMillis = silenceMillis)
         val seen = mutableListOf<Link>()
         withTimeout(TIMEOUT_MILLIS) {
             socket.connect(Endpoint(server.hostName, server.port)).first { link ->
@@ -81,7 +82,49 @@ class FcSocketTest {
         assertTrue("session never ended: $seen", seen.last() is Link.Down)
     }
 
+    @Test
+    fun `a socket the controller has stopped sending on ends the session`() {
+        // The broadcaster drops a client whose write timed out without closing
+        // its socket, so the connection stays open and answers pings while no
+        // state will ever arrive on it again. Silence is the only evidence.
+        server.enqueue(
+            MockResponse().withWebSocketUpgrade(object : WebSocketListener() {
+                override fun onOpen(webSocket: WebSocket, response: Response) {
+                    webSocket.send(Fixtures.hello)
+                    // and then nothing, ever again
+                }
+            })
+        )
+
+        val seen = linksUntilDown(silenceMillis = 400L)
+
+        assertTrue("never saw the hello: $seen", seen.any { it is Link.Up })
+        assertTrue("session never ended: $seen", seen.last() is Link.Down)
+    }
+
+    @Test
+    fun `a socket that keeps sending is left alone`() {
+        server.enqueue(
+            MockResponse().withWebSocketUpgrade(object : WebSocketListener() {
+                override fun onOpen(webSocket: WebSocket, response: Response) {
+                    repeat(TELEMETRY_FRAMES) {
+                        webSocket.send(Fixtures.hello)
+                        Thread.sleep(TELEMETRY_GAP_MILLIS)
+                    }
+                    webSocket.close(1000, "done")
+                }
+            })
+        )
+
+        val seen = linksUntilDown(silenceMillis = TELEMETRY_GAP_MILLIS * 5)
+
+        // Torn down by the close at the end, not by the watchdog part way through.
+        assertEquals(TELEMETRY_FRAMES, seen.count { it is Link.Up })
+    }
+
     private companion object {
         const val TIMEOUT_MILLIS = 10_000L
+        const val TELEMETRY_FRAMES = 4
+        const val TELEMETRY_GAP_MILLIS = 100L
     }
 }

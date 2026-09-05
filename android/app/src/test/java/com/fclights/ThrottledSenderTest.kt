@@ -116,6 +116,23 @@ class ThrottledSenderTest {
         }
     }
 
+    @Test
+    fun `a release sends the value the drag left, not one captured when it was requested`() {
+        // A drag frame and the release can arrive in the same input batch, with
+        // no composition between them. Nothing may be carried from the request.
+        var pending = 0
+        val sent = mutableListOf<Int>()
+        senderTest(send = { sent += pending }) { sender ->
+            pending = 1
+            sender.request(final = false)
+            pending = 2
+            sender.request(final = true)
+            advanceUntilIdle()
+
+            assertEquals(listOf(2), sent)
+        }
+    }
+
     private companion object {
 
         const val THROTTLE = 100L

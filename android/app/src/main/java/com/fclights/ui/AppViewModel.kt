@@ -118,6 +118,29 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             controller = ControllerState(),
             error = null,
         )
+        openSocket(endpoint)
+    }
+
+    /**
+     * Start following the live state, if nothing is following it already.
+     *
+     * Tied to whether the app is on screen: a socket nobody is looking at costs
+     * traffic and a watchdog timer for a screen that is not being drawn, and
+     * coming back to the app should land on live state rather than on whatever
+     * was last seen before it went away.
+     */
+    fun onVisible() {
+        if (socketJob?.isActive == true) return
+        _ui.value.endpoint?.let { openSocket(it) }
+    }
+
+    fun onHidden() {
+        socketJob?.cancel()
+        socketJob = null
+    }
+
+    private fun openSocket(endpoint: Endpoint) {
+        socketJob?.cancel()
         socketJob = viewModelScope.launch {
             socket.connect(endpoint).collect { link ->
                 when (link) {
@@ -175,10 +198,18 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     fun setPower(on: Boolean) = command { it.setPower(on) }
 
-    fun setBrightness(value: Double, committed: Boolean) {
+    fun setBrightness(value: Double) {
         _ui.value = _ui.value.copy(pendingBrightness = value.coerceIn(0.0, 1.0))
-        brightnessSends.request(final = committed)
+        brightnessSends.request(final = false)
     }
+
+    /**
+     * The finger has lifted. No value is passed back down: what a control drew
+     * last is not necessarily what it last sent, because a drag frame and the
+     * release can arrive in the same input batch with no composition between
+     * them. The value already pending here is the one the finger stopped on.
+     */
+    fun commitBrightness() = brightnessSends.request(final = true)
 
     fun selectEffect(name: String) = command {
         // Params omitted: the controller fills in the effect's declared
@@ -186,13 +217,16 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         it.setEffect(name)
     }
 
-    fun setParam(name: String, value: JsonElement, committed: Boolean) {
+    fun setParam(name: String, value: JsonElement) {
         _ui.value = _ui.value.copy(pendingParams = _ui.value.pendingParams + (name to value))
-        paramSends.request(final = committed)
+        paramSends.request(final = false)
     }
 
-    fun setColorParam(name: String, value: ColorValue, committed: Boolean) =
-        setParam(name, Params.encodeColor(value), committed)
+    /** As [commitBrightness], for whichever parameters a control has left pending. */
+    fun commitParam() = paramSends.request(final = true)
+
+    fun setColorParam(name: String, value: ColorValue) =
+        setParam(name, Params.encodeColor(value))
 
     fun saveScene(name: String) = command { it.createScene(name) }
 

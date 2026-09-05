@@ -189,10 +189,8 @@ private fun MasterCard(ui: UiState, model: AppViewModel) {
             }
             Slider(
                 value = ui.brightness.toFloat(),
-                onValueChange = { model.setBrightness(it.toDouble(), committed = false) },
-                onValueChangeFinished = {
-                    model.setBrightness(ui.brightness, committed = true)
-                },
+                onValueChange = { model.setBrightness(it.toDouble()) },
+                onValueChangeFinished = { model.commitBrightness() },
                 valueRange = 0f..1f,
             )
         }
@@ -238,8 +236,9 @@ private fun EffectCard(ui: UiState, model: AppViewModel) {
                 ParamControl(
                     spec = param,
                     values = ui.paramValues,
-                    onChange = { value, committed -> model.setParam(param.name, value, committed) },
-                    onColorChange = { value, committed -> model.setColorParam(param.name, value, committed) },
+                    onChange = { value -> model.setParam(param.name, value) },
+                    onColorChange = { value -> model.setColorParam(param.name, value) },
+                    onCommit = { model.commitParam() },
                 )
             }
         }
