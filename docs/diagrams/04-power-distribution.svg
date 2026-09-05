@@ -61,7 +61,7 @@
   <text class="tiny" x="279" y="209" text-anchor="middle">FUSE</text>
   <text class="tiny" x="279" y="231" text-anchor="middle">20 A</text>
   <text class="wlbl" x="310" y="164">+5 V bus bar</text>
-  <text class="tiny" x="310" y="180">and the feeder to it: 12 AWG for these four runs, 15.4 A</text>
+  <text class="tiny" x="310" y="180">12 AWG bus, 8 AWG feeder under 1 m - four runs, 15.4 A</text>
   <path class="gndm" d="M 230 248 H 244 V 508 H 578"/>
   <text class="wlbl" x="310" y="530">GND bus bar - same gauge as the +5 V bus</text>
   <circle class="dotr" cx="372" cy="204" r="4.4"/>
@@ -118,17 +118,20 @@
   <text class="tiny" x="332" y="478" text-anchor="end">from Fadecandy</text>
   <text class="wlbl" x="60" y="566">Branch fuse: 5 A</text>
   <text class="lbls" x="60" y="584">One run tops out at 3.84 A, so a 5 A</text>
-  <text class="lbls" x="60" y="600">fuse holds it and still protects 16 AWG.</text>
-  <text class="wlbl" x="60" y="626">Branch wire: 16 AWG, always</text>
-  <text class="lbls" x="60" y="644">for hops under about 2 m - 0.20 V of drop</text>
-  <text class="lbls" x="60" y="660">at 3.84 A. Longer, step up a size.</text>
+  <text class="lbls" x="60" y="600">fuse holds it and still protects 14 AWG.</text>
+  <text class="wlbl" x="60" y="626">Branch wire: 14 AWG, always</text>
+  <text class="lbls" x="60" y="644">up to 2 m - 0.13 V at 3.84 A, which is its</text>
+  <text class="lbls" x="60" y="660">share of the budget. 16 AWG is 0.20 V.</text>
   <text class="wlbl" x="60" y="686">Fuses protect wire, not LEDs.</text>
   <text class="lbls" x="60" y="704">A 60 A supply will happily push 60 A</text>
-  <text class="lbls" x="60" y="720">into a shorted 16 AWG branch. The fuse</text>
+  <text class="lbls" x="60" y="720">into a shorted 14 AWG branch. The fuse</text>
   <text class="lbls" x="60" y="736">is what stops that becoming a fire.</text>
   <text class="wlbl" x="60" y="756">Main fuse = load &#247; 0.8, rounded up</text>
   <text class="lbls" x="60" y="774">4 runs &#8594; 20 A, 6 runs &#8594; 30 A, 8 runs &#8594; 40 A.</text>
   <text class="lbls" x="60" y="790">One main per feeder, at the supply end.</text>
+  <text class="wlbl" x="340" y="756">0.25 V is the WHOLE path, apportioned:</text>
+  <text class="lbls" x="340" y="774">feeder 0.08 + bus 0.04 + branch 0.13 V,</text>
+  <text class="lbls" x="340" y="790">each V = I &#215; 2 &#215; L &#215; &#961; at ITS own current.</text>
   <text class="wlbl" x="340" y="566">Order of assembly, every time</text>
   <text class="lbls" x="340" y="586">1. Supply off and unplugged.</text>
   <text class="lbls" x="340" y="604">2. Bus bars and main fuse.</text>
@@ -161,14 +164,14 @@
   <text class="h3" x="640" y="492">3. Conductor sizing and fusing</text>
   <text class="mono" x="640" y="516" xml:space="preserve">AWG   &#937;/m       typical chassis ampacity</text>
   <text class="mono" x="640" y="534" xml:space="preserve">22    0.0529    ~ 5 A</text>
-  <text class="mono" x="640" y="552" xml:space="preserve">18    0.0209    ~ 7 A    too thin for a branch</text>
-  <text class="mono" x="640" y="570" xml:space="preserve">16    0.0132    ~10 A    branch to 2 m; bus, 2 runs</text>
-  <text class="mono" x="640" y="588" xml:space="preserve">14    0.00829   ~15 A    bus bar, up to 3 runs</text>
-  <text class="mono" x="640" y="606" xml:space="preserve">12    0.00521   ~20 A    bus bar, up to 4 runs</text>
-  <text class="mono" x="640" y="624" xml:space="preserve">10    0.00328   ~30 A    bus bar, up to 6 runs</text>
-  <text class="mono" x="640" y="642" xml:space="preserve"> 8    0.00206   ~40 A    bus bar, up to 8 runs</text>
-  <text class="lbls" x="640" y="664">Typical free-air chassis values, not a code table. Run counts come</text>
-  <text class="lbls" x="640" y="680">from load &#247; 0.8, which is the derating for a warm, bundled box.</text>
+  <text class="mono" x="640" y="552" xml:space="preserve">16    0.0132    ~10 A    bus, 1-2 runs</text>
+  <text class="mono" x="640" y="570" xml:space="preserve">14    0.00829   ~15 A    branch to 2 m; bus, 3 runs</text>
+  <text class="mono" x="640" y="588" xml:space="preserve">12    0.00521   ~20 A    bus bar, 4 runs</text>
+  <text class="mono" x="640" y="606" xml:space="preserve">10    0.00328   ~30 A    bus, 5-6 runs; feeder, 2-3</text>
+  <text class="mono" x="640" y="624" xml:space="preserve"> 8    0.00206   ~40 A    bus, 7-8 runs; feeder, 4-5</text>
+  <text class="mono" x="640" y="642" xml:space="preserve"> 6    0.00130   ~55 A    feeder, 6-8 runs</text>
+  <text class="lbls" x="640" y="664">Run counts are load &#247; 0.8 for heat. The feeder is then stepped up</text>
+  <text class="lbls" x="640" y="680">again for DROP, so a 1 m feeder fits its 0.08 V of the budget.</text>
   <text class="warnt" x="640" y="700">A fuse must never exceed the ampacity of the wire it alone protects.</text>
   <text class="h3" x="640" y="730">4. What it costs to leave on</text>
   <text class="mono" x="640" y="754" xml:space="preserve">18 runs, full white   69.1 A &#215; 5 V = 345 W   never happens</text>
@@ -186,9 +189,9 @@
   <text class="mono" x="60" y="1018" xml:space="preserve">2.0 m of 60 LEDs/m   120 px  7.20 A &#215; 2.00 m = 14.4 A&#183;m  the rule&#8217;s case</text>
   <text class="mono" x="60" y="1036" xml:space="preserve">your run, 30 LEDs/m   64 px  3.84 A &#215; 2.11 m =  8.10 A&#183;m  56 % of it</text>
   <text class="notep" x="60" y="1058">The same tip drop as about 1.5 m of 60 LEDs/m strip, not 2.11 m.</text>
-  <text class="notet" x="60" y="1082">Under a brightness cap a 64-pixel run needs no far-end</text>
-  <text class="notet" x="60" y="1099">injection at any plausible r_rail. At full white it does,</text>
-  <text class="notet" x="60" y="1116">once r_rail passes about 0.062 &#937;/m - the 4.5 V floor.</text>
+  <text class="notet" x="60" y="1082">Full white needs injection once r_rail passes about</text>
+  <text class="notet" x="60" y="1099">0.062 &#937;/m. A 30 % cap moves that to about 0.21 &#937;/m for</text>
+  <text class="notet" x="60" y="1116">the 4.5 V floor, and 0.10 &#937;/m for the 5 % drop budget.</text>
   <text class="notet" x="620" y="874">1. Rail resistance.   V_tip = 8.10 &#215; r_rail</text>
   <text class="mono" x="620" y="900" xml:space="preserve">r_rail &#937;/m    full white    at a 30 % cap</text>
   <text class="mono" x="620" y="918" xml:space="preserve">  0.05          0.41 V         0.12 V</text>

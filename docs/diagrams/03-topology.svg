@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1180 1090" width="1180" height="1090"
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1180 1146" width="1180" height="1146"
      role="img" aria-labelledby="t3 d3">
   <title id="t3">Topology for many zones: all runs home to one point, versus clustering</title>
   <desc id="d3">Three layouts compared. Option A brings all eighteen runs home to a single supply and
@@ -50,23 +50,23 @@
     .okt     { font:700 12px ui-sans-serif,system-ui,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; fill:#1F5A31; }
   </style>
 
-  <rect class="bg" x="1" y="1" width="1178" height="1088" rx="6"/>
+  <rect class="bg" x="1" y="1" width="1178" height="1144" rx="6"/>
   <text class="ttl" x="40" y="46">Diagram 3 - Topology for many zones: one central point, or clusters?</text>
   <text class="sub" x="40" y="72">Long 5 V runs are costly in copper and fail on voltage drop. Long data runs cost nothing in current, but are bounded by signal integrity.</text>
 
-  <rect class="col" x="40" y="96" width="356" height="624" rx="6"/>
+  <rect class="col" x="40" y="96" width="356" height="680" rx="6"/>
   <rect class="tagbad" x="56" y="110" width="62" height="20" rx="4"/>
   <text class="tagt" x="64" y="124">AVOID</text>
   <text class="colttl" x="56" y="155">Option A - All home to one point</text>
   <text class="lbls" x="56" y="174">Every run needs its own long,</text>
   <text class="lbls" x="56" y="190">heavy 5 V pair.</text>
   <text class="tiny" x="56" y="209">One supply, so no V&#8722; bond needed - and no other virtue.</text>
-  <rect class="col" x="412" y="96" width="372" height="624" rx="6"/>
+  <rect class="col" x="412" y="96" width="372" height="680" rx="6"/>
   <rect class="taggood" x="428" y="110" width="53" height="20" rx="4"/>
   <text class="tagt" x="436" y="124">GOOD</text>
   <text class="colttl" x="428" y="155">Option B - One supply, local blocks</text>
   <text class="lbls" x="428" y="174">One supply, adjacent zones, a fused block in each.</text>
-  <rect class="col" x="800" y="96" width="340" height="624" rx="6"/>
+  <rect class="col" x="800" y="96" width="340" height="680" rx="6"/>
   <rect class="tagbest" x="816" y="110" width="90" height="20" rx="4"/>
   <text class="tagt" x="824" y="124">BEST FAR</text>
   <text class="colttl" x="816" y="155">Option C - Local Fadecandy too</text>
@@ -163,14 +163,16 @@
   <path class="datct" d="M 508 344 C 514 344, 514 532, 520 532"/>
   <path class="datt"  d="M 508 344 C 514 344, 514 532, 520 532"/>
   <path class="gndt"  d="M 508 352 C 516 352, 516 537, 520 537"/>
-  <text class="okt" x="428" y="570">Every heavy conductor stays inside the cluster.</text>
-  <text class="lbls" x="428" y="590">Each run still needs its own DATA + GND pair back to the</text>
-  <text class="lbls" x="428" y="607">Fadecandy. Keep those under about 5 m and twist each pair.</text>
-  <text class="warnt" x="428" y="632">One central board is allowed only while every run it</text>
-  <text class="warnt" x="428" y="648">drives is fed from the SAME supply.</text>
-  <text class="lbls" x="428" y="670">Adjacent zones can share one supply, as here. The moment a</text>
-  <text class="lbls" x="428" y="687">second supply is needed, that board would bridge two power</text>
-  <text class="lbls" x="428" y="704">zones through its 24-26 AWG grounds - so use Option C.</text>
+  <text class="okt" x="428" y="570">Heavy copper stays inside the shared-supply cluster.</text>
+  <text class="lbls" x="428" y="590">A +5 V / GND feeder pair still crosses from the PSU to</text>
+  <text class="lbls" x="428" y="607">zones 2 and 3 - which is why they must be adjacent: &#167; 6.2</text>
+  <text class="lbls" x="428" y="624">rule 4 allows each feeder about 1 m. Each run also needs</text>
+  <text class="lbls" x="428" y="641">its own DATA + GND pair, under about 5 m, twisted.</text>
+  <text class="warnt" x="428" y="666">A central board is allowed only while every run</text>
+  <text class="warnt" x="428" y="682">it drives is fed from the SAME supply.</text>
+  <text class="lbls" x="428" y="702">The moment a second supply is needed, that board would</text>
+  <text class="lbls" x="428" y="719">bridge two power zones through its 24-26 AWG grounds -</text>
+  <text class="lbls" x="428" y="736">so use Option C instead.</text>
   <!-- Option C -->
   <rect class="box" x="812" y="300" width="80" height="96" rx="4"/>
   <text class="wlbl" x="852" y="326" text-anchor="middle">Pi 3B+</text>
@@ -236,35 +238,35 @@
   <text class="lbls" x="812" y="682">The boards and the hub already tie these two supply</text>
   <text class="lbls" x="812" y="699">grounds through 24-26 AWG. The bond keeps that thin</text>
   <text class="lbls" x="812" y="716">path from being the only tie - &#167; 5.3 has the limits.</text>
-  <rect class="note" x="40" y="740" width="550" height="330" rx="6"/>
-  <text class="notet" x="60" y="768">Why long +5 V runs are the problem</text>
-  <text class="notep" x="60" y="792">Drop is set by the round trip, so count the wire out AND back:</text>
-  <text class="mono" x="60" y="818" xml:space="preserve">R_loop = 2 &#215; length_m &#215; &#961;        V_drop = I &#215; R_loop</text>
-  <text class="notep" x="60" y="844">Copper &#961; at 20 &#176;C, ohms per metre of one conductor:</text>
-  <text class="mono" x="60" y="868" xml:space="preserve">22 AWG 0.0529   20 AWG 0.0333   18 AWG 0.0209</text>
-  <text class="mono" x="60" y="886" xml:space="preserve">16 AWG 0.0132   14 AWG 0.00829  12 AWG 0.00521</text>
-  <text class="notep" x="60" y="912">One run at full white draws 3.84 A. Budget 0.25 V of drop, i.e. 5 %:</text>
-  <text class="mono" x="60" y="936" xml:space="preserve">6.0 m 18 AWG   0.251 &#937;   0.96 V   run sees 4.04 V   FAILS</text>
-  <text class="mono" x="60" y="954" xml:space="preserve">6.0 m 12 AWG   0.063 &#937;   0.24 V   run sees 4.76 V   works</text>
-  <text class="mono" x="60" y="972" xml:space="preserve">1.5 m 16 AWG   0.040 &#937;   0.15 V   run sees 4.85 V   works</text>
-  <text class="notep" x="60" y="998">The last line is Option B. A short 16 AWG hop from a local supply beats</text>
-  <text class="notep" x="60" y="1015">a long 12 AWG haul from a central one, for a fraction of the copper.</text>
-  <text class="notep" x="60" y="1040">Add the strip&#39;s own internal drop on top. Measure it: meter across a</text>
-  <text class="notep" x="60" y="1057">run&#39;s red and black leads while it is lit white, compare with the supply.</text>
-  <rect class="note" x="606" y="740" width="534" height="330" rx="6"/>
-  <text class="notet" x="626" y="768">Why long data runs are cheap in current - but still bounded</text>
-  <text class="notep" x="626" y="792">A WS2812B data input draws &#177;1 &#181;A and presents 15 pF. Gauge is almost</text>
-  <text class="notep" x="626" y="809">irrelevant: 24 to 26 AWG is ample at any indoor length. Timing is the limit.</text>
-  <text class="mono" x="626" y="835" xml:space="preserve">bit period  1.25 &#181;s     T0H 0.4 &#181;s     T1H 0.8 &#181;s</text>
-  <text class="mono" x="626" y="853" xml:space="preserve">tolerance   &#177;150 ns     propagation    ~5 ns per metre</text>
-  <text class="notep" x="626" y="879">A reflection on an unterminated line makes a round trip: 10 m is roughly</text>
-  <text class="notep" x="626" y="896">100 ns, the same order as the whole &#177;150 ns budget. The Fadecandy&#39;s 68 &#937;</text>
-  <text class="notep" x="626" y="913">series resistor damps that, but only if the line impedance is near it -</text>
-  <text class="notep" x="626" y="930">which means DATA twisted with its own GND, not run as a lone wire.</text>
-  <text class="notet" x="626" y="958">Practical limits - engineering practice, not a datasheet number</text>
-  <text class="mono" x="626" y="982" xml:space="preserve">to ~2 m    plain hookup wire, data and ground together</text>
-  <text class="mono" x="626" y="1000" xml:space="preserve">to ~5 m    twisted pair, away from mains cable. Do this.</text>
-  <text class="mono" x="626" y="1018" xml:space="preserve">past ~5 m  do not stretch it. Move the Fadecandy into the</text>
-  <text class="mono" x="626" y="1036" xml:space="preserve">           zone and extend USB (Option C), or convert to a</text>
-  <text class="mono" x="626" y="1054" xml:space="preserve">           differential RS-485 pair and back again at the run.</text>
+  <rect class="note" x="40" y="796" width="550" height="330" rx="6"/>
+  <text class="notet" x="60" y="824">Why long +5 V runs are the problem</text>
+  <text class="notep" x="60" y="848">Drop is set by the round trip, so count the wire out AND back:</text>
+  <text class="mono" x="60" y="874" xml:space="preserve">R_loop = 2 &#215; length_m &#215; &#961;        V_drop = I &#215; R_loop</text>
+  <text class="notep" x="60" y="900">Copper &#961; at 20 &#176;C, ohms per metre of one conductor:</text>
+  <text class="mono" x="60" y="924" xml:space="preserve">22 AWG 0.0529   20 AWG 0.0333   18 AWG 0.0209</text>
+  <text class="mono" x="60" y="942" xml:space="preserve">16 AWG 0.0132   14 AWG 0.00829  12 AWG 0.00521</text>
+  <text class="notep" x="60" y="968">One run at full white draws 3.84 A. Budget 0.25 V of drop, i.e. 5 %:</text>
+  <text class="mono" x="60" y="992" xml:space="preserve">6.0 m 18 AWG   0.251 &#937;   0.96 V   run sees 4.04 V   FAILS</text>
+  <text class="mono" x="60" y="1010" xml:space="preserve">6.0 m 12 AWG   0.063 &#937;   0.24 V   run sees 4.76 V   works</text>
+  <text class="mono" x="60" y="1028" xml:space="preserve">1.5 m 16 AWG   0.040 &#937;   0.15 V   run sees 4.85 V   works</text>
+  <text class="notep" x="60" y="1054">The last line is Option B. A short 16 AWG hop from a local supply beats</text>
+  <text class="notep" x="60" y="1071">a long 12 AWG haul from a central one, for a fraction of the copper.</text>
+  <text class="notep" x="60" y="1096">Add the strip&#39;s own internal drop on top. Measure it: meter across a</text>
+  <text class="notep" x="60" y="1113">run&#39;s red and black leads while it is lit white, compare with the supply.</text>
+  <rect class="note" x="606" y="796" width="534" height="330" rx="6"/>
+  <text class="notet" x="626" y="824">Why long data runs are cheap in current - but still bounded</text>
+  <text class="notep" x="626" y="848">A WS2812B data input draws &#177;1 &#181;A and presents 15 pF. Gauge is almost</text>
+  <text class="notep" x="626" y="865">irrelevant: 24 to 26 AWG is ample at any indoor length. Timing is the limit.</text>
+  <text class="mono" x="626" y="891" xml:space="preserve">bit period  1.25 &#181;s     T0H 0.4 &#181;s     T1H 0.8 &#181;s</text>
+  <text class="mono" x="626" y="909" xml:space="preserve">tolerance   &#177;150 ns     propagation    ~5 ns per metre</text>
+  <text class="notep" x="626" y="935">A reflection on an unterminated line makes a round trip: 10 m is roughly</text>
+  <text class="notep" x="626" y="952">100 ns, the same order as the whole &#177;150 ns budget. The Fadecandy&#39;s 68 &#937;</text>
+  <text class="notep" x="626" y="969">series resistor damps that, but only if the line impedance is near it -</text>
+  <text class="notep" x="626" y="986">which means DATA twisted with its own GND, not run as a lone wire.</text>
+  <text class="notet" x="626" y="1014">Practical limits - engineering practice, not a datasheet number</text>
+  <text class="mono" x="626" y="1038" xml:space="preserve">to ~2 m    plain hookup wire, data and ground together</text>
+  <text class="mono" x="626" y="1056" xml:space="preserve">to ~5 m    twisted pair, away from mains cable. Do this.</text>
+  <text class="mono" x="626" y="1074" xml:space="preserve">past ~5 m  do not stretch it. Move the Fadecandy into the</text>
+  <text class="mono" x="626" y="1092" xml:space="preserve">           zone and extend USB (Option C), or convert to a</text>
+  <text class="mono" x="626" y="1110" xml:space="preserve">           differential RS-485 pair and back again at the run.</text>
 </svg>
