@@ -179,7 +179,7 @@
   <text class="mono" x="640" y="790" xml:space="preserve">86 W &#215; 5 h/day &#215; 30 days           &#8776;  13 kWh/month</text>
   <text class="warnt" x="40" y="822">Check every gauge, fuse rating and drop figure here against a current wire-ampacity table before you buy cable or cut anything.</text>
   <text class="lbls" x="40" y="840">They follow from the assumptions stated in the guide, and the guide is not a substitute for that check. Sizing is also a layout decision: a supply</text>
-  <text class="lbls" x="40" y="856">beside the block it feeds takes the eight-run feeder from 6 AWG to 8 AWG, and splitting that zone into two 4-run blocks takes it to 12 AWG.</text>
+  <text class="lbls" x="40" y="856">beside the block it feeds - 0.3 m rather than 1 m - takes the eight-run feeder from 6 AWG to 8 AWG at no cost in copper elsewhere.</text>
   <rect class="note" x="40" y="876" width="1100" height="320" rx="6"/>
   <text class="notet" x="60" y="904">Does a 64-pixel run need injection at its far end?</text>
   <text class="notep" x="60" y="930">Do not apply an "inject every 2 m" length rule here. That number is</text>

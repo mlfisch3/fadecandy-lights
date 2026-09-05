@@ -369,21 +369,22 @@ Those feeder gauges are not a law of physics.
 They are what it costs to feed a whole zone from a supply that is not in it.
 
 The feeder's drop is `I × 2 × L × ρ`, so two of the three terms are yours to choose - how much current one feeder carries, and how far it goes - and buying your way down the ρ column is the most expensive way to fix either.
-The same three zones as §9.2, sized three ways, with the "beside the block" column at 0.3 m:
+The same three zones as §9.2, sized two ways.
+Both columns are a gauge *at a stated length*, because a gauge without its length is not a specification: the first is the feeder at the 1 m §5.3 allows, the second is the same feeder shortened to about 0.3 m by putting the supply beside the block it feeds.
 
-| Zone | Supply 1 m from the block | Supply beside the block | Zone split, a local supply per block |
-|---|---|---|---|
-| Living room, 8 runs, 30.7 A | 6 AWG | 8 AWG | 12 AWG - two 4-run blocks, 15.4 A each |
-| Bedroom, 6 runs, 23.0 A | 6 AWG | 10 AWG | 14 AWG - two 3-run blocks, 11.5 A each |
-| Kitchen / hall, 4 runs, 15.4 A | 8 AWG | 12 AWG | 14 AWG - two 2-run blocks, 7.7 A each |
+| Zone | Feeder at 1 m | Feeder at 0.3 m |
+|---|---|---|
+| Living room, 8 runs, 30.7 A | 6 AWG | 8 AWG |
+| Bedroom, 6 runs, 23.0 A | 6 AWG | 10 AWG |
+| Kitchen / hall, 4 runs, 15.4 A | 8 AWG | 12 AWG |
 
-Read across the living-room row: moving the supply to the block it feeds takes it from 6 AWG to 8 AWG, and splitting the zone into two blocks with a supply each takes it to 12 AWG - a conductor you can bend by hand and land on an ordinary screw terminal.
-Six AWG is none of those things, and it has to be crimped.
+Read across the bedroom row: nothing about the load changed, and the feeder went from 6 AWG to 10 AWG - under half the cross-section - purely by moving the supply 0.7 m.
+Six AWG has to be crimped and is awkward to route; 10 AWG lands on an ordinary screw terminal.
 
 **This is the same recommendation §5.3 already makes for data, for the same reason: it is cheaper to move the source than to pay for the distance.**
 A third 5 V supply costs far less than a reel of 6 AWG and the afternoon spent pulling and terminating it, and §9.2 recommends a third supply anyway, for headroom.
 So treat the table above as the sizing consequence of a layout decision, and make the layout decision first.
-If you do keep one supply feeding zones it does not sit in, the 1 m column is the price of that, and rule 4 is why.
+If you do keep one supply feeding a zone it does not sit in, the 1 m column is the price of that, and rule 4 is why.
 
 ### 6.3 Power injection into the far end
 
@@ -409,6 +410,8 @@ The product `I_total × L` is what actually sets the drop, so compare in amp-met
 Your run sits at 56 % of that threshold, so roughly 1.8× margin against it.
 Put another way, a 2.11 m run at 30 LEDs/m produces the same tip drop as about a 1.5 m run of 60 LEDs/m strip, not a 2.11 m one.
 Crossing 2 m in length is not, by itself, the thing that matters.
+
+> **Open item - these thresholds are optimistic and are pending revision.** Every tip voltage below is worked from a 5.0 V feed *at the strip*, but §6.2 rule 4 allows up to 0.25 V of drop getting there, so the feed a run actually sees is nearer 4.75 V. Each `r_rail` threshold in this section is therefore reached sooner than stated. The figures are left as they are for now rather than half-corrected; do not act on them without redoing the arithmetic from your own measured feed voltage. Composing §6.3 with §6.2's budget properly is a follow-up to the sizing revision.
 
 **So: at the brightness you will actually run it, a single 64-pixel run at 30 LEDs/m does not need far-end injection.**
 At full white that conclusion is conditional, not automatic, and what it turns on is `r_rail`.
