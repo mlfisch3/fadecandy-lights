@@ -163,7 +163,7 @@
   <path class="datct" d="M 508 344 C 514 344, 514 532, 520 532"/>
   <path class="datt"  d="M 508 344 C 514 344, 514 532, 520 532"/>
   <path class="gndt"  d="M 508 352 C 516 352, 516 537, 520 537"/>
-  <text class="okt" x="428" y="570">Heavy copper stays inside the shared-supply cluster.</text>
+  <text class="okt" x="428" y="570">Heavy copper stays in the shared-supply cluster.</text>
   <text class="lbls" x="428" y="590">A +5 V / GND feeder pair still crosses from the PSU to</text>
   <text class="lbls" x="428" y="607">zones 2 and 3 - which is why they must be adjacent: &#167; 6.2</text>
   <text class="lbls" x="428" y="624">rule 4 allows each feeder about 1 m. Each run also needs</text>
@@ -228,8 +228,8 @@
   <path class="usbc" d="M 892 348 C 898 348, 898 526, 904 526"/>
   <path class="usb"  d="M 892 348 C 898 348, 898 526, 904 526"/>
   <text class="okt" x="812" y="570">Nothing but USB crosses the room.</text>
-  <text class="lbls" x="812" y="590">Data and power both stay short and local. USB 2.0 is</text>
-  <text class="lbls" x="812" y="607">5 m per passive segment; a powered hub starts a new one.</text>
+  <text class="lbls" x="812" y="590">Data and power stay short and local. A passive USB 2.0</text>
+  <text class="lbls" x="812" y="607">segment is 5 m; a powered hub starts a new one.</text>
   <text class="warnt" x="812" y="632">Bond every PSU&#8217;s V&#8722; to every other. Required.</text>
   <path class="bond" d="M 818 656 H 918"/>
   <rect x="812" y="650" width="13" height="12" fill="#FFFFFF" stroke="#111111" stroke-width="1.6"/>

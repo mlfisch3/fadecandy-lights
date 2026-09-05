@@ -160,7 +160,7 @@
   <text class="mono" x="640" y="402" xml:space="preserve">18 runs   69.1 A  &#8594; both supplies, split by zone</text>
   <text class="lbls" x="640" y="424">Your 30 A unit cannot carry eight full-white runs. Put the eight-run</text>
   <text class="lbls" x="640" y="440">starter cluster on the 60 A unit; keep the 30 A one for a second zone.</text>
-  <text class="warnt" x="640" y="462">Never parallel two supplies&#8217; V+ outputs. Tie their grounds, not their V+.</text>
+  <text class="warnt" x="640" y="462">Never parallel two supplies&#8217; V+ outputs. Tie grounds, not V+.</text>
   <text class="h3" x="640" y="492">3. Conductor sizing and fusing</text>
   <text class="mono" x="640" y="516" xml:space="preserve">AWG   &#937;/m       typical chassis ampacity</text>
   <text class="mono" x="640" y="534" xml:space="preserve">22    0.0529    ~ 5 A</text>
