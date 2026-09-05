@@ -59,9 +59,9 @@
   <path class="pwrm" d="M 296 204 H 578"/>
   <text class="tiny" x="279" y="187" text-anchor="middle">MAIN</text>
   <text class="tiny" x="279" y="209" text-anchor="middle">FUSE</text>
-  <text class="tiny" x="279" y="231" text-anchor="middle">40 A</text>
+  <text class="tiny" x="279" y="231" text-anchor="middle">20 A</text>
   <text class="wlbl" x="310" y="164">+5 V bus bar</text>
-  <text class="tiny" x="310" y="180">and the feeder to it: 8 AWG for eight runs, 30.7 A</text>
+  <text class="tiny" x="310" y="180">and the feeder to it: 12 AWG for these four runs, 15.4 A</text>
   <path class="gndm" d="M 230 248 H 244 V 508 H 578"/>
   <text class="wlbl" x="310" y="530">GND bus bar - same gauge as the +5 V bus</text>
   <circle class="dotr" cx="372" cy="204" r="4.4"/>
@@ -119,7 +119,7 @@
   <text class="wlbl" x="60" y="566">Branch fuse: 5 A</text>
   <text class="lbls" x="60" y="584">One run tops out at 3.84 A, so a 5 A</text>
   <text class="lbls" x="60" y="600">fuse holds it and still protects 16 AWG.</text>
-  <text class="wlbl" x="60" y="626">Branch wire: 16 AWG</text>
+  <text class="wlbl" x="60" y="626">Branch wire: 16 AWG, always</text>
   <text class="lbls" x="60" y="644">for hops under about 2 m - 0.20 V of drop</text>
   <text class="lbls" x="60" y="660">at 3.84 A. Longer, step up a size.</text>
   <text class="wlbl" x="60" y="686">Fuses protect wire, not LEDs.</text>
@@ -161,8 +161,8 @@
   <text class="h3" x="640" y="492">3. Conductor sizing and fusing</text>
   <text class="mono" x="640" y="516" xml:space="preserve">AWG   &#937;/m       typical chassis ampacity</text>
   <text class="mono" x="640" y="534" xml:space="preserve">22    0.0529    ~ 5 A</text>
-  <text class="mono" x="640" y="552" xml:space="preserve">18    0.0209    ~ 7 A    branch, under 1.5 m</text>
-  <text class="mono" x="640" y="570" xml:space="preserve">16    0.0132    ~10 A    branch; bus up to 2 runs</text>
+  <text class="mono" x="640" y="552" xml:space="preserve">18    0.0209    ~ 7 A    too thin for a branch</text>
+  <text class="mono" x="640" y="570" xml:space="preserve">16    0.0132    ~10 A    branch to 2 m; bus, 2 runs</text>
   <text class="mono" x="640" y="588" xml:space="preserve">14    0.00829   ~15 A    bus bar, up to 3 runs</text>
   <text class="mono" x="640" y="606" xml:space="preserve">12    0.00521   ~20 A    bus bar, up to 4 runs</text>
   <text class="mono" x="640" y="624" xml:space="preserve">10    0.00328   ~30 A    bus bar, up to 6 runs</text>

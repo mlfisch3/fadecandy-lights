@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1180 1040" width="1180" height="1040"
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1180 1136" width="1180" height="1136"
      role="img" aria-labelledby="t5 d5">
   <title id="t5">Three Fadecandy boards on a powered USB hub, driving all eighteen runs</title>
   <desc id="d5">The Raspberry Pi 3B+ connects to a powered USB hub. Three Fadecandy boards hang off
@@ -6,8 +6,9 @@
   configuration by its own USB serial number, and each board's channels map to a slice of the Open
   Pixel Control pixel space. The eighteen runs are grouped into three zones: the living room takes
   all eight channels of board A, the kitchen and hall take board B channels 0 to 3, and the bedroom
-  takes board B channels 4 to 7 plus board C channels 0 and 1. The 60 A supply feeds the living room
-  and the kitchen and hall together; the 30 A supply feeds the bedroom alone. Alongside: how to read
+  takes all six used channels of board C, so that no board spans two supplies. The 60 A supply feeds
+  the living room and the kitchen and hall together; the 30 A supply feeds the bedroom alone, and the
+  two supplies' V-minus terminals are bonded to each other with 8 AWG. Alongside: how to read
   the serial numbers off the boards, how to read a map entry, and the power and cable-length
   constraints on the USB side.</desc>
 
@@ -34,6 +35,7 @@
     .gnd    { stroke:#111111; stroke-width:3.4; fill:none; stroke-linecap:round; }
     .pwr    { stroke:#CE2318; stroke-width:3.4; fill:none; stroke-linecap:round; }
     .mains  { stroke:#5A5348; stroke-width:3.4; fill:none; stroke-linecap:round; stroke-dasharray:7 4; }
+    .bond   { stroke:#111111; stroke-width:7; fill:none; stroke-linecap:round; }
 
     .note   { fill:#FFF9E3; stroke:#C9A227; stroke-width:1.6; }
     .notet  { font:700 13px ui-sans-serif,system-ui,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; fill:#3D3200; }
@@ -41,11 +43,11 @@
     .warnt  { font:700 12.5px ui-sans-serif,system-ui,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; fill:#7A140C; }
   </style>
 
-  <rect class="bg" x="1" y="1" width="1178" height="1038" rx="6"/>
+  <rect class="bg" x="1" y="1" width="1178" height="1134" rx="6"/>
   <text class="ttl" x="40" y="46">Diagram 5 - Three Fadecandy boards for all eighteen runs</text>
   <text class="sub" x="40" y="72">24 channels available, 18 used. fcserver tells the boards apart by USB serial number, so the mapping survives reboots and re-plugging.</text>
 
-  <rect class="pan" x="40" y="96" width="1100" height="484" rx="6"/>
+  <rect class="pan" x="40" y="96" width="1100" height="580" rx="6"/>
   <text class="panttl" x="66" y="126">The whole chain, end to end</text>
   <text class="lbls" x="66" y="145">Only USB leaves the Pi. Only DATA and its GND leave each Fadecandy. All strip current stays between a supply and the runs it feeds.</text>
   <rect class="box" x="66" y="280" width="150" height="100" rx="5"/>
@@ -81,24 +83,22 @@
   <path class="usb"  d="M 438 330 C 476 330, 476 322, 514 322"/>
   <rect class="fcb" x="516" y="276" width="256" height="92" rx="5"/>
   <text class="wlbl" x="532" y="298">Fadecandy B</text>
-  <text class="tiny" x="532" y="316">ch 0-7 &#8594; runs 9-16</text>
-  <text class="tiny" x="532" y="332">OPC px 512-1023</text>
+  <text class="tiny" x="532" y="316">ch 0-3 &#8594; runs 9-12  (ch 4-7 unused)</text>
+  <text class="tiny" x="532" y="332">OPC px 512-767</text>
   <rect class="code" x="530" y="338" width="228" height="20" rx="3"/>
   <text class="monos" x="536" y="352" xml:space="preserve">serial FFFFFFFFFFFF0021003B20&#8230;</text>
-  <path class="datc" d="M 772 306 H 856"/>
-  <path class="dat"  d="M 772 306 H 856"/>
-  <path class="datc" d="M 772 340 C 812 340, 812 420, 856 420"/>
-  <path class="dat"  d="M 772 340 C 812 340, 812 420, 856 420"/>
+  <path class="datc" d="M 772 322 H 856"/>
+  <path class="dat"  d="M 772 322 H 856"/>
   <path class="usbc" d="M 436 330 C 476 330, 476 430, 516 430"/>
   <path class="usb"  d="M 438 330 C 476 330, 476 430, 514 430"/>
   <rect class="fcb" x="516" y="384" width="256" height="92" rx="5"/>
   <text class="wlbl" x="532" y="406">Fadecandy C</text>
-  <text class="tiny" x="532" y="424">ch 0-1 &#8594; runs 17-18</text>
-  <text class="tiny" x="532" y="440">OPC px 1024-1151</text>
+  <text class="tiny" x="532" y="424">ch 0-5 &#8594; runs 13-18</text>
+  <text class="tiny" x="532" y="440">OPC px 768-1151</text>
   <rect class="code" x="530" y="446" width="228" height="20" rx="3"/>
   <text class="monos" x="536" y="460" xml:space="preserve">serial FFFFFFFFFFFF0034005220&#8230;</text>
-  <path class="datc" d="M 772 452 H 856"/>
-  <path class="dat"  d="M 772 452 H 856"/>
+  <path class="datc" d="M 772 430 H 856"/>
+  <path class="dat"  d="M 772 430 H 856"/>
   <text class="tiny" x="476" y="180" text-anchor="middle">one hub port</text>
   <text class="tiny" x="476" y="194" text-anchor="middle">per board</text>
   <text class="wlbl" x="814" y="176" text-anchor="middle">DATA</text>
@@ -121,63 +121,78 @@
   <text class="tiny" x="880" y="350">GND, local - tied to that board&#39;s &#8722; pins</text>
   <rect class="box" x="856" y="384" width="256" height="92" rx="5"/>
   <text class="wlbl" x="872" y="408">Zone 3 &#183; bedroom</text>
-  <text class="tiny" x="1096" y="408" text-anchor="end">B ch 4-7 + C ch 0-1</text>
+  <text class="tiny" x="1096" y="408" text-anchor="end">C ch 0-5</text>
   <text class="tiny" x="872" y="426">6 runs, 23.0 A &#183; S-150-5 (30 A), 77 %</text>
   <path class="pwr" d="M 872 446 H 1096"/>
   <path class="gnd" d="M 872 468 H 1096"/>
   <text class="tiny" x="1096" y="442" text-anchor="end">+5 V, local</text>
-  <text class="tiny" x="872" y="458">GND, local - runs 13-16 to board B, 17-18 to C</text>
-  <text class="warnt" x="66" y="500">Do not hang three boards off the Pi&#8217;s own USB ports.</text>
-  <text class="tiny" x="66" y="518">The Pi 3B+ shares roughly 1.2 A across all four of its ports, and a</text>
-  <text class="tiny" x="66" y="532">brown-out on one board can take the Pi down with it. A hub with its</text>
-  <text class="tiny" x="66" y="546">own supply removes the question entirely.</text>
-  <text class="tiny" x="66" y="566">Widely cited figure from Raspberry Pi community sources; not confirmed against official docs.</text>
-  <text class="warnt" x="620" y="500">Bandwidth is not your constraint. Cable length is.</text>
-  <text class="tiny" x="620" y="518">Each Fadecandy is a full-speed 12 Mbps device. Three of them together are</text>
-  <text class="tiny" x="620" y="532">nowhere near saturating a USB 2.0 bus. But USB allows 5 m per passive</text>
-  <text class="tiny" x="620" y="546">segment: Pi to hub is one, hub to board is another. A second powered hub</text>
-  <text class="tiny" x="620" y="566">buys another segment. Keep hubs out of any enclosure that holds an open-frame mains supply.</text>
-  <rect class="pan" x="40" y="600" width="628" height="414" rx="6"/>
-  <text class="panttl" x="66" y="630">How fcserver addresses each board</text>
-  <text class="lbls" x="66" y="649">A device entry with no "serial" key matches any Fadecandy. That is fine with</text>
-  <text class="lbls" x="66" y="665">one board and ambiguous with three, so name them.</text>
-  <rect class="code" x="66" y="678" width="576" height="318" rx="4"/>
-  <text class="monos" x="80" y="698" xml:space="preserve">{</text>
-  <text class="monos" x="80" y="715" xml:space="preserve">&#160;&#160;"listen":&#160;[null,&#160;7890],</text>
-  <text class="monos" x="80" y="732" xml:space="preserve">&#160;&#160;"verbose":&#160;true,</text>
-  <text class="monos" x="80" y="749" xml:space="preserve">&#160;&#160;"color":&#160;{&#160;"gamma":&#160;2.5,&#160;"whitepoint":&#160;[1.0,&#160;1.0,&#160;1.0]&#160;},</text>
-  <text class="monos" x="80" y="766" xml:space="preserve">&#160;&#160;"devices":&#160;[</text>
-  <text class="monos" x="80" y="783" xml:space="preserve">&#160;&#160;&#160;&#160;{&#160;"type":&#160;"fadecandy",</text>
-  <text class="monos" x="80" y="800" xml:space="preserve">&#160;&#160;&#160;&#160;&#160;&#160;"serial":&#160;"FFFFFFFFFFFF00180017200214134D44",</text>
-  <text class="monos" x="80" y="817" xml:space="preserve">&#160;&#160;&#160;&#160;&#160;&#160;"map":&#160;[&#160;[&#160;0,&#160;0,&#160;&#160;&#160;&#160;0,&#160;512&#160;]&#160;]&#160;},</text>
-  <text class="monos" x="80" y="834" xml:space="preserve"></text>
-  <text class="monos" x="80" y="851" xml:space="preserve">&#160;&#160;&#160;&#160;{&#160;"type":&#160;"fadecandy",</text>
-  <text class="monos" x="80" y="868" xml:space="preserve">&#160;&#160;&#160;&#160;&#160;&#160;"serial":&#160;"FFFFFFFFFFFF0021003B200314134D44",</text>
-  <text class="monos" x="80" y="885" xml:space="preserve">&#160;&#160;&#160;&#160;&#160;&#160;"map":&#160;[&#160;[&#160;0,&#160;512,&#160;&#160;0,&#160;512&#160;]&#160;]&#160;},</text>
-  <text class="monos" x="80" y="902" xml:space="preserve"></text>
-  <text class="monos" x="80" y="919" xml:space="preserve">&#160;&#160;&#160;&#160;{&#160;"type":&#160;"fadecandy",</text>
-  <text class="monos" x="80" y="936" xml:space="preserve">&#160;&#160;&#160;&#160;&#160;&#160;"serial":&#160;"FFFFFFFFFFFF00340052200914134D44",</text>
-  <text class="monos" x="80" y="953" xml:space="preserve">&#160;&#160;&#160;&#160;&#160;&#160;"map":&#160;[&#160;[&#160;0,&#160;1024,&#160;0,&#160;128&#160;]&#160;]&#160;}</text>
-  <text class="monos" x="80" y="970" xml:space="preserve">&#160;&#160;]</text>
-  <text class="monos" x="80" y="987" xml:space="preserve">}</text>
-  <rect class="note" x="688" y="600" width="452" height="414" rx="6"/>
-  <text class="notet" x="710" y="628">Reading a map entry</text>
-  <text class="mono" x="710" y="652" xml:space="preserve">[ OPC_channel, first_OPC_px,</text>
-  <text class="mono" x="710" y="670" xml:space="preserve">  first_device_px, count ]</text>
-  <text class="notep" x="710" y="696">A Fadecandy&#39;s own pixels are numbered 0 to 511.</text>
-  <text class="notep" x="710" y="713">Strand 1 starts at 0, strand 2 at 64, strand 3 at</text>
-  <text class="notep" x="710" y="730">128, and so on. So on board C, count 128 means its</text>
-  <text class="notep" x="710" y="747">first two strands, which are runs 17 and 18.</text>
-  <text class="notet" x="710" y="780">Finding the serial numbers</text>
-  <text class="notep" x="710" y="804">Plug in one board at a time and run fcserver with</text>
-  <text class="notep" x="710" y="821">"verbose": true. It prints the serial of each device</text>
-  <text class="notep" x="710" y="838">it opens. Write that on a label and stick it to the</text>
-  <text class="notep" x="710" y="855">board before you plug in the next one.</text>
-  <text class="notet" x="710" y="888">Why serials and not port order</text>
-  <text class="notep" x="710" y="912">USB enumeration order is not stable. Address boards</text>
-  <text class="notep" x="710" y="929">by port and your living room becomes your bedroom</text>
-  <text class="notep" x="710" y="946">after a reboot. Address by serial and a board keeps</text>
-  <text class="notep" x="710" y="963">its zone whichever socket it lands in.</text>
-  <text class="warnt" x="710" y="978">Label the boards. You will not remember which</text>
-  <text class="warnt" x="710" y="995">hex string is the one in the hall.</text>
+  <text class="tiny" x="880" y="458">GND, local - tied to that board&#39;s &#8722; pins</text>
+  <text class="warnt" x="66" y="508">Bond the two supplies&#8217; V&#8722; terminals to each other. Required, not optional.</text>
+  <text class="tiny" x="66" y="528">The Fadecandy ground wires are 24-26 AWG signal returns: the reference for the data</text>
+  <text class="tiny" x="66" y="542">line and nothing more. If a zone&#8217;s GND feeder ever works loose at its supply, this bond</text>
+  <text class="tiny" x="66" y="556">carries that zone&#8217;s return current - not the thin board grounds, and not the USB ground.</text>
+  <rect class="box" x="660" y="498" width="170" height="70" rx="5"/>
+  <text class="wlbl" x="745" y="522" text-anchor="middle">sompom S-300-5</text>
+  <text class="tiny" x="745" y="538" text-anchor="middle">60 A &#183; zones 1 and 2</text>
+  <rect class="box" x="970" y="498" width="170" height="70" rx="5"/>
+  <text class="wlbl" x="1055" y="522" text-anchor="middle">LETOUR S-150-5</text>
+  <text class="tiny" x="1055" y="538" text-anchor="middle">30 A &#183; zone 3</text>
+  <path class="bond" d="M 830 552 H 970"/>
+  <rect x="822" y="546" width="14" height="12" fill="#FFFFFF" stroke="#111111" stroke-width="1.6"/>
+  <rect x="964" y="546" width="14" height="12" fill="#FFFFFF" stroke="#111111" stroke-width="1.6"/>
+  <text class="tiny" x="900" y="540" text-anchor="middle">8 AWG V&#8722; to V&#8722;</text>
+  <text class="tiny" x="900" y="580" text-anchor="middle">never tie the V+ outputs</text>
+  <text class="warnt" x="66" y="596">Do not hang three boards off the Pi&#8217;s own USB ports.</text>
+  <text class="tiny" x="66" y="614">The Pi 3B+ shares roughly 1.2 A across all four of its ports, and a</text>
+  <text class="tiny" x="66" y="628">brown-out on one board can take the Pi down with it. A hub with its</text>
+  <text class="tiny" x="66" y="642">own supply removes the question entirely.</text>
+  <text class="tiny" x="66" y="662">Widely cited figure from Raspberry Pi community sources; not confirmed against official docs.</text>
+  <text class="warnt" x="620" y="596">Bandwidth is not your constraint. Cable length is.</text>
+  <text class="tiny" x="620" y="614">Each Fadecandy is a full-speed 12 Mbps device. Three of them together are</text>
+  <text class="tiny" x="620" y="628">nowhere near saturating a USB 2.0 bus. But USB allows 5 m per passive</text>
+  <text class="tiny" x="620" y="642">segment: Pi to hub is one, hub to board is another. A second powered hub</text>
+  <text class="tiny" x="620" y="662">buys another segment. Keep hubs out of any enclosure that holds an open-frame mains supply.</text>
+  <rect class="pan" x="40" y="696" width="628" height="414" rx="6"/>
+  <text class="panttl" x="66" y="726">How fcserver addresses each board</text>
+  <text class="lbls" x="66" y="745">A device entry with no "serial" key matches any Fadecandy. That is fine with</text>
+  <text class="lbls" x="66" y="761">one board and ambiguous with three, so name them.</text>
+  <rect class="code" x="66" y="774" width="576" height="318" rx="4"/>
+  <text class="monos" x="80" y="794" xml:space="preserve">{</text>
+  <text class="monos" x="80" y="811" xml:space="preserve">&#160;&#160;"listen":&#160;[null,&#160;7890],</text>
+  <text class="monos" x="80" y="828" xml:space="preserve">&#160;&#160;"verbose":&#160;true,</text>
+  <text class="monos" x="80" y="845" xml:space="preserve">&#160;&#160;"color":&#160;{&#160;"gamma":&#160;2.5,&#160;"whitepoint":&#160;[1.0,&#160;1.0,&#160;1.0]&#160;},</text>
+  <text class="monos" x="80" y="862" xml:space="preserve">&#160;&#160;"devices":&#160;[</text>
+  <text class="monos" x="80" y="879" xml:space="preserve">&#160;&#160;&#160;&#160;{&#160;"type":&#160;"fadecandy",</text>
+  <text class="monos" x="80" y="896" xml:space="preserve">&#160;&#160;&#160;&#160;&#160;&#160;"serial":&#160;"FFFFFFFFFFFF00180017200214134D44",</text>
+  <text class="monos" x="80" y="913" xml:space="preserve">&#160;&#160;&#160;&#160;&#160;&#160;"map":&#160;[&#160;[&#160;0,&#160;0,&#160;&#160;&#160;&#160;0,&#160;512&#160;]&#160;]&#160;},</text>
+  <text class="monos" x="80" y="930" xml:space="preserve"></text>
+  <text class="monos" x="80" y="947" xml:space="preserve">&#160;&#160;&#160;&#160;{&#160;"type":&#160;"fadecandy",</text>
+  <text class="monos" x="80" y="964" xml:space="preserve">&#160;&#160;&#160;&#160;&#160;&#160;"serial":&#160;"FFFFFFFFFFFF0021003B200314134D44",</text>
+  <text class="monos" x="80" y="981" xml:space="preserve">&#160;&#160;&#160;&#160;&#160;&#160;"map":&#160;[&#160;[&#160;0,&#160;512,&#160;&#160;0,&#160;256&#160;]&#160;]&#160;},</text>
+  <text class="monos" x="80" y="998" xml:space="preserve"></text>
+  <text class="monos" x="80" y="1015" xml:space="preserve">&#160;&#160;&#160;&#160;{&#160;"type":&#160;"fadecandy",</text>
+  <text class="monos" x="80" y="1032" xml:space="preserve">&#160;&#160;&#160;&#160;&#160;&#160;"serial":&#160;"FFFFFFFFFFFF00340052200914134D44",</text>
+  <text class="monos" x="80" y="1049" xml:space="preserve">&#160;&#160;&#160;&#160;&#160;&#160;"map":&#160;[&#160;[&#160;0,&#160;768,&#160;&#160;0,&#160;384&#160;]&#160;]&#160;}</text>
+  <text class="monos" x="80" y="1066" xml:space="preserve">&#160;&#160;]</text>
+  <text class="monos" x="80" y="1083" xml:space="preserve">}</text>
+  <rect class="note" x="688" y="696" width="452" height="414" rx="6"/>
+  <text class="notet" x="710" y="724">Reading a map entry</text>
+  <text class="mono" x="710" y="748" xml:space="preserve">[ OPC_channel, first_OPC_px,</text>
+  <text class="mono" x="710" y="766" xml:space="preserve">  first_device_px, count ]</text>
+  <text class="notep" x="710" y="792">A Fadecandy&#39;s own pixels are numbered 0 to 511.</text>
+  <text class="notep" x="710" y="809">Strand 1 starts at 0, strand 2 at 64, strand 3 at</text>
+  <text class="notep" x="710" y="826">128, and so on. So on board C, count 384 means its</text>
+  <text class="notep" x="710" y="843">first six strands, which are runs 13 to 18.</text>
+  <text class="notet" x="710" y="876">Finding the serial numbers</text>
+  <text class="notep" x="710" y="900">Plug in one board at a time and run fcserver with</text>
+  <text class="notep" x="710" y="917">"verbose": true. It prints the serial of each device</text>
+  <text class="notep" x="710" y="934">it opens. Write that on a label and stick it to the</text>
+  <text class="notep" x="710" y="951">board before you plug in the next one.</text>
+  <text class="notet" x="710" y="984">Why serials and not port order</text>
+  <text class="notep" x="710" y="1008">USB enumeration order is not stable. Address boards</text>
+  <text class="notep" x="710" y="1025">by port and your living room becomes your bedroom</text>
+  <text class="notep" x="710" y="1042">after a reboot. Address by serial and a board keeps</text>
+  <text class="notep" x="710" y="1059">its zone whichever socket it lands in.</text>
+  <text class="warnt" x="710" y="1074">Label the boards. You will not remember which</text>
+  <text class="warnt" x="710" y="1091">hex string is the one in the hall.</text>
 </svg>

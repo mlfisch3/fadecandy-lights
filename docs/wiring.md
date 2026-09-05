@@ -251,6 +251,16 @@ That is correct and necessary.
 What must never happen is paralleling the two supplies' **V+** outputs.
 Tie grounds; never tie positives.
 
+**Whenever you use two supplies, bond their V− terminals directly to each other**, with a conductor sized like the larger of the two zones' bus bars - 8 AWG in the §9.2 layout.
+This is a requirement, not a refinement, and the reason is what the alternative return path would otherwise be.
+
+The Fadecandy's ground wires are 24-26 AWG signal-grade returns.
+**They are the reference for the data line and nothing more, and they must never be a power return path.**
+Without the bond, if one zone's GND feeder works loose at its supply, that zone's return current still has a route: out through its runs' black leads into that board's `−` pins, through the board, over the USB ground to the hub, into a board on the other supply, and home through that zone's GND bus.
+That circuit is complete, so current flows, and nothing interrupts it - the branch fuses sit on the +5 V side, the main is sized for tens of amps, and the path's own resistance holds the current to a couple of amps.
+A couple of amps sits indefinitely in 26 AWG signal wire and in the hub, with no symptom but dim LEDs.
+With the heavy V−-to-V− bond fitted, that current returns through the bond instead, and the board grounds go on carrying nothing but signal reference.
+
 ---
 
 ## 6. Diagram 4 - Power distribution, sizing, fusing and injection
@@ -447,11 +457,11 @@ That is fine with one board and ambiguous with three, so name them:
 
     { "type": "fadecandy",
       "serial": "FFFFFFFFFFFF0021003B200314134D44",
-      "map": [ [ 0, 512,  0, 512 ] ] },
+      "map": [ [ 0, 512,  0, 256 ] ] },
 
     { "type": "fadecandy",
       "serial": "FFFFFFFFFFFF00340052200914134D44",
-      "map": [ [ 0, 1024, 0, 128 ] ] }
+      "map": [ [ 0, 768,  0, 384 ] ] }
   ]
 }
 ```
@@ -461,7 +471,8 @@ Yours will differ.
 
 A map entry is `[ OPC_channel, first_OPC_pixel, first_device_pixel, count ]`.
 A Fadecandy's own pixels are numbered 0 through 511: strand 1 starts at index 0, strand 2 at 64, strand 3 at 128, and so on.
-So `count: 128` on board C means its first two strands, which are runs 17 and 18.
+So `count: 256` on board B means its first four strands, runs 9 to 12, and `count: 384` on board C means its first six strands, runs 13 to 18.
+The three entries cover OPC pixels 0-511, 512-767 and 768-1151: 1152 pixels, which is 18 runs of 64.
 
 **Finding the serials.** Plug in one board at a time and run `fcserver` with `"verbose": true`.
 It prints the serial of each device it opens.
@@ -515,14 +526,16 @@ Mapped onto rooms and boards:
 | Zone | Runs | Worst case | Supply | Board and channels |
 |---|---|---|---|---|
 | Living room | 8 | 30.7 A | S-300-5 | Fadecandy A, ch 0-7 |
-| Kitchen / hall | 4 | 15.4 A | S-300-5, same unit | Fadecandy B, ch 0-3 |
-| Bedroom | 6 | 23.0 A | S-150-5 | Fadecandy B ch 4-7, Fadecandy C ch 0-1 |
+| Kitchen / hall | 4 | 15.4 A | S-300-5, same unit | Fadecandy B, ch 0-3 (ch 4-7 unused) |
+| Bedroom | 6 | 23.0 A | S-150-5 | Fadecandy C, ch 0-5 |
 
 Two things about that table are worth calling out.
 
-First, the board split does not line up with the supply split, and that is fine.
-Data channels and power zones are independent.
-A Fadecandy's eight channels can feed runs on two different supplies, as long as each of those runs has its ground bonded back to that board.
+First, **no board spans two supplies**, and that is deliberate rather than tidy.
+Board B drives the four kitchen/hall runs and leaves ch 4-7 unused instead of picking up part of the bedroom, and the bedroom is board C's alone.
+A board whose channels straddle two supplies is the single component bridging two power zones, and the wires doing the bridging are its 24-26 AWG grounds - the failure §5.3 describes.
+Spare channels are cheap; that bridge is not.
+It does not remove the shared reference, because all three boards still share ground through the hub and the Pi over USB, and that is exactly why the V−-to-V− bond in §5.3 is required and not optional.
 
 Second, living room and kitchen/hall share one supply, which only respects the clustering rule in §5.3 if those two areas are adjacent enough for that supply to sit within a metre or two of both of the blocks it feeds.
 If they are not, that shared supply is exactly the long-power-run mistake §5.1 warns about.
@@ -536,7 +549,7 @@ Both supplies at 77 % is workable but not generous, and the shared-supply compro
 A third 5 V supply, one per zone, removes both problems at once: every supply lands under 60 %, and every supply is genuinely local to the runs it feeds.
 That is cheaper than rewiring for heavier bus bars, and it is the layout §5.3 actually recommends.
 
-Keep each supply physically inside the cluster it serves, and tie all the grounds together.
+Keep each supply physically inside the cluster it serves, and bond the two supplies' V− terminals to each other with 8 AWG as §5.3 requires.
 
 ---
 
@@ -564,6 +577,10 @@ Anchor the mains cable at the enclosure wall so any pull is taken by the gland, 
 
 **Separation.** Keep mains wiring physically separated from the 5 V and data wiring inside any shared enclosure - separate compartments or a barrier, different cable entries, and never in the same bundle.
 This is a safety requirement first; the reduced noise on the data lines is a bonus.
+
+**Bonding between supplies.** If the installation uses two supplies, their V− terminals are bonded to each other with a conductor sized like the larger zone's bus bar - 8 AWG in the §9.2 layout.
+Fit that bond before either supply is energised.
+It is what keeps a loose ground feeder from turning the Fadecandy boards and the USB hub into the return path for a zone's full current, as §5.3 explains.
 
 **Polarity.** Confirm V+ and V− with a meter before connecting a single strip.
 WS2812Bs do have some reverse-connection tolerance, but do not spend it.
@@ -594,6 +611,8 @@ You need a multimeter.
     If it beeps, you have a short - find it now.
 4. Confirm continuity from the GND bus to every run's black lead, and to the Fadecandy's `−` pins for the channels in use.
     This is the common ground; prove it exists.
+    With two supplies, confirm the V−-to-V− bond itself: disconnect both GND feeders at their blocks and meter across the two supplies' V− terminals, so you are measuring the bond and not a path through the boards.
+    Reconnect the feeders and confirm each zone's GND bus reaches its own supply's V− directly, not only by way of that bond.
 5. Confirm continuity from the +5 V bus, through each branch fuse, to that run's red lead.
     Do this per branch; it also confirms each fuse is actually seated.
 6. Confirm **no continuity between the +5 V bus and mains earth**, and none between the GND bus and any mains conductor.
