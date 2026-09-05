@@ -8,7 +8,9 @@
   5 V power supply feeds a red +5 V bus and a black GND bus that power the runs directly, and each run
   takes its +5 V off that bus through its own 5 A branch fuse. The feeder from the supply's V-plus
   terminal to the bus passes through a 40 A main fuse, and both bus bars are 8 AWG. Strip current
-  flows only between the supply and the runs; it never passes through the Fadecandy or the Pi.</desc>
+  flows only between the supply and the runs; it never passes through the Fadecandy or the Pi. For
+  these eight runs the supply must be the sompom S-300-5, 60 A, which they load to 51 per cent; the
+  30 A LETOUR S-150-5 would be at 102 per cent of its rating and must not be used here.</desc>
 
   <style>
     .bg      { fill:#F7F6F1; stroke:#C7C3B8; stroke-width:2; }
@@ -265,8 +267,8 @@
   <!-- ===================== POWER SUPPLY ===================== -->
   <rect class="box" x="790" y="612" width="350" height="176" rx="5"/>
   <text class="boxttl" x="806" y="640">5 V DC power supply</text>
-  <text class="lbls" x="806" y="659">sompom S-300-5  (5 V, 60 A)  or</text>
-  <text class="lbls" x="806" y="675">LETOUR S-150-5  (5 V, 30 A)</text>
+  <text class="lbls" x="806" y="659">sompom S-300-5 (5 V, 60 A) - 30.7 A is 51 %: use this</text>
+  <text class="lbls" x="806" y="675" style="fill:#7A140C;font-weight:600">LETOUR S-150-5 (5 V, 30 A) - 102 %: DO NOT</text>
   <text class="lbls" x="806" y="699">Open-frame: MUST be enclosed and earthed.</text>
   <text class="lbls" x="806" y="715">Set output to 5.00 V with a meter - see &#167; Safety.</text>
   <text class="mono" x="806" y="740">V+  &#8594; +5 V bus      V&#8722;  &#8594; GND bus</text>

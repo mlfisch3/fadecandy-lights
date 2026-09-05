@@ -50,8 +50,10 @@ Two facts that are easy to get wrong and are settled there:
 Diagrams live in `docs/diagrams/*.svg` as hand-written SVG so they stay diffable. They render with
 an explicit light panel background so they stay legible on dark documentation backgrounds, label
 every conductor in text as well as colour, and use `xml:space="preserve"` on monospace rows to keep
-tabular alignment. Render-check any edit (`google-chrome --headless --screenshot`) before committing;
-SVG text does not wrap, so overruns are silent.
+tabular alignment. SVG text does not wrap and is not clipped, so overruns are silent: run
+`python3 tools/check-svg-text-fit.py` after any edit, which renders each diagram in headless Chrome
+and fails on a label that crosses its panel border or the canvas. Look at the drawing too
+(`google-chrome --headless --screenshot`); the check catches collisions, not ugliness.
 
 ## Maintaining this file
 
