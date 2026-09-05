@@ -494,7 +494,9 @@ Data channels and power zones are independent.
 A Fadecandy's eight channels can feed runs on two different supplies, as long as each of those runs has its ground bonded back to that board.
 
 Second, living room and kitchen/hall share one supply, which only respects the clustering rule in §5.3 if those two areas are adjacent enough for the distribution block to sit within a metre or two of both.
-Size each zone's own bus bars from its own run count by the rule in §6.1 - 8 AWG for the eight-run living room, 12 AWG for the four-run kitchen/hall - and note that whatever conductor leaves the S-300-5 to feed both blocks carries all 46.1 A, so it needs 8 AWG and a 40 A main fuse of its own.
+Size each zone's own bus bars and main fuse from its own run count by the rule in §6.1: 8 AWG and a 35 A main fuse for the eight-run living room (30.7 A), 10 AWG and a 25 A main fuse for the six-run bedroom (23.0 A), and 12 AWG and a 20 A main fuse for the four-run kitchen/hall (15.4 A).
+Do not run one shared feeder from the S-300-5 to both of the blocks it serves: that conductor would carry the combined 46.1 A, which is past every gauge in the §5.1 table.
+Land two separate feeders on its V+ and V− terminals instead, one per distribution block, each fused at that block's own rating, so no conductor ever carries more than the runs behind it.
 If they are not, that shared supply is exactly the long-power-run mistake §5.1 warns about.
 
 Both supplies at 77 % is workable but not generous, and the shared-supply compromise above exists only because you have two supplies for three zones.

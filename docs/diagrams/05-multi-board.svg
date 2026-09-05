@@ -126,7 +126,7 @@
   <path class="pwr" d="M 872 446 H 1096"/>
   <path class="gnd" d="M 872 468 H 1096"/>
   <text class="tiny" x="1096" y="442" text-anchor="end">+5 V, local</text>
-  <text class="tiny" x="880" y="458">GND, local - tied to that board&#39;s &#8722; pins</text>
+  <text class="tiny" x="872" y="458">GND, local - runs 13-16 to board B, 17-18 to C</text>
   <text class="warnt" x="66" y="500">Do not hang three boards off the Pi&#8217;s own USB ports.</text>
   <text class="tiny" x="66" y="518">The Pi 3B+ shares roughly 1.2 A across all four of its ports, and a</text>
   <text class="tiny" x="66" y="532">brown-out on one board can take the Pi down with it. A hub with its</text>
