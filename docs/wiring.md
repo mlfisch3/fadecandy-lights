@@ -194,6 +194,7 @@ Copper resistance at 20 °C, ohms per metre of one conductor:
 
 Those ampacity figures are typical free-air chassis-wiring values used for sizing equipment wiring, not a building-code table.
 Derate them when conductors are bundled, in conduit, or in a warm enclosure.
+Check them against a current wire-ampacity table before you buy cable: this column is the input every gauge and every fuse rating in §6.2 is derived from.
 
 One run at full white draws 3.84 A (see §7).
 Budget 0.25 V of drop, which is 5 % - and note that this is the budget for the **whole path**, supply terminals to strip, not for any one conductor in it. §6.2 rule 4 apportions it.
@@ -308,6 +309,11 @@ All the current that goes out comes back.
 
 ### 6.2 Sizing and fusing - the whole policy, in one place
 
+> **Check these numbers before you spend money on them.**
+> Every gauge, fuse rating and drop figure below is derived from the assumptions stated in this document, and they were revised repeatedly while it was being written.
+> Before you buy cable or cut anything, sanity-check each one against a current wire-ampacity table, and against the ratings printed on the fuse holders and terminal blocks you actually buy.
+> Nothing here is a substitute for that check.
+
 A fuse protects the **conductor downstream of it**, not the LEDs.
 A 60 A supply will happily push 60 A into a shorted 16 AWG branch, and 16 AWG will not survive that.
 The fuse is what stops it becoming a fire.
@@ -356,6 +362,28 @@ The table stops at 8 runs because that is the largest zone in this document and 
 - **Branch fuse, one per run: 5 A.** A run tops out at 3.84 A, and `3.84 ÷ 0.8` is 4.8 A, so 5 A holds it without nuisance blowing and sits far inside 14 AWG's ~15 A. Same 77 % of rating as every row above.
 - **One main fuse per feeder, not per supply.** A supply with two feeders leaving it gets two mains, one per feeder, each read off its own row.
 - **Never fuse above the ampacity of the thinnest conductor that fuse is the only protection for.** The main protects its feeder and its bus bars and nothing else, because every branch beyond it has its own fuse; each branch fuse protects that branch's wire.
+
+#### Before you buy 6 AWG: the lever is topology, not copper
+
+Those feeder gauges are not a law of physics.
+They are what it costs to feed a whole zone from a supply that is not in it.
+
+The feeder's drop is `I × 2 × L × ρ`, so two of the three terms are yours to choose - how much current one feeder carries, and how far it goes - and buying your way down the ρ column is the most expensive way to fix either.
+The same three zones as §9.2, sized three ways, with the "beside the block" column at 0.3 m:
+
+| Zone | Supply 1 m from the block | Supply beside the block | Zone split, a local supply per block |
+|---|---|---|---|
+| Living room, 8 runs, 30.7 A | 6 AWG | 8 AWG | 12 AWG - two 4-run blocks, 15.4 A each |
+| Bedroom, 6 runs, 23.0 A | 6 AWG | 10 AWG | 14 AWG - two 3-run blocks, 11.5 A each |
+| Kitchen / hall, 4 runs, 15.4 A | 8 AWG | 12 AWG | 14 AWG - two 2-run blocks, 7.7 A each |
+
+Read across the living-room row: moving the supply to the block it feeds takes it from 6 AWG to 8 AWG, and splitting the zone into two blocks with a supply each takes it to 12 AWG - a conductor you can bend by hand and land on an ordinary screw terminal.
+Six AWG is none of those things, and it has to be crimped.
+
+**This is the same recommendation §5.3 already makes for data, for the same reason: it is cheaper to move the source than to pay for the distance.**
+A third 5 V supply costs far less than a reel of 6 AWG and the afternoon spent pulling and terminating it, and §9.2 recommends a third supply anyway, for headroom.
+So treat the table above as the sizing consequence of a layout decision, and make the layout decision first.
+If you do keep one supply feeding zones it does not sit in, the 1 m column is the price of that, and rule 4 is why.
 
 ### 6.3 Power injection into the far end
 
