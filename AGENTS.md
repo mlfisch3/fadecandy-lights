@@ -12,7 +12,7 @@ A Fadecandy-driven WS2812B controller for a Raspberry Pi 3 B+, serving a REST an
 ```bash
 uv venv --python 3.11 .venv && VIRTUAL_ENV=.venv uv pip install -e '.[dev]'
 .venv/bin/pytest
-.venv/bin/ruff check src tests
+.venv/bin/ruff check src tests tools
 .venv/bin/fclights run --simulate --pixels 512    # whole service, no hardware
 .venv/bin/fclights check --simulate --pixels 512  # validate config, print power arithmetic
 ```
@@ -52,8 +52,13 @@ an explicit light panel background so they stay legible on dark documentation ba
 every conductor in text as well as colour, and use `xml:space="preserve"` on monospace rows to keep
 tabular alignment. SVG text does not wrap and is not clipped, so overruns are silent: run
 `python3 tools/check-svg-text-fit.py` after any edit, which renders each diagram in headless Chrome
-and fails on a label that crosses its panel border or the canvas. Look at the drawing too
-(`google-chrome --headless --screenshot`); the check catches collisions, not ugliness.
+and fails on a label that crosses its panel border or the canvas, and on a diagram it could not
+measure at all.
+`tests/test_svg_text_fit.py` runs it over every committed diagram, but the whole module skips when
+no Chrome or Chromium binary is on PATH, so a green pytest run there is not proof the drawings were
+checked.
+Look at the drawing too (`google-chrome --headless --screenshot`); the check catches collisions,
+not ugliness.
 
 ## Maintaining this file
 

@@ -385,8 +385,10 @@ The `serial` field is in the layout schema for that; it is not yet matched again
 | `config/` | Example config, layout, and fcserver config. |
 | `deploy/` | systemd units, udev rule, setup script. |
 | `docs/api.md` | The control API contract. |
+| `docs/wiring.md` | Wiring, power and topology record, with the colour diagrams in `docs/diagrams/`. |
 | `docs/bring-up.md` | Hardware bring-up checklist. |
 | `tests/opc_sink.py` | Test-double OPC receiver, used in place of fcserver. |
+| `tools/` | Development checks that are not part of the service. |
 
 ## Testing
 
