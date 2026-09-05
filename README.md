@@ -276,6 +276,9 @@ These strips measure **33 mm centre to centre**, so 30.3 LEDs/m and a full 64-pi
 
 **Do not use an "inject every 2 m" rule at this density.** It is written for 60 LEDs/m strips, and current, not length, is what sets the drop. `docs/wiring.md` §6.3 works it properly; the results are:
 
+> **Changed:** this section used to say 18 AWG injection wire, 16 AWG if the run is long. That is wrong at this current and length. It is **14 AWG**, and the branch fuse is **6 A**. See `docs/wiring.md` §6.2.
+
+
 - **Every 64-pixel run is fed at both ends.** That is not a contingency, it is the design. Fed from one end, a 2.11 m run would need a strip rail resistance no flexible PCB achieves; fed from both ends the requirement is four times looser and a decent strip meets it.
 - **Feed 5 V and ground at each end**, both legs off that run's single branch fuse. The data line is **not** injected; it continues pixel to pixel as normal.
 - **Run injection wire back to the distribution block, not along the strip.** 14 AWG up to 1.87 m per leg is the default. Size each leg for the whole 3.84 A, not half of it.

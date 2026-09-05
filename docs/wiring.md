@@ -9,6 +9,16 @@ Where something could not be established, it is marked **unverified** rather tha
 Wire colours throughout the diagrams match the pigtails on your strips: **black = GND, yellow = DATA, red = +5 V**.
 Every conductor is also labelled in text, so the diagrams still work printed in grey.
 
+> ## Read this if you read an earlier version of this document
+>
+> **§6.3 used to say a 64-pixel run does not need injection at its far end. That was wrong, and this revision reverses it.**
+>
+> The old thresholds were worked from 5.00 V arriving at the strip, when the distribution wiring spends 0.25 V getting there. Every one of them was therefore twice as generous as it should have been. Corrected, feeding a 2.11 m run from one end needs a strip rail resistance no flexible PCB achieves.
+>
+> **Every 64-pixel run is fed at both ends: two +5 V leads and two GND leads per run, both off that run's own branch fuse.** It is the design, not a contingency for bad strips.
+>
+> Two other numbers moved enough to matter if you were about to buy from the old text. Branch wire is **14 AWG to 1.87 m per leg**, not 18 or 16 AWG, and not a round 2 m. The branch fuse is **6 A**, not 5 A. §6.2 is the authoritative table and every figure in it is derived there from a cited standard.
+
 ---
 
 ## 1. The hardware, as measured
@@ -481,6 +491,10 @@ A third 5 V supply costs far less than a reel of 4 AWG and the afternoon spent p
 So treat the table above as the sizing consequence of a layout decision, and make the layout decision first.
 
 ### 6.3 Power injection: how many points a run needs
+
+> **This section reverses what an earlier version of it concluded.**
+> It used to say a single 64-pixel run does not need far-end injection. It does. The old thresholds assumed 5.00 V at the strip when §6.2 spends 0.25 V reaching it, so all of them were 2× too generous, and correcting them moves the answer from "probably not needed" to "not physically possible from one end".
+> **Every run is fed at both ends.** The rest of this section derives that rather than asserting it, because you should be able to check it.
 
 **Do not use an "inject every 2 m" length rule here.**
 That number is stated for 60 LEDs/m strips, and these are 30 LEDs/m.
