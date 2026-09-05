@@ -8,17 +8,21 @@ headless Chrome and measures real laid-out text boxes against the panel rects
 they overlap, so the defect fails a command instead of a reviewer's eye.
 
 Usage:  python3 tools/check-svg-text-fit.py [file.svg ...]
-Exit 0 when every label sits inside its panel, 1 on any collision, 2 when no
-Chrome binary is available to render with.
+Exit 0 when every label sits inside its panel, 1 on any collision or on any
+diagram that could not be measured, 2 when no Chrome binary is available to
+render with. A diagram the probe failed to measure is a failure, never a pass:
+an empty result and a clean result must not look alike.
 """
 
 import glob
 import html
 import os
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
+from xml.etree import ElementTree
 
 CHROME_CANDIDATES = (
     "google-chrome",
@@ -29,10 +33,17 @@ CHROME_CANDIDATES = (
 
 # Measures each <text> against every stroked <rect> it overlaps, in the SVG's
 # own user units, then reports the edges it straddles.
+# The probe always writes a first line: "MEASURED <n>" once it has walked every
+# text node, or "ERROR <message>" if it threw on the way. Silence means it never
+# ran, which the Python side treats as a failure rather than as a clean result.
 PROBE = r"""
 <pre id="out"></pre>
 <script>
-var svg = document.querySelector('svg'), lines = [];
+(function () {
+var lines = [], measured = 0;
+try {
+var svg = document.querySelector('svg');
+if (!svg) throw new Error('no <svg> element in the rendered page');
 function abs(el) {
   var b = el.getBBox();
   var m = svg.getScreenCTM().inverse().multiply(el.getScreenCTM());
@@ -56,6 +67,7 @@ var rects = Array.prototype.map.call(svg.querySelectorAll('rect'), function (r) 
 Array.prototype.forEach.call(svg.querySelectorAll('text'), function (t) {
   var a = abs(t), content = (t.textContent || '').trim();
   if (!content) return;
+  measured += 1;
   rects.forEach(function (r) {
     if (r.stroke === 'none' || r.stroke === 'rgba(0, 0, 0, 0)') return;
     // Legend swatches and pin pads are smaller than any label; labels are
@@ -81,17 +93,44 @@ Array.prototype.forEach.call(svg.querySelectorAll('text'), function (t) {
       a.y0 < vb.y - 0.5 || a.y1 > vb.y + vb.height + 0.5)
     lines.push('"' + content.slice(0, 64) + '" falls outside the viewBox');
 });
+lines.unshift('MEASURED ' + measured);
+} catch (e) {
+  lines = ['ERROR ' + ((e && e.message) ? e.message : String(e))];
+}
 document.getElementById('out').textContent = lines.join('\n');
+})();
 </script>
 """
 
 
+class ProbeError(Exception):
+    """The diagram could not be measured, so its result proves nothing."""
+
+
 def find_chrome():
     for name in CHROME_CANDIDATES:
-        found = subprocess.run(["which", name], capture_output=True, text=True)
-        if found.returncode == 0:
-            return found.stdout.strip()
+        found = shutil.which(name)
+        if found:
+            return found
     return None
+
+
+def text_node_count(svg_path):
+    """How many non-empty <text> elements the file itself contains.
+
+    This is what the probe is expected to measure. If the probe reports zero
+    and this says otherwise, the probe did not do its job.
+    """
+    source = open(svg_path, encoding="utf-8").read()
+    try:
+        root = ElementTree.fromstring(source)
+    except ElementTree.ParseError:
+        return len(re.findall(r"<text[\s>]", source))
+    return sum(
+        1
+        for el in root.iter()
+        if el.tag.rsplit("}", 1)[-1] == "text" and "".join(el.itertext()).strip()
+    )
 
 
 def collisions(chrome, svg_path):
@@ -119,9 +158,22 @@ def collisions(chrome, svg_path):
         ).stdout
     found = re.search(r'<pre id="out">(.*?)</pre>', rendered, re.S)
     if not found:
-        raise SystemExit("could not read measurements back from " + svg_path)
-    body = html.unescape(found.group(1)).strip()
-    return body.splitlines() if body else []
+        raise ProbeError("the probe element is missing from the rendered page")
+    lines = html.unescape(found.group(1)).strip().splitlines()
+    if not lines:
+        raise ProbeError("the probe wrote no result, so nothing was measured")
+    marker, rest = lines[0], lines[1:]
+    if marker.startswith("ERROR "):
+        raise ProbeError("the probe failed: " + marker[len("ERROR "):])
+    if not marker.startswith("MEASURED "):
+        raise ProbeError("the probe did not run to completion")
+    measured = int(marker.split()[1])
+    expected = text_node_count(svg_path)
+    if measured == 0 and expected:
+        raise ProbeError(
+            "measured 0 of the {} text nodes in this file".format(expected)
+        )
+    return rest
 
 
 def main(argv):
@@ -135,8 +187,14 @@ def main(argv):
         return 2
     failed = False
     for path in targets:
-        found = collisions(chrome, path)
         name = os.path.relpath(path, here)
+        try:
+            found = collisions(chrome, path)
+        except ProbeError as error:
+            failed = True
+            print("FAIL " + name)
+            print("       could not measure this diagram: " + str(error))
+            continue
         if found:
             failed = True
             print("FAIL " + name)
