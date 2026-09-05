@@ -133,7 +133,7 @@ Use the ground pin next to the channel you are using, run it alongside that chan
 
 ## 3. Diagram 1 - System overview
 
-![System overview: Pi to Fadecandy over USB, eight DATA + GND pairs out to eight runs, a 5 V supply feeding the runs directly, and the common ground tie](diagrams/01-system-overview.svg)
+![System overview: Pi to Fadecandy over USB, eight DATA + GND pairs out to eight runs, a 5 V supply feeding 8 AWG bus bars through a 40 A main fuse, a 5 A branch fuse per run, and the common ground tie](diagrams/01-system-overview.svg)
 
 The thing to take from this drawing is the current path.
 Strip current leaves the supply's V+, goes through the LEDs, and returns to the supply's V−.
@@ -239,7 +239,7 @@ These are engineering practice, not a datasheet number, and are marked as such:
 Only data and its ground travel any distance.**
 
 Group the runs by room.
-Give each group its own 5 V supply and its own fused distribution block, sited within about 1.5 m of the runs it feeds, so the heavy conductors are short and can be 16 AWG rather than 12.
+Give each group its own 5 V supply and its own fused distribution block, sited within about 1.5 m of the runs it feeds, so each run's branch wire is short and can be 16 AWG rather than 12.
 
 Then pick how the data gets there:
 
@@ -267,22 +267,49 @@ One supply can feed more than one distribution block, and §9.2 does exactly tha
 Each block is its own feeder: its own pair of conductors off the supply terminals, its own main fuse, its own bus bars.
 Nothing is shared between two feeders except the supply terminals they land on.
 
-The bus bars carry every run at once, so size them for the cluster total, not for one run.
-Multiply the runs on that block by 3.84 A and pick the first conductor in the §5.1 table whose ampacity is at or above that number.
-Worked from that table: up to 3 runs (11.5 A) is 14 AWG, up to 5 runs (19.2 A) is 12 AWG, up to 7 runs (26.9 A) is 10 AWG, and up to 10 runs (38.4 A) is 8 AWG.
-The eight-run starter cluster in §9.1 is 30.7 A, so it wants 8 AWG - 14 AWG would be carrying twice its rating.
-The GND bus is never thinner than the +5 V bus.
+The bus bars carry every run at once, so they are sized for the cluster total rather than for one run.
+§6.2 is the single place that says how; read the gauge and the fuse for your run count straight off the table there.
+
+The feeder carries exactly the same current as the bus bars it lands on, so **the feeder is the same gauge as those bus bars, or heavier** - never a thin hop from the supply terminal to a big fuse.
+The main fuse goes at the **supply end** of the feeder, so that one fuse protects the feeder and the bus bars together.
+Keep the unfused stub between the supply terminal and that fuse as short as you physically can, because nothing protects it.
+The GND bus is never thinner than the +5 V bus, and the GND feeder is never thinner than the +5 V feeder.
 All the current that goes out comes back.
 
-### 6.2 Fusing
+### 6.2 Sizing and fusing - the whole policy, in one place
 
 A fuse protects the **conductor downstream of it**, not the LEDs.
 A 60 A supply will happily push 60 A into a shorted 16 AWG branch, and 16 AWG will not survive that.
 The fuse is what stops it becoming a fire.
 
-- **Branch fuse, one per run: 5 A.** A run tops out at 3.84 A, so 5 A holds it without nuisance blowing, and 5 A is comfortably inside 16 AWG's ~10 A.
-- **Main fuse, one per feeder: rate it at the bus conductor's ampacity from the §5.1 table.** Size it to the bus bar it protects, never to the supply's rating, and do not tune it per zone. Taking the ampacity outright satisfies both halves of the rule at once: it is above any load that bus is allowed to carry, and it never exceeds what that bus can take. So a 12 AWG bus (~20 A, at most 5 runs) takes a 20 A main, a 10 AWG bus (~30 A, at most 7 runs) takes 30 A, and an 8 AWG bus (~40 A, at most 10 runs) takes 40 A. A supply with two feeders leaving it gets two mains, one per feeder, each sized from its own bus. If your cluster total exceeds the bus bar's ampacity, the bus bar is too thin, not the fuse too small.
-- **Never fuse above the ampacity of the thinnest conductor that fuse is the only protection for.** The main protects the bus bars and nothing else, because every branch beyond it has its own fuse; each branch fuse protects that branch wire.
+Three rules size every bus bar, every feeder and every main fuse in this document.
+Nothing elsewhere restates them; §9.1 and §9.2 just read off the table below.
+
+1. **Derate for continuous load.** A bus bar or feeder is sized so its worst-case current is at most 80 % of that conductor's ampacity, so the ampacity you need is `load ÷ 0.8`. Full white on every run in a zone is a continuous load, not a surge, and §10 assumes the block may end up in a warm cupboard - which is exactly when the §5.1 figures need derating.
+2. **The main fuse sits between `load ÷ 0.8` and the conductor's ampacity**, taken from the standard values 10, 15, 20, 25, 30, 35, 40 and 50 A. Above the derated load, so it does not open in service; at or below the conductor's ampacity, so it still protects it.
+3. **The feeder is the same gauge as the bus bar it serves, or heavier**, and its main fuse sits at the supply end, so that fuse protects the feeder and the bus together.
+
+Worked out at 3.84 A per run, so you never have to derive it:
+
+| Runs on the block | Worst case | Bus bars and feeder | Main fuse | Load, as % of fuse |
+|---|---|---|---|---|
+| 1 | 3.84 A | 16 AWG | 10 A | 38 % |
+| 2 | 7.68 A | 16 AWG | 10 A | 77 % |
+| 3 | 11.52 A | 14 AWG | 15 A | 77 % |
+| 4 | 15.36 A | 12 AWG | 20 A | 77 % |
+| 5 | 19.20 A | 10 AWG | 25 A | 77 % |
+| 6 | 23.04 A | 10 AWG | 30 A | 77 % |
+| 7 | 26.88 A | 8 AWG | 35 A | 77 % |
+| 8 | 30.72 A | 8 AWG | 40 A | 77 % |
+
+The one-run row is set by the smallest standard fuse rather than by the load, which is why it sits at 38 % instead of 77 %.
+
+The table stops at 8 runs because that is the largest zone in this document and one Fadecandy drives eight channels.
+**Do not put more than 8 runs on one bus bar.** Split the zone instead and give the second block its own feeder, its own main fuse and its own bus bars.
+
+- **Branch fuse, one per run: 5 A.** A run tops out at 3.84 A, and `3.84 ÷ 0.8` is 4.8 A, so 5 A holds it without nuisance blowing and sits comfortably inside 16 AWG's ~10 A. Same 77 % of rating as every row above.
+- **One main fuse per feeder, not per supply.** A supply with two feeders leaving it gets two mains, one per feeder, each read off its own row.
+- **Never fuse above the ampacity of the thinnest conductor that fuse is the only protection for.** The main protects its feeder and its bus bars and nothing else, because every branch beyond it has its own fuse; each branch fuse protects that branch's wire.
 
 ### 6.3 Power injection into the far end
 
@@ -461,8 +488,8 @@ It is a complete, working system, and it is also the first cluster of the full b
 | Pixels | 512 |
 | Worst-case current | 30.7 A |
 | Supply | **sompom S-300-5 (60 A)** - 51 % loaded, comfortable |
-| Bus bars | 8 AWG, +5 V and GND alike - they carry the whole 30.7 A |
-| Main fuse | 40 A - the ampacity of the 8 AWG bus it protects, and above the 30.7 A load |
+| Bus bars and feeder | 8 AWG, +5 V and GND alike - all of it carries the whole 30.7 A |
+| Main fuse | 40 A at the supply end of the feeder - the 8-run row of §6.2 |
 | Branch fuses | 5 A per run, 8 of them |
 | Branch wire | 16 AWG, under 2 m per run - 0.20 V of drop at 3.84 A |
 | Data | 8 × twisted DATA + GND pairs, 24-26 AWG, each under 5 m |
@@ -497,11 +524,13 @@ First, the board split does not line up with the supply split, and that is fine.
 Data channels and power zones are independent.
 A Fadecandy's eight channels can feed runs on two different supplies, as long as each of those runs has its ground bonded back to that board.
 
-Second, living room and kitchen/hall share one supply, which only respects the clustering rule in §5.3 if those two areas are adjacent enough for the distribution block to sit within a metre or two of both.
-Size each zone's own bus bars from its own run count by the rule in §6.1, then take each main fuse from that bus conductor's ampacity by the rule in §6.2: 8 AWG and a 40 A main for the eight-run living room (30.7 A), 10 AWG and a 30 A main for the six-run bedroom (23.0 A), and 12 AWG and a 20 A main for the four-run kitchen/hall (15.4 A).
-Do not run one shared feeder from the S-300-5 to both of the blocks it serves: that conductor would carry the combined 46.1 A, which is past every gauge in the §5.1 table.
-Land two separate feeders on its V+ and V− terminals instead, one per distribution block, each with its own main fuse sized from its own bus, so no conductor ever carries more than the runs behind it.
+Second, living room and kitchen/hall share one supply, which only respects the clustering rule in §5.3 if those two areas are adjacent enough for that supply to sit within a metre or two of both of the blocks it feeds.
 If they are not, that shared supply is exactly the long-power-run mistake §5.1 warns about.
+
+Those two zones get a distribution block each, not one block between them.
+Do not run a single shared feeder from the S-300-5 to both: that conductor would carry the combined 46.1 A, which is past every gauge in the §5.1 table.
+Land two separate feeders on its V+ and V− terminals instead, one per block, each with its own main fuse at the supply end, so no conductor ever carries more than the runs behind it.
+Read each zone's bus bars, feeder and main fuse off the §6.2 table by its run count: 8 AWG and a 40 A main for the eight-run living room (30.7 A), 10 AWG and a 30 A main for the six-run bedroom (23.0 A), and 12 AWG and a 20 A main for the four-run kitchen/hall (15.4 A).
 
 Both supplies at 77 % is workable but not generous, and the shared-supply compromise above exists only because you have two supplies for three zones.
 A third 5 V supply, one per zone, removes both problems at once: every supply lands under 60 %, and every supply is genuinely local to the runs it feeds.

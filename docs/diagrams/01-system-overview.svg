@@ -6,7 +6,8 @@
   run, and a black GND wire from that same channel's minus pin, twisted with it and landed on the GND
   bus alongside that run's own ground lead. There are eight such pairs, not eight lone data wires. The
   5 V power supply feeds a red +5 V bus and a black GND bus that power the runs directly, and each run
-  takes its +5 V off that bus through its own 5 A branch fuse. Strip current
+  takes its +5 V off that bus through its own 5 A branch fuse. The feeder from the supply's V-plus
+  terminal to the bus passes through a 40 A main fuse, and both bus bars are 8 AWG. Strip current
   flows only between the supply and the runs; it never passes through the Fadecandy or the Pi.</desc>
 
   <style>
@@ -213,8 +214,8 @@
     <circle class="dotr" cx="688" cy="440" r="4.4"/><circle class="dotr" cx="800" cy="440" r="4.4"/>
     <circle class="dotr" cx="912" cy="440" r="4.4"/><circle class="dotr" cx="1024" cy="440" r="4.4"/>
   </g>
-  <text class="wlbl" x="92" y="391">GND BUS</text>
-  <text class="wlbl" x="92" y="431">+5 V BUS</text>
+  <text class="wlbl" x="92" y="391">GND BUS &#183; 8 AWG</text>
+  <text class="wlbl" x="92" y="431">+5 V BUS &#183; 8 AWG</text>
   <text class="lbls" x="46" y="464">5 A branch fuse</text>
   <text class="lbls" x="46" y="478">on every run</text>
 
@@ -280,7 +281,12 @@
   <!-- risers: V- up to GND bus (hop over +5V bus); V+ up to +5V bus -->
   <path class="gnd" d="M 1062 605 V 447 A 7 7 0 0 1 1062 433 V 400"/>
   <circle class="dot" cx="1062" cy="400" r="4.4"/>
-  <path class="pwr" d="M 1106 605 V 440"/>
+  <path class="pwr" d="M 1106 605 V 556"/>
+  <rect class="fuse" x="1098" y="534" width="16" height="22" rx="3"/>
+  <path class="pwr" d="M 1106 534 V 440"/>
+  <text class="lbls" x="1120" y="498">MAIN</text>
+  <text class="lbls" x="1120" y="512">FUSE</text>
+  <text class="lbls" x="1120" y="526">40 A</text>
   <circle class="dotr" cx="1106" cy="440" r="4.4"/>
 
   <!-- ===================== NOTES ===================== -->
